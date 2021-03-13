@@ -27,19 +27,19 @@ levels_metadata = {
 }
 
 flask1 = {
-	center_x = 21, -- center x
+	center_x = 24, -- center x
 	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
 	cur_slot = 1, -- current slot the flask is placed in
 }
 
 flask2 = {
-	center_x = 71,
+	center_x = 74,
 	fill_order = {},
 	cur_slot = 2,
 }
 
 flask3 = {
-	center_x = 121,
+	center_x = 124,
 	fill_order = {}, 
 	cur_slot = 3,
 }
@@ -61,7 +61,7 @@ flasks = { flask1, flask2, flask3 } -- not ordered
 
 faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 
-drop_slots = { {6, 36}, {56, 86}, {106, 136} } -- ranges of the drop slots
+drop_slots = { {6, 42}, {56, 92}, {106, 142} } -- ranges of the drop slots
 
 selected = nil -- selected flask to drag
 
@@ -74,7 +74,7 @@ CLOCK_FREQ = 60 --Hz
 
 CURR_STATE = states.MAIN_MENU
 
-FLASK_WIDTH = 30
+FLASK_WIDTH = 36
 FLASK_OFFSET_Y = 4
 FLASK_HEIGHT = 84
 
@@ -111,6 +111,11 @@ function TIC()
 		r = drop_slots[i][2]
 		line(l, 0, l, 135, 5)
 		line(r, 0, r, 135, 5)
+	end
+
+	for i = 1, #flasks do
+		x = flasks[i].center_x
+		line(x, 0, x, 135, 10)
 	end
 end
 
@@ -358,9 +363,9 @@ function draw_flask(flask)
 		color = flask.fill_order[i][1]
 		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
 		height = flask.fill_order[i][3] - flask.fill_order[i][2]
-		rect(x + 9,	y, FLASK_WIDTH, height, color)
+		rect(x + 3,	y, FLASK_WIDTH - 6, height, color)
 	end
-	spr(10, flask.center_x - FLASK_WIDTH / 2, 45, 0, 3, 0, 0, 2, 4)
+	spr(10, flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 end
 
 function draw_orders()
@@ -388,29 +393,29 @@ function draw_faucets()
 
 		-- draw red faucet 
 		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x,5,0,3,0,0,2,2)
+		spr(2,pos_red_x - 6,5,0,3,0,0,2,2)
 
 		-- draw blue faucet
 		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x,5,0,3,0,0,2,2)
+		spr(4,pos_blue_x - 6,5,0,3,0,0,2,2)
 
 		-- draw out of order faucet
 		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(8,pos_outoforder_x,5,0,3,0,0,2,2)
+		spr(8,pos_outoforder_x - 6,5,0,3,0,0,2,2)
 	else  
 		width = drop_slots[1][2] - drop_slots[1][1]
 
 		-- draw red faucet 
 		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x,5,0,3,0,0,2,2)
+		spr(2,pos_red_x - 6,5,0,3,0,0,2,2)
 
 		-- draw blue faucet
 		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x,5,0,3,0,0,2,2)
+		spr(4,pos_blue_x - 6,5,0,3,0,0,2,2)
 
 		-- draw green faucet
 		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(6,pos_outoforder_x,5,0,3,0,0,2,2)
+		spr(6, pos_outoforder_x - 6, 5, 0, 3, 0, 0, 2, 2)
 	end
 end
 
