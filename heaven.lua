@@ -21,9 +21,9 @@ events = {
 -- table with information for each level like time (possible others in the future)
 -- time in seconds
 levels_metadata = {
-	["level_one"] = { ["time"] = 5 },
-	["level_two"] = { ["time"] = 2 },
-	["level_three"] = { ["time"] = 5 }
+	["level_one"] = { ["time"] = 10 },
+	["level_two"] = { ["time"] = 15 },
+	["level_three"] = { ["time"] = 20 }
 }
 
 flask1 = {
