@@ -36,11 +36,11 @@ flask3 = {
 	cur_slot = 3 -- current slot the flask is placed in
 }
 
+flasks = { flask1, flask2, flask3 }
+
 faucets = { 2, 4, 9 } -- red, yellow, blue faucets
 
 drop_slots = { {60, 90}, {100, 130}, {140, 170} } -- ranges of the drop slots
-
-flasks = { flask1, flask2, flask3 }
 
 -- constants
 CURR_STATE = states.MAIN_MENU
@@ -48,6 +48,11 @@ FLASK_WIDTH = 30
 FLASK_OFFSET_Y = 20
 SCREEN_WIDTH = 240
 SCREEN_HEIGHT = 136
+FAUCET_KEYCODE_1 = 28
+FAUCET_KEYCODE_2 = 29
+FAUCET_KEYCODE_3 = 30
+Z_KEYCODE = 26
+BACKGROUND_COLOR = 13
 
 function TIC()
 	update()
@@ -56,22 +61,22 @@ end
 
 function update()
 	if (CURR_STATE == states.MAIN_MENU) then
-		if keyp(26) then
+		if keyp(Z_KEYCODE) then
 			update_state_machine(events.START_GAME)
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
-		if key(28) then
+		if key(FAUCET_KEYCODE_1) then
 			fill_flask(flask1)
-		elseif key(29) then
+		elseif key(FAUCET_KEYCODE_2) then
 			fill_flask(flask2)
-		elseif key(30) then
+		elseif key(FAUCET_KEYCODE_3) then
 			fill_flask(flask3)
 		end
 	end
 end
 
 function draw()
-	cls(13)
+	cls(BACKGROUND_COLOR)
 	if (CURR_STATE == states.MAIN_MENU) then
 		draw_main_menu()
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
@@ -108,9 +113,9 @@ function draw_main_menu()
 end
 
 function draw_game()
-	draw_flask(flask1)
-	draw_flask(flask2)
-	draw_flask(flask3)
+	for i = 1, #flasks do
+		draw_flask(flasks[i])
+	end
 end
 
 function draw_flask(flask)
