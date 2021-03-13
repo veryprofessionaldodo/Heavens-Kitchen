@@ -106,6 +106,12 @@ vertical_targets = { 8, 52, 96, 137 }
 function TIC()
 	update()
 	draw()
+	for i = 1, #drop_slots do
+		l = drop_slots[i][1]
+		r = drop_slots[i][2]
+		line(l, 0, l, 135, 5)
+		line(r, 0, r, 135, 5)
+	end
 end
 
 -- updates
@@ -270,6 +276,17 @@ function mouse_up(flask)
 	flask.center_x = (drop_slots[flask.cur_slot][2] + drop_slots[flask.cur_slot][1]) / 2
 end
 
+-- function get_closest_slot(x)
+-- 	positions = { 
+-- 		drop_slots[1][1], drop_slots[1][2], 
+-- 		drop_slots[2][1], drop_slots[2][2], 
+-- 		drop_slots[3][1], drop_slots[3][2] 
+-- 	}
+-- 	positions = map(function(a) return x - a end, positions)
+-- 	idx = min_i(positions)
+-- 	return math.ceil(idx / 2) 
+-- end
+
 function handle_timeout()
 	timeout = levels_metadata[CURR_STATE].time * CLOCK_FREQ
 	if frame_count >= timeout then
@@ -326,7 +343,6 @@ end
 function draw_flasks()
 	for i = 1, #flasks do
 		draw_flask(flasks[i])
-		check_if_flask_full(flasks[i])
 	end
 
 	-- selected flask is always on top
@@ -398,7 +414,30 @@ function draw_faucets()
 	end
 end
 
--- init
+-- utils
+function map(func, tbl)
+	local newtbl = {}
+	for i, v in pairs(tbl) do
+		newtbl[i] = func(v)
+	end
+	return newtbl
+end
+
+function min(tbl)
+	return tbl[min_i(tbl)]
+end
+
+function min_i(tbl)
+	local idx, min = 1, tbl[1]
+	for i = 1, #tbl do
+		if tbl[i] < min then 
+			idx = i
+			min = tbl[i] 
+		end
+	end
+	return idx
+end
+
 function init()
 	update_state_machine(events.MAIN_MENU)
 	draw_main_menu()
