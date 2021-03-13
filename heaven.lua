@@ -92,11 +92,11 @@ BACKGROUND_COLOR = 0
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = { 
-	{{2, 1}, pos = {168, 137}, target = {168, 8}}, 
-	{{2, 0.5}, {4, 0.5}, pos = {168, 137 + 44}, target = {168, 52}},
-	{{2, 0.5}, {4, 0.5}, pos = {168, 137 + 88}, target = {168, 96}},
-	{{2, 0.5}, {4, 0.5}, pos = {168, 137}, target = {168, 137}},
-	{{2, 0.5}, {4, 0.5}, pos = {168, 137}, target = {168, 137}}
+	{content = {{2, 1}}, pos = {168, 137}, target = {168, 8}}, 
+	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + 44}, target = {168, 52}},
+	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + 88}, target = {168, 96}},
+	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137}, target = {168, 137}},
+	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137}, target = {168, 137}}
 }
 
 completed_orders = {}
@@ -130,6 +130,7 @@ function update()
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		-- generateOrders() #TODO
+		level_timer()
 		update_orders()
 		update_mouse()
 		update_flasks()
@@ -170,6 +171,10 @@ function update_mouse()
 		flask.center_x = mx
 	end
 end
+
+function level_timer()
+end
+
 
 function update_flasks()
 	if key(FAUCET_KEYCODE_1) then
@@ -315,7 +320,6 @@ function draw()
 		draw_main_menu()
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		draw_game()
-		draw_orders()
 	end
 	rectb(160, 0, 80, 136, 6)
 	rectb(0, 0, 240, 136, 5)
@@ -331,6 +335,14 @@ end
 function draw_game()
 	draw_faucets()
 	draw_flasks()
+	draw_orders()
+	draw_timer()
+end
+
+function draw_timer()
+	rect(42, 5, 155, 7, 4)
+	rectb(42, 5, 155, 7, 4)
+	print("Time Left", 100, 6, 0, false, 1, false)
 end
 
 function draw_flasks()
@@ -364,13 +376,13 @@ function draw_orders()
 	for i=1, math.min(#orders, 4) do
 		spr(12, orders[i].pos[1], orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
 		--Draw order elements
-		print(orders[i][1][2], orders[i].pos[1]+16, orders[i].pos[2] + 16)
+		print(orders[i].content[1][2], orders[i].pos[1]+16, orders[i].pos[2] + 16)
 	end
 
 	for i=1, #completed_orders do
 		spr(12, completed_orders[i].pos[1], completed_orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
 		--Draw order elements
-		print(completed_orders[i][1][2], completed_orders[i].pos[1]+16, completed_orders[i].pos[2] + 16)
+		print(completed_orders[i].content[1][2], completed_orders[i].pos[1]+16, completed_orders[i].pos[2] + 16)
 	end
 
 end
