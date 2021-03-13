@@ -69,8 +69,24 @@ FAUCET_KEYCODE_1 = 28
 FAUCET_KEYCODE_2 = 29
 FAUCET_KEYCODE_3 = 30
 
+ORDER_START_POS = 8
+ORDER_PADDING = 44
+ORDER_DELTA = 15
+ORDER_OFF_SCREEN = 241
+
 BACKGROUND_COLOR = 0
---
+
+-- Single Order -> {{<color>, <percentage>}, <activity_flag>}
+orders = { 
+	{{2, 1}, pos = {168, 137}, target = {168, 8}}, 
+	{{2, 0.5}, {4, 0.5}, pos = {168, 137 + 44}, target = {168, 52}},
+	{{2, 0.5}, {4, 0.5}, pos = {168, 137 + 88}, target = {168, 96}},
+	{{2, 0.5}, {4, 0.5}, pos = {168, 137}, target = {168, 137}},
+	{{2, 0.5}, {4, 0.5}, pos = {168, 137}, target = {168, 137}}
+}
+
+completed_orders = {}
+vertical_targets = { 8, 52, 96, 137 }
 
 -- called at 60Hz by TIC-80
 function TIC()
@@ -86,9 +102,15 @@ function update()
 			update_state_machine(events.START_GAME)
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
+		-- generateOrders() #TODO
+		update_orders()
 		update_mouse()
 		update_flasks()
 		handle_timeout()
+		-- toRemove = checkCompleteOrder() #TODO -> returns index of completed task
+		if keyp(1) then
+			remove_order(1)
+		end
 	end
 end
 
@@ -151,6 +173,18 @@ function fill_flask(flask)
 	end
 end
 
+function update_orders()
+	for i = 1, #orders do
+		orders[i].pos[1] = orders[i].pos[1] + (orders[i].target[1] - orders[i].pos[1]) / ORDER_DELTA
+		orders[i].pos[2] = orders[i].pos[2] + (orders[i].target[2] - orders[i].pos[2]) / ORDER_DELTA
+	end
+
+	for i = 1, #completed_orders do
+		completed_orders[i].pos[1] = completed_orders[i].pos[1] + (completed_orders[i].target[1] - completed_orders[i].pos[1]) / ORDER_DELTA
+		completed_orders[i].pos[2] = completed_orders[i].pos[2] + (completed_orders[i].target[2] - completed_orders[i].pos[2]) / ORDER_DELTA
+	end
+end
+
 function get_flask_at(slot)
 	for i = 1, #flasks do
 		if flasks[i].cur_slot == slot then return i end
@@ -205,6 +239,17 @@ function next_level()
 	end
 end
 
+function remove_order(index)
+		
+	for i = #orders, index + 1, -1 do
+		orders[i].target[2] = orders[i-1].target[2]
+	end
+
+	orders[index].target[1] = ORDER_OFF_SCREEN
+	table.insert(completed_orders, orders[index])
+	table.remove(orders, index)
+end
+
 -- draws
 function draw()
 	cls(BACKGROUND_COLOR)
@@ -213,6 +258,8 @@ function draw()
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		draw_game()
 	end
+	rectb(160, 0, 80, 136, 6)
+	rectb(0, 0, 240, 136, 5)
 end
 
 function draw_main_menu()
@@ -248,6 +295,25 @@ function draw_flask(flask)
 		rect(x + 9,	y, FLASK_WIDTH, height, color)
 	end
 	spr(10, flask.center_x - FLASK_WIDTH / 2, 45, 0, 3, 0, 0, 3, 4)
+end
+
+function draw_orders(orders)
+	-- Orders are 8px from the edges
+	-- Orders are spaced 12px between each other
+	-- Orders are 32px by 16px and scaled by 2
+
+	for i=1, math.min(#orders, 4) do
+		spr(32, orders[i].pos[1], orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
+		--Draw order elements
+		print(orders[i][1][2], orders[i].pos[1]+16, orders[i].pos[2] + 16)
+	end
+
+	for i=1, #completed_orders do
+		spr(32, completed_orders[i].pos[1], completed_orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
+		--Draw order elements
+		print(completed_orders[i][1][2], completed_orders[i].pos[1]+16, completed_orders[i].pos[2] + 16)
+	end
+
 end
 
 function draw_faucets()
