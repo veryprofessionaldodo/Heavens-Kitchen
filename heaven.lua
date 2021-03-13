@@ -18,6 +18,14 @@ events = {
 	WON_GAME = 'won'
 }
 
+-- table with information for each level like time (possible others in the future)
+-- time in seconds
+levels_metadata = {
+	["level_one"] = { ["time"] = 5 },
+	["level_two"] = { ["time"] = 2 },
+	["level_three"] = { ["time"] = 5 }
+}
+
 flask1 = {
 	center_x = 50, -- center x
 	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
@@ -44,9 +52,12 @@ drop_slots = { {35, 65}, {85, 115}, {135, 165} } -- ranges of the drop slots
 
 selected = nil -- selected flask to drag
 
+frame_count = 0 -- count of elapsed frames
+
 -- constants
 SCREEN_WIDTH = 240
 SCREEN_HEIGHT = 136
+CLOCK_FREQ = 60 --Hz
 
 CURR_STATE = states.MAIN_MENU
 
@@ -61,12 +72,15 @@ FAUCET_KEYCODE_3 = 30
 BACKGROUND_COLOR = 0
 --
 
+-- called at 60Hz by TIC-80
 function TIC()
 	update()
 	draw()
 end
 
+-- updates
 function update()
+	frame_count = frame_count + 1
 	if (CURR_STATE == states.MAIN_MENU) then
 		if keyp(Z_KEYCODE) then
 			update_state_machine(events.START_GAME)
@@ -74,24 +88,21 @@ function update()
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		update_mouse()
 		update_flasks()
+		handle_timeout()
 	end
 end
 
-function draw()
-	cls(BACKGROUND_COLOR)
-	if (CURR_STATE == states.MAIN_MENU) then
-		draw_main_menu()
-	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
-		draw_game()
-	end
-end
-
--- updates
 function update_state_machine(event)
 	if event == events.MAIN_MENU then
 		CURR_STATE = states.MAIN_MENU
 	elseif event == events.START_GAME then
 		CURR_STATE = states.LEVEL_ONE
+	elseif event == events.NEXT_LEVEL then
+		if CURR_STATE == states.LEVEL_ONE then
+			CURR_STATE = states.LEVEL_TWO
+		elseif CURR_STATE == states.LEVEL_TWO then
+			CURR_STATE = states.LEVEL_THREE
+		end		
 	end
 end
 
@@ -99,7 +110,7 @@ function update_mouse()
 	mx, my, md = mouse()
 	if not md then
 		if selected ~= nil then
-			jump_to_closest_position(flasks[get_flask_at(selected)])
+			mouse_up(flasks[get_flask_at(selected)])
 		end
 		selected = nil
 	elseif selected == nil then
@@ -152,10 +163,9 @@ function get_slot(mx)
 		x1 = drop_slots[i][2]
 		if mx >= x0 and mx <= x1 then return i end
 	end
-	return nil
 end
 
-function jump_to_closest_position(flask)
+function mouse_up(flask)
 	curr_diff = 240
 	closest = 1
 	for i=1, #drop_slots do
@@ -178,7 +188,30 @@ function jump_to_closest_position(flask)
 	flask.center_x = (drop_slots[flask.cur_slot][2] + drop_slots[flask.cur_slot][1]) / 2
 end
 
+function handle_timeout()
+	timeout = levels_metadata[CURR_STATE].time * CLOCK_FREQ
+	if frame_count >= timeout then
+		frame_count = 0
+		next_level()
+	end
+end
+
+function next_level()
+	update_state_machine(events.NEXT_LEVEL)
+
+	-- other code like reseting flasks and orders
+end
+
 -- draws
+function draw()
+	cls(BACKGROUND_COLOR)
+	if (CURR_STATE == states.MAIN_MENU) then
+		draw_main_menu()
+	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
+		draw_game()
+	end
+end
+
 function draw_main_menu()
 	print('HEAVENS KITCHEN', 30, 20, 7, false, 2, false)
 	print('From the minds of BOB, MOUZI 2', 30, 42, 15, false, 1, true)
@@ -217,8 +250,8 @@ end
 function draw_faucets()
 	if CURR_STATE == states.LEVEL_ONE then
 		width = drop_slots[1][2] - drop_slots[1][1]
+
 		-- draw red faucet 
-		
 		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
 		spr(2,pos_red_x,5,0,3,0,0,2,2)
 
@@ -231,8 +264,8 @@ function draw_faucets()
 		spr(8,pos_outoforder_x,5,0,3,0,0,2,2)
 	else  
 		width = drop_slots[1][2] - drop_slots[1][1]
+
 		-- draw red faucet 
-		
 		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
 		spr(2,pos_red_x,5,0,3,0,0,2,2)
 
