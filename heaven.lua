@@ -18,21 +18,36 @@ events = {
 	WON_GAME = 'won'
 }
 
-CURR_STATE = states.MAIN_MENU
-
 flask1 = {
-	y = 104, -- y of last line
-	x0 = 60, -- left x
-	x1 = 90, -- right x
-	lines = {}, -- lines drawn so far
-	fill_order = {} -- order of fill like [(color, frames), ...]
+	center_x = 75, -- center x
+	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
+	cur_slot = 1 -- current slot the flask is placed in
 }
 
-flasks = { flask1, nil, nil } -- flask order indicates under which faucet it is
+flask2 = {
+	center_x = 115, -- center x
+	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
+	cur_slot = 2 -- current slot the flask is placed in
+}
+
+flask3 = {
+	center_x = 155, -- center x
+	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
+	cur_slot = 3 -- current slot the flask is placed in
+}
 
 faucets = { 2, 4, 9 } -- red, yellow, blue faucets
 
 drop_slots = { {60, 90}, {100, 130}, {140, 170} } -- ranges of the drop slots
+
+flasks = { flask1, flask2, flask3 }
+
+-- constants
+CURR_STATE = states.MAIN_MENU
+FLASK_WIDTH = 30
+FLASK_OFFSET_Y = 20
+SCREEN_WIDTH = 240
+SCREEN_HEIGHT = 136
 
 function TIC()
 	update()
@@ -46,11 +61,11 @@ function update()
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		if key(28) then
-			new_flask_line(flasks[1])
+			fill_flask(flask1)
 		elseif key(29) then
-			new_flask_line(flasks[2])
+			fill_flask(flask2)
 		elseif key(30) then
-			new_flask_line(flasks[3])
+			fill_flask(flask3)
 		end
 	end
 end
@@ -73,32 +88,38 @@ function update_state_machine(event)
 	end
 end
 
-function new_flask_line(flask)
-	table.insert(flask.lines, {
-		x0 = flask.x0,
-		y0 = flask.y - 8,
-		x1 = flask.x1,
-		y1 = flask.y - 8
-	})
-	flask.y = flask.y - 1
+function fill_flask(flask)
+	cur_color = faucets[flask.cur_slot]
+	if #flask.fill_order ~= 0 and flask.fill_order[#flask.fill_order][1] == cur_color then
+		-- same color as the previous, update previous entry
+		flask.fill_order[#flask.fill_order][3] = flask.fill_order[#flask.fill_order][3] + 1;
+	else
+		-- different color as the previous, create new entry
+		table.insert(flask.fill_order, {cur_color, 0, 0}) 
+	end
 end
 
 -- draws
-function draw_game()
-	draw_flask(flasks[1])
-end
-
 function draw_main_menu()
-	cls(13)
 	print('HEAVENS KITCHEN', 30, 20, 7, false, 2, false)
 	print('From the minds of BOB, MOUZI 2', 30, 42, 15, false, 1, true)
 	print('and SPACEBAR', 30, 50, 15, false, 1, true)
 	print('Press Z to start...', 30, 116, 7, false, 1, true)
 end
 
+function draw_game()
+	draw_flask(flask1)
+	draw_flask(flask2)
+	draw_flask(flask3)
+end
+
 function draw_flask(flask)
-	for i = 1, #flask.lines do
-		line(flask.lines[i].x0, flask.lines[i].y0, flask.lines[i].x1, flask.lines[i].y1, 4)
+	for i = 1, #flask.fill_order do
+		x = flask.center_x - FLASK_WIDTH
+		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
+		height = flask.fill_order[i][3]
+		color = flask.fill_order[i][1]
+		rect(x,	y, FLASK_WIDTH, height, color)
 	end
 end
 
