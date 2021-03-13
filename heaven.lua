@@ -190,7 +190,7 @@ function draw_flask(flask)
 		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
 		height = flask.fill_order[i][3]
 		color = flask.fill_order[i][1]
-		rect(x,	y, FLASK_WIDTH, height, color)
+		rect(x + 9,	y, FLASK_WIDTH, height, color)
 	end
 	spr(10, flask.center_x - FLASK_WIDTH / 2, 45, 0, 3, 0, 0, 3, 4)
 end
