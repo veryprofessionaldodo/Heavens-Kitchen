@@ -106,17 +106,19 @@ vertical_targets = { 8, 52, 96, 137 }
 function TIC()
 	update()
 	draw()
-	for i = 1, #drop_slots do
-		l = drop_slots[i][1]
-		r = drop_slots[i][2]
-		line(l, 0, l, 135, 5)
-		line(r, 0, r, 135, 5)
-	end
 
-	for i = 1, #flasks do
-		x = flasks[i].center_x
-		line(x, 0, x, 135, 10)
-	end
+	-- TODO: remove debug slot lines and center
+	-- for i = 1, #drop_slots do
+	-- 	l = drop_slots[i][1]
+	-- 	r = drop_slots[i][2]
+	-- 	line(l, 0, l, 135, 5)
+	-- 	line(r, 0, r, 135, 5)
+	-- end
+
+	-- for i = 1, #flasks do
+	-- 	x = flasks[i].center_x
+	-- 	line(x, 0, x, 135, 10)
+	-- end
 end
 
 -- updates
@@ -259,21 +261,7 @@ function get_slot(mx)
 end
 
 function mouse_up(flask)
-	curr_diff = 240
-	closest = 1
-	for i=1, #drop_slots do
-		temp_diff_lower_bound = math.abs(flask.center_x - drop_slots[i][1])
-		temp_diff_upper_bound = math.abs(flask.center_x - drop_slots[i][2])
-		if temp_diff_lower_bound < curr_diff then
-			curr_diff = temp_diff_lower_bound
-			closest = i
-		elseif temp_diff_upper_bound < curr_diff then
-			curr_diff = temp_diff_upper_bound
-			closest = i
-		end
-	end
-
-	-- swap stuff
+	closest = get_closest_slot(flask.center_x)
 	closest_flask = flasks[get_flask_at(closest)]
 	closest_flask.cur_slot = flask.cur_slot
 	closest_flask.center_x = (drop_slots[closest_flask.cur_slot][2] + drop_slots[closest_flask.cur_slot][1]) / 2
@@ -281,16 +269,16 @@ function mouse_up(flask)
 	flask.center_x = (drop_slots[flask.cur_slot][2] + drop_slots[flask.cur_slot][1]) / 2
 end
 
--- function get_closest_slot(x)
--- 	positions = { 
--- 		drop_slots[1][1], drop_slots[1][2], 
--- 		drop_slots[2][1], drop_slots[2][2], 
--- 		drop_slots[3][1], drop_slots[3][2] 
--- 	}
--- 	positions = map(function(a) return x - a end, positions)
--- 	idx = min_i(positions)
--- 	return math.ceil(idx / 2) 
--- end
+function get_closest_slot(x)
+	positions = { 
+		drop_slots[1][1], drop_slots[1][2], 
+		drop_slots[2][1], drop_slots[2][2], 
+		drop_slots[3][1], drop_slots[3][2] 
+	}
+	positions = map(function(a) return math.abs(x - a) end, positions)
+	idx = min_i(positions)
+	return math.ceil(idx / 2) 
+end
 
 function handle_timeout()
 	timeout = levels_metadata[CURR_STATE].time * CLOCK_FREQ
@@ -393,25 +381,25 @@ function draw_faucets()
 
 		-- draw red faucet 
 		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x - 6,5,0,3,0,0,2,2)
+		spr(2,pos_red_x - 6, 5, 0, 3, 0, 0, 2, 2)
 
 		-- draw blue faucet
 		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x - 6,5,0,3,0,0,2,2)
+		spr(4,pos_blue_x - 6, 5, 0, 3, 0, 0, 2, 2)
 
 		-- draw out of order faucet
 		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(8,pos_outoforder_x - 6,5,0,3,0,0,2,2)
+		spr(8,pos_outoforder_x - 6, 5, 0, 3, 0, 0, 2, 2)
 	else  
 		width = drop_slots[1][2] - drop_slots[1][1]
 
 		-- draw red faucet 
 		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x - 6,5,0,3,0,0,2,2)
+		spr(2,pos_red_x - 6, 5, 0, 3, 0, 0, 2, 2)
 
 		-- draw blue faucet
 		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x - 6,5,0,3,0,0,2,2)
+		spr(4,pos_blue_x - 6, 5, 0, 3, 0, 0, 2, 2)
 
 		-- draw green faucet
 		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
@@ -428,10 +416,12 @@ function map(func, tbl)
 	return newtbl
 end
 
+-- Does not work for empty tables
 function min(tbl)
 	return tbl[min_i(tbl)]
 end
 
+-- Does not work for empty tables
 function min_i(tbl)
 	local idx, min = 1, tbl[1]
 	for i = 1, #tbl do
