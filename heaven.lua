@@ -22,26 +22,23 @@ flask1 = {
 	center_x = 50, -- center x
 	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
 	cur_slot = 1, -- current slot the flask is placed in
-	mx = nil -- mouse offset
 }
 
 flask2 = {
 	center_x = 100,
 	fill_order = {},
 	cur_slot = 2,
-	mx = nil 
 }
 
 flask3 = {
 	center_x = 150,
 	fill_order = {}, 
 	cur_slot = 3,
-	mx = nil
 }
 
 flasks = { flask1, flask2, flask3 }
 
-faucets = { 2, 4, 9 } -- red, yellow, blue faucets
+faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 
 drop_slots = { {35, 65}, {85, 115}, {135, 165} } -- ranges of the drop slots
 
@@ -50,7 +47,7 @@ selected = nil -- selected flask to drag
 -- constants
 CURR_STATE = states.MAIN_MENU
 FLASK_WIDTH = 30
-FLASK_OFFSET_Y = 0
+FLASK_OFFSET_Y = 4
 SCREEN_WIDTH = 240
 SCREEN_HEIGHT = 136
 FAUCET_KEYCODE_1 = 28
@@ -100,7 +97,7 @@ function fill_flask(flask)
 		flask.fill_order[#flask.fill_order][3] = flask.fill_order[#flask.fill_order][3] + 1;
 	else
 		-- different color as the previous, create new entry
-		table.insert(flask.fill_order, {cur_color, 0, 0}) 
+		table.insert(flask.fill_order, {cur_color, 0, 0})
 	end
 end
 
@@ -188,7 +185,7 @@ end
 
 function draw_flask(flask)
 	for i = 1, #flask.fill_order do
-		x = flask.mx or flask.center_x 
+		x = flask.mx or flask.center_x
 		x = x - FLASK_WIDTH / 2
 		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
 		height = flask.fill_order[i][3]
