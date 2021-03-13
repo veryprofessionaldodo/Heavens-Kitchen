@@ -221,7 +221,8 @@ end
 
 function calculate_score(fill_order)
 	total = 85
-	if #orders ~= #fill_order then
+	if #orders[1].content ~= #fill_order then
+		trace('return')
 		return 0
 	end
 	for i=1, #orders do
@@ -236,6 +237,7 @@ function calculate_score(fill_order)
 			score = 0
 		end
 	end
+	trace(score)
 	return score
 end
 
