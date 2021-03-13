@@ -373,7 +373,7 @@ end
 
 function draw_stream(slot)
 	cur_color = faucets[slot]
-	center_stream = (drop_slots[slot][1] + drop_slots[slot][2]) / 2 + 2
+	center_stream = (drop_slots[slot][1] + drop_slots[slot][2]) / 2 - 7
 	targetFlask = flasks[get_flask_at(slot)]
 	length = #targetFlask.fill_order
 
@@ -428,7 +428,7 @@ function draw_flask(flask)
 	for i = 1, #flask.fill_order do
 		color = flask.fill_order[i][1]
 		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
-		height = flask.fill_order[i][3] - flask.fill_order[i][2]
+		height = math.ceil(flask.fill_order[i][3]) - math.ceil(flask.fill_order[i][2])
 		rect(x + 3,	y, FLASK_WIDTH - 6, height, color)
 	end
 	spr(10, flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
