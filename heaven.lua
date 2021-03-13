@@ -21,25 +21,25 @@ events = {
 -- table with information for each level like time (possible others in the future)
 -- time in seconds
 levels_metadata = {
-	["level_one"] = { ["time"] = 5 },
-	["level_two"] = { ["time"] = 2 },
-	["level_three"] = { ["time"] = 5 }
+	["level_one"] = { ["time"] = 15 },
+	["level_two"] = { ["time"] = 15 },
+	["level_three"] = { ["time"] = 15 }
 }
 
 flask1 = {
-	center_x = 50, -- center x
+	center_x = 21, -- center x
 	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
 	cur_slot = 1, -- current slot the flask is placed in
 }
 
 flask2 = {
-	center_x = 100,
+	center_x = 71,
 	fill_order = {},
 	cur_slot = 2,
 }
 
 flask3 = {
-	center_x = 150,
+	center_x = 121,
 	fill_order = {}, 
 	cur_slot = 3,
 }
@@ -48,7 +48,7 @@ flasks = { flask1, flask2, flask3 } -- not ordered
 
 faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 
-drop_slots = { {35, 65}, {85, 115}, {135, 165} } -- ranges of the drop slots
+drop_slots = { {6, 36}, {56, 86}, {106, 136} } -- ranges of the drop slots
 
 selected = nil -- selected flask to drag
 
@@ -257,6 +257,7 @@ function draw()
 		draw_main_menu()
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		draw_game()
+		draw_orders()
 	end
 	rectb(160, 0, 80, 136, 6)
 	rectb(0, 0, 240, 136, 5)
@@ -294,22 +295,22 @@ function draw_flask(flask)
 		height = flask.fill_order[i][3] - flask.fill_order[i][2]
 		rect(x + 9,	y, FLASK_WIDTH, height, color)
 	end
-	spr(10, flask.center_x - FLASK_WIDTH / 2, 45, 0, 3, 0, 0, 3, 4)
+	spr(10, flask.center_x - FLASK_WIDTH / 2, 45, 0, 3, 0, 0, 2, 4)
 end
 
-function draw_orders(orders)
+function draw_orders()
 	-- Orders are 8px from the edges
 	-- Orders are spaced 12px between each other
 	-- Orders are 32px by 16px and scaled by 2
 
 	for i=1, math.min(#orders, 4) do
-		spr(32, orders[i].pos[1], orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
+		spr(12, orders[i].pos[1], orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
 		--Draw order elements
 		print(orders[i][1][2], orders[i].pos[1]+16, orders[i].pos[2] + 16)
 	end
 
 	for i=1, #completed_orders do
-		spr(32, completed_orders[i].pos[1], completed_orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
+		spr(12, completed_orders[i].pos[1], completed_orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
 		--Draw order elements
 		print(completed_orders[i][1][2], completed_orders[i].pos[1]+16, completed_orders[i].pos[2] + 16)
 	end
@@ -366,6 +367,10 @@ init()
 -- 009:ee44443022443430422443404424443014224340144243404442344014411330
 -- 010:0000000000c0000000c0000000c0c00000c0c00000c0000000c0c00000c00000
 -- 011:0000000000000c0000000c0000000c0000000d0000000d0000000c0000000d00
+-- 012:0888888888cccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc
+-- 013:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-- 014:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-- 015:88888880cccccc88ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8
 -- 018:001122cc0011122200000022000000e2000000df0000000e0000000000000000
 -- 019:cc22ff00222fff00220000002f000000ff000000f00000000000000000000000
 -- 020:008999990089999c00099999000000ff000000ff0000000d0000000000000000
@@ -376,6 +381,10 @@ init()
 -- 025:44431330211113303333300033f00000ff000000f00000000000000000000000
 -- 026:00d0000000d0000000c0000000d0000000d0000000c0000000d0000000d00000
 -- 027:00000d0000000d0000000d0000000d0000000d00000c0d00000c0e00000c0d00
+-- 028:8ccccccc8ccccccc8ccccccc8ccccccc88cccccc088888880000000000000000
+-- 029:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
+-- 030:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
+-- 031:ccccccc8ccccccc8ccccccc8ccccccc8cccccc88888ccc800088c88000088800
 -- 042:00d0000000d0000000c0000000d0000000d0000000d0000000d0000000d00000
 -- 043:00000d0000000e0000000e0000000d0000000e0000000e0000000e0000000e00
 -- 058:00d0000000d00c0000d0000000dde000000ede000000eeee0000000000000000
