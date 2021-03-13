@@ -19,21 +19,21 @@ events = {
 }
 
 flask1 = {
-	center_x = 75, -- center x
+	center_x = 50, -- center x
 	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
 	cur_slot = 1, -- current slot the flask is placed in
 	mx = nil -- mouse offset
 }
 
 flask2 = {
-	center_x = 115,
-	fill_order = {}, 
+	center_x = 100,
+	fill_order = {},
 	cur_slot = 2,
 	mx = nil 
 }
 
 flask3 = {
-	center_x = 155,
+	center_x = 150,
 	fill_order = {}, 
 	cur_slot = 3,
 	mx = nil
@@ -43,21 +43,21 @@ flasks = { flask1, flask2, flask3 }
 
 faucets = { 2, 4, 9 } -- red, yellow, blue faucets
 
-drop_slots = { {60, 90}, {100, 130}, {140, 170} } -- ranges of the drop slots
+drop_slots = { {35, 65}, {85, 115}, {135, 165} } -- ranges of the drop slots
 
 selected = nil -- selected flask to drag
 
 -- constants
 CURR_STATE = states.MAIN_MENU
 FLASK_WIDTH = 30
-FLASK_OFFSET_Y = 20
+FLASK_OFFSET_Y = 0
 SCREEN_WIDTH = 240
 SCREEN_HEIGHT = 136
 FAUCET_KEYCODE_1 = 28
 FAUCET_KEYCODE_2 = 29
 FAUCET_KEYCODE_3 = 30
 Z_KEYCODE = 26
-BACKGROUND_COLOR = 13
+BACKGROUND_COLOR = 0
 
 function TIC()
 	update()
@@ -176,6 +176,11 @@ function draw_main_menu()
 end
 
 function draw_game()
+	draw_faucets()
+	draw_flasks()
+end
+
+function draw_flasks()
 	for i = 1, #flasks do
 		draw_flask(flasks[i])
 	end
@@ -189,6 +194,39 @@ function draw_flask(flask)
 		height = flask.fill_order[i][3]
 		color = flask.fill_order[i][1]
 		rect(x,	y, FLASK_WIDTH, height, color)
+	end
+	spr(10, flask.center_x - FLASK_WIDTH / 2, 45, 0, 3, 0, 0, 3, 4)
+end
+
+function draw_faucets()
+	if CURR_STATE == states.LEVEL_ONE then
+		width = drop_slots[1][2] - drop_slots[1][1]
+		-- draw red faucet 
+		
+		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
+		spr(2,pos_red_x,5,0,3,0,0,2,2)
+
+		-- draw blue faucet
+		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
+		spr(4,pos_blue_x,5,0,3,0,0,2,2)
+
+		-- draw out of order faucet
+		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
+		spr(8,pos_outoforder_x,5,0,3,0,0,2,2)
+	else  
+		width = drop_slots[1][2] - drop_slots[1][1]
+		-- draw red faucet 
+		
+		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
+		spr(2,pos_red_x,5,0,3,0,0,2,2)
+
+		-- draw blue faucet
+		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
+		spr(4,pos_blue_x,5,0,3,0,0,2,2)
+
+		-- draw green faucet
+		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
+		spr(6,pos_outoforder_x,5,0,3,0,0,2,2)
 	end
 end
 
@@ -206,20 +244,24 @@ init()
 -- 005:888888888888888099999800c99998009999980099c9980099c9980099c99800
 -- 006:0000555500056566000566660005666c0055666c00566ccc00566ccc0066666c
 -- 007:666600006666700066667000c6667000c6666700ccc67700ccc66700c6667700
--- 008:00eeeeee00eeeeee00eeeee200eee42200ee4424004442240444424404444244
--- 009:eee44430ee444430224434304224434044244430142243401442434044423440
--- 010:00000000000c0000000c0000000c0c00000c0c00000c0000000d0c00000d0000
--- 011:00000000000c0000000c0000000d0000000d0000000e0000000d0000000d0000
--- 018:001122cc0011122200000022000000e2000000df000000de000000dd00000000
--- 019:cc22ff00222fff00220000002f000000ff000000ff000000ee00000000000000
--- 020:008999990089999c00099999000000ff000000ff000000dd000000dd00000000
--- 021:99999800c999980099999000ff000000ff000000ee000000ee00000000000000
--- 022:0056666c006666660007666600007777000000ff000000dd000000dd00000000
--- 023:c6666700666677006667700077770000ff000000ee000000ee00000000000000
--- 024:0344223404442444044222210344344300334333000333dd000000dd00000000
--- 025:1441133044431330211113303333300033000000ee000000ee00000000000000
--- 026:000e0000000d0000000d0000000d0000000e0000000d0000000ed0000000eeee
--- 027:000e0000000e0000000e0000000e00000c0e0000c00e000000ee0000eee00000
+-- 008:00eeeeee00eeeee200eee42200ee442400444224044442440444424403442234
+-- 009:ee44443022443430422443404424443014224340144243404442344014411330
+-- 010:000000000c0000000c0000000c0c00000c0c00000c0000000c0c00000c000000
+-- 011:00000000000000c0000000c0000000c0000000d0000000d0000000c0000000d0
+-- 018:001122cc0011122200000022000000e2000000df0000000e0000000000000000
+-- 019:cc22ff00222fff00220000002f000000ff000000f00000000000000000000000
+-- 020:008999990089999c00099999000000ff000000ff0000000d0000000000000000
+-- 021:99999800c999980099999000ff000000ff000000e00000000000000000000000
+-- 022:0056666c006666660007666600007777000000ff0000000d0000000000000000
+-- 023:c6666700666677006667700077770000ff000000e00000000000000000000000
+-- 024:04442444044222210344344300334333000333ff0000000d0000000000000000
+-- 025:44431330211113303333300033f00000ff000000f00000000000000000000000
+-- 026:0d0000000d0000000c0000000d0000000d0000000c0000000d0000000d000000
+-- 027:000000d0000000d0000000d0000000d0000000d00000c0d00000c0e00000c0d0
+-- 042:0d0000000d0000000c0000000d0000000d0000000d0000000d0000000d000000
+-- 043:000000d0000000e0000000e0000000d0000000e0000000e0000000e0000000e0
+-- 058:0d0000000d00c0000d0000000dde000000ede000000eeeee0000000000000000
+-- 059:0000c0e00000c0e0000c00e000000de0000dee00eeeee0000000000000000000
 -- </TILES>
 
 -- <SPRITES>
