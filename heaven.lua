@@ -73,8 +73,12 @@ ORDER_START_POS = 8
 ORDER_PADDING = 44
 ORDER_DELTA = 15
 ORDER_OFF_SCREEN = 241
+FILL_RATE = 3
 
 BACKGROUND_COLOR = 0
+
+STREAM_WIDTH = 6
+MAX_NUMBER_OF_PARTICLES = 300
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = { 
@@ -106,6 +110,7 @@ function update()
 		update_orders()
 		update_mouse()
 		update_flasks()
+		update_streams()
 		handle_timeout()
 		-- toRemove = checkCompleteOrder() #TODO -> returns index of completed task
 		if keyp(1) then
@@ -156,6 +161,12 @@ function update_flasks()
 	end
 end
 
+function update_streams() 
+	for i = 1, #particles_red do 
+
+	end
+end
+
 function fill_flask(flask)
 	cur_color = faucets[flask.cur_slot]
 
@@ -165,12 +176,14 @@ function fill_flask(flask)
 
 	if flask.fill_order[#flask.fill_order][1] == cur_color then
 		-- same color as the previous, update previous entry
-		flask.fill_order[#flask.fill_order][3] = flask.fill_order[#flask.fill_order][3] + 1;
+		flask.fill_order[#flask.fill_order][3] = flask.fill_order[#flask.fill_order][3] + 0.1 * FILL_RATE;
 	else
 		-- different color as the previous, create new entry
 		y = flask.fill_order[#flask.fill_order][3]
-		table.insert(flask.fill_order, {cur_color, y, y + 1})
+		table.insert(flask.fill_order, {cur_color, y, y + 0.1 * FILL_RATE})
 	end
+
+	
 end
 
 function update_orders()
@@ -273,6 +286,63 @@ end
 function draw_game()
 	draw_faucets()
 	draw_flasks()
+	draw_streams()
+end
+
+-- particles are simple objects that have four components:
+-- position, velocity, color and time-to-live
+particles_red = {}
+particles_green = {}
+particles_blue = {}
+
+function draw_streams()
+	if key(FAUCET_KEYCODE_1) then
+		draw_stream(1)
+	end
+	if key(FAUCET_KEYCODE_2) then
+		draw_stream(2)
+	end
+	if key(FAUCET_KEYCODE_3) then
+		draw_stream(3)
+	end
+
+	draw_particles()
+end
+
+function draw_stream(slot)
+	cur_color = faucets[slot]
+	center_stream = (drop_slots[slot][1] + drop_slots[slot][2]) / 2 + 2
+	targetFlask = flasks[get_flask_at(slot)]
+	length = #targetFlask.fill_order
+
+	-- draw main stream
+	for i = 1, STREAM_WIDTH do 
+		pos_x = center_stream + STREAM_WIDTH / 2 + i
+		if length > 0 then
+			line(pos_x, 47, pos_x, 131 - targetFlask.fill_order[length][3], cur_color+1)
+		end
+	end
+
+	
+	-- draw foam
+
+	
+	-- draw bubbles
+end
+
+function draw_particles()
+	for i = 1, #particles_red do 
+		--particles_red.pos[1]
+		pix(particles_red.pos[1], particles_red.pos[2], particles_red.color)
+	end
+
+	for i = 1, #particles_green do 
+		pix(particles_green.pos[1], particles_green.pos[2], particles_green.color)
+	end
+
+	for i = 1, #particles_blue do 
+		pix(particles_blue.pos[1], particles_blue.pos[2], particles_blue.color)
+	end
 end
 
 function draw_flasks()
