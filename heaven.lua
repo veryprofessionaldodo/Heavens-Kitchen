@@ -1,6 +1,6 @@
 -- title:  Heaven's Kitchen
 -- author: Amogus
--- desc:   Cook creatures for God himself
+-- desc:   Play as a mad chemist working for God
 -- script: lua
 
 states = {
@@ -45,16 +45,21 @@ drop_slots = { {35, 65}, {85, 115}, {135, 165} } -- ranges of the drop slots
 selected = nil -- selected flask to drag
 
 -- constants
-CURR_STATE = states.MAIN_MENU
-FLASK_WIDTH = 30
-FLASK_OFFSET_Y = 4
 SCREEN_WIDTH = 240
 SCREEN_HEIGHT = 136
+
+CURR_STATE = states.MAIN_MENU
+
+FLASK_WIDTH = 30
+FLASK_OFFSET_Y = 4
+
+Z_KEYCODE = 26
 FAUCET_KEYCODE_1 = 28
 FAUCET_KEYCODE_2 = 29
 FAUCET_KEYCODE_3 = 30
-Z_KEYCODE = 26
+
 BACKGROUND_COLOR = 0
+--
 
 function TIC()
 	update()
