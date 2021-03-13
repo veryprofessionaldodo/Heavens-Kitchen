@@ -41,12 +41,16 @@ end
 
 function update()
 	if (CURR_STATE == states.MAIN_MENU) then
-		if btnp(4) then
+		if keyp(26) then
 			update_state_machine(events.START_GAME)
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
-		if btn(0) then
+		if key(28) then
 			new_flask_line(flasks[1])
+		elseif key(29) then
+			new_flask_line(flasks[2])
+		elseif key(30) then
+			new_flask_line(flasks[3])
 		end
 	end
 end
@@ -70,14 +74,13 @@ function update_state_machine(event)
 end
 
 function new_flask_line(flask)
-	line_to_draw = {
+	table.insert(flask.lines, {
 		x0 = flask.x0,
 		y0 = flask.y - 8,
 		x1 = flask.x1,
 		y1 = flask.y - 8
-	}
+	})
 	flask.y = flask.y - 1
-	table.insert(flask.lines, line_to_draw)
 end
 
 -- draws
