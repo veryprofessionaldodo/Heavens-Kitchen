@@ -44,18 +44,7 @@ flask3 = {
 	cur_slot = 3,
 }
 
-orders = {
-	{
-		color = 2,
-		percentage = 0.5
-	},
-	{
-		color = 9,
-		percentage = 0.5
-	}
-}
-
-score = 0 -- total score of the player
+total_score = 0 -- total score of the player
 
 flasks = { flask1, flask2, flask3 } -- not ordered
 
@@ -214,31 +203,38 @@ function check_if_flask_full(flask)
 	end
 	if sum >= FLASK_HEIGHT then
 		local score = calculate_score(flask.fill_order)
+		total_score = total_score + score
 		flask.fill_order = {}
 	end
-	print(score, 0, 0, 6)
 end
 
 function calculate_score(fill_order)
 	total = 85
-	if #orders[1].content ~= #fill_order then
+	if fill_order == nil then
 		trace('return')
 		return 0
 	end
 	for i=1, #orders do
-		if orders[i].color == fill_order[i][1] then
-			local diff = math.abs((orders[i].percentage * FLASK_HEIGHT) - (fill_order[i][3] - fill_order[i][2]))
-			if diff ~= 0 then
-				score = math.floor(40 / diff)
-			else
-				score = 40
+		for j=1, #orders[i].content do
+			if #fill_order ~= #orders[i].content then
+				return 0
 			end
-		else
-			score = 0
+			if orders[i].content[j][1] == fill_order[j][1] then
+				local diff = math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[i][3] - fill_order[i][2]))
+				trace(diff)
+				if diff ~= 0 then
+					score = math.floor(40 / diff)
+					return score
+				else
+					score = 40
+					return score
+				end
+			else
+				score = 0
+				return score
+			end
 		end
 	end
-	trace(score)
-	return score
 end
 
 function update_orders()
@@ -339,6 +335,7 @@ function draw_game()
 	draw_flasks()
 	draw_orders()
 	draw_timer()
+	print(total_score, 64, 64, 4)
 end
 
 function draw_timer()
