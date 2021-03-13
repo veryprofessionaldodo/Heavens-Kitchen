@@ -21,14 +21,18 @@ events = {
 CURR_STATE = states.MAIN_MENU
 
 flask1 = {
-	y = 104,
-	x0 = 60,
-	x1 = 90,
-	lines = {},
-	fill_order = {}
+	y = 104, -- y of last line
+	x0 = 60, -- left x
+	x1 = 90, -- right x
+	lines = {}, -- lines drawn so far
+	fill_order = {} -- order of fill like [(color, frames), ...]
 }
 
-flasks = { flask1 }
+flasks = { flask1, nil, nil } -- flask order indicates under which faucet it is
+
+faucets = { 2, 4, 9 } -- red, yellow, blue faucets
+
+drop_slots = { {60, 90}, {100, 130}, {140, 170} } -- ranges of the drop slots
 
 function TIC()
 	update()
@@ -52,7 +56,7 @@ function draw()
 	if (CURR_STATE == states.MAIN_MENU) then
 		draw_main_menu()
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
-		draw_flask(flasks[1])
+		draw_game()
 	end
 end
 
@@ -77,6 +81,10 @@ function new_flask_line(flask)
 end
 
 -- draws
+function draw_game()
+	draw_flask(flasks[1])
+end
+
 function draw_main_menu()
 	cls(13)
 	print('HEAVENS KITCHEN', 30, 20, 7, false, 2, false)
