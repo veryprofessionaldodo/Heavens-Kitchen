@@ -1,11 +1,7 @@
--- title:  game title
--- author: game developer
--- desc:   short description
+-- title:  Heaven's Kitchen
+-- author: Amogus
+-- desc:   Cook creatures for God himself
 -- script: lua
-
-t=0
-x=96
-y=24
 
 states = {
 	MAIN_MENU = 'menu',
@@ -13,8 +9,6 @@ states = {
 	LEVEL_TWO = 'level_two',
 	LEVEL_THREE = 'level_three'
 }
-
-CURR_STATE = states.MAIN_MENU
 
 events = {
 	MAIN_MENU = 'main',
@@ -24,16 +18,45 @@ events = {
 	WON_GAME = 'won'
 }
 
-first_glass_lines = {
-	last_y = 104,
-	first_x = 60,
-	last_x = 90,
-	lines = {}
+CURR_STATE = states.MAIN_MENU
+
+flask1 = {
+	y = 104,
+	x0 = 60,
+	x1 = 90,
+	lines = {},
+	fill_order = {}
 }
 
-second_glass_lines = {}
-third_glass_lines = {}
+flasks = { flask1 }
 
+function TIC()
+	update()
+	draw()
+end
+
+function update()
+	if (CURR_STATE == states.MAIN_MENU) then
+		if btnp(4) then
+			update_state_machine(events.START_GAME)
+		end
+	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
+		if btn(0) then
+			new_flask_line(flasks[1])
+		end
+	end
+end
+
+function draw()
+	cls(13)
+	if (CURR_STATE == states.MAIN_MENU) then
+		draw_main_menu()
+	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
+		draw_flask(flasks[1])
+	end
+end
+
+-- updates
 function update_state_machine(event)
 	if event == events.MAIN_MENU then
 		CURR_STATE = states.MAIN_MENU
@@ -42,6 +65,18 @@ function update_state_machine(event)
 	end
 end
 
+function new_flask_line(flask)
+	line_to_draw = {
+		x0 = flask.x0,
+		y0 = flask.y - 8,
+		x1 = flask.x1,
+		y1 = flask.y - 8
+	}
+	flask.y = flask.y - 1
+	table.insert(flask.lines, line_to_draw)
+end
+
+-- draws
 function draw_main_menu()
 	cls(13)
 	print('HEAVENS KITCHEN', 30, 20, 7, false, 2, false)
@@ -50,46 +85,18 @@ function draw_main_menu()
 	print('Press Z to start...', 30, 116, 7, false, 1, true)
 end
 
-function draw_first_glass_line()
-	line_to_draw = {
-		x0 = first_glass_lines.first_x,
-		y0 = first_glass_lines.last_y - 8,
-		x1 = first_glass_lines.last_x,
-		y1 = first_glass_lines.last_y - 8
-	}
-	first_glass_lines.last_y = first_glass_lines.last_y - 1
-	table.insert(first_glass_lines.lines, line_to_draw)
+function draw_flask(flask)
+	for i = 1, #flask.lines do
+		line(flask.lines[i].x0, flask.lines[i].y0, flask.lines[i].x1, flask.lines[i].y1, 4)
+	end
 end
 
+-- init
 function init()
 	update_state_machine(events.MAIN_MENU)
 	draw_main_menu()
 end
-
-function update()
-	cls(13)
-	if btn(0) then
-		draw_first_glass_line()
-	end
-
-	for i = 1, #first_glass_lines.lines do
-		line(first_glass_lines.lines[i].x0, first_glass_lines.lines[i].y0, first_glass_lines.lines[i].x1, first_glass_lines.lines[i].y1, 4)
-	end
-end
-
 init()
-
-function TIC()
-	if (CURR_STATE == states.MAIN_MENU) then
-		draw_main_menu()
-			if btnp(4) then
-				update_state_machine(events.START_GAME)
-			end
-		return
-	end
-
-	update()
-end
 
 -- <TILES>
 -- 001:eccccccccc888888caaaaaaaca888888cacccccccacc0ccccacc0ccccacc0ccc
