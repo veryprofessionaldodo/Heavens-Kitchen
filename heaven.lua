@@ -109,21 +109,29 @@ end
 function update_flasks()
 	if key(FAUCET_KEYCODE_1) then
 		fill_flask(flasks[get_flask_at(1)])
-	elseif key(FAUCET_KEYCODE_2) then
+	end
+	if key(FAUCET_KEYCODE_2) then
 		fill_flask(flasks[get_flask_at(2)])
-	elseif key(FAUCET_KEYCODE_3) then
+	end
+	if key(FAUCET_KEYCODE_3) then
 		fill_flask(flasks[get_flask_at(3)])
 	end
 end
 
 function fill_flask(flask)
 	cur_color = faucets[flask.cur_slot]
-	if #flask.fill_order ~= 0 and flask.fill_order[#flask.fill_order][1] == cur_color then
+
+	if #flask.fill_order == 0 then
+		table.insert(flask.fill_order, {cur_color, 0, 0})
+	end
+
+	if flask.fill_order[#flask.fill_order][1] == cur_color then
 		-- same color as the previous, update previous entry
 		flask.fill_order[#flask.fill_order][3] = flask.fill_order[#flask.fill_order][3] + 1;
 	else
 		-- different color as the previous, create new entry
-		table.insert(flask.fill_order, {cur_color, 0, 1})
+		y = flask.fill_order[#flask.fill_order][3]
+		table.insert(flask.fill_order, {cur_color, y, y + 1})
 	end
 end
 
@@ -191,11 +199,11 @@ function draw_flasks()
 end
 
 function draw_flask(flask)
+	x = flask.center_x - FLASK_WIDTH / 2
 	for i = 1, #flask.fill_order do
-		x = flask.center_x - FLASK_WIDTH / 2
-		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
-		height = flask.fill_order[i][3]
 		color = flask.fill_order[i][1]
+		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
+		height = flask.fill_order[i][3] - flask.fill_order[i][2]
 		rect(x + 9,	y, FLASK_WIDTH, height, color)
 	end
 	spr(10, flask.center_x - FLASK_WIDTH / 2, 45, 0, 3, 0, 0, 3, 4)
