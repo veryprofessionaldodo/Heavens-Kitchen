@@ -24,6 +24,16 @@ events = {
 	WON_GAME = 'won'
 }
 
+first_glass_lines = {
+	last_y = 104,
+	first_x = 60,
+	last_x = 90,
+	lines = {}
+}
+
+second_glass_lines = {}
+third_glass_lines = {}
+
 function update_state_machine(event)
 	if event == events.MAIN_MENU then
 		CURR_STATE = states.MAIN_MENU
@@ -34,15 +44,37 @@ end
 
 function draw_main_menu()
 	cls(13)
-	print('HEAVENS KITCHEN', 30, 20, 7, false, 2.5, false)
+	print('HEAVENS KITCHEN', 30, 20, 7, false, 2, false)
 	print('From the minds of BOB, MOUZI 2', 30, 42, 15, false, 1, true)
 	print('and SPACEBAR', 30, 50, 15, false, 1, true)
 	print('Press Z to start...', 30, 116, 7, false, 1, true)
 end
 
+function draw_first_glass_line()
+	line_to_draw = {
+		x0 = first_glass_lines.first_x,
+		y0 = first_glass_lines.last_y - 8,
+		x1 = first_glass_lines.last_x,
+		y1 = first_glass_lines.last_y - 8
+	}
+	first_glass_lines.last_y = first_glass_lines.last_y - 1
+	table.insert(first_glass_lines.lines, line_to_draw)
+end
+
 function init()
 	update_state_machine(events.MAIN_MENU)
 	draw_main_menu()
+end
+
+function update()
+	cls(13)
+	if btn(0) then
+		draw_first_glass_line()
+	end
+
+	for i = 1, #first_glass_lines.lines do
+		line(first_glass_lines.lines[i].x0, first_glass_lines.lines[i].y0, first_glass_lines.lines[i].x1, first_glass_lines.lines[i].y1, 4)
+	end
 end
 
 init()
@@ -56,15 +88,7 @@ function TIC()
 		return
 	end
 
-	if btn(0) then y=y-1 end
-	if btn(1) then y=y+1 end
-	if btn(2) then x=x-1 end
-	if btn(3) then x=x+1 end
-
-	cls(13)
-	spr(1+t%60//30*2,x,y,14,3,0,0,2,2)
-	print("HELLO WORLD!",84,84)
-	t=t+1
+	update()
 end
 
 -- <TILES>
