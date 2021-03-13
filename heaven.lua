@@ -123,10 +123,6 @@ function draw_flask(flask)
 	end
 end
 
-function draw_orders(orders)
-		
-end
-
 -- init
 function init()
 	update_state_machine(events.MAIN_MENU)
