@@ -34,6 +34,8 @@ faucets = { 2, 4, 9 } -- red, yellow, blue faucets
 
 drop_slots = { {60, 90}, {100, 130}, {140, 170} } -- ranges of the drop slots
 
+orders = { {{2, 1}}, {{2, 0.5}, {4, 0.5}} }
+
 function TIC()
 	update()
 	draw()
@@ -45,6 +47,7 @@ function update()
 			update_state_machine(events.START_GAME)
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
+		-- generateOrders() #TODO
 		if btn(0) then
 			new_flask_line(flasks[1])
 		end
@@ -83,6 +86,7 @@ end
 -- draws
 function draw_game()
 	draw_flask(flasks[1])
+	draw_orders(orders)
 end
 
 function draw_main_menu()
@@ -97,6 +101,10 @@ function draw_flask(flask)
 	for i = 1, #flask.lines do
 		line(flask.lines[i].x0, flask.lines[i].y0, flask.lines[i].x1, flask.lines[i].y1, 4)
 	end
+end
+
+function draw_orders(orders)
+		
 end
 
 -- init
@@ -115,6 +123,15 @@ init()
 -- 018:ccca00ccaaaa0ccecaaa0ceeaaaa0ceeaaaa0cee8888ccee000cceeecccceeee
 -- 019:cacccccccaaaaaaacaaacaaacaaaaccccaaaaaaac8888888cc000cccecccccec
 -- 020:ccca00ccaaaa0ccecaaa0ceeaaaa0ceeaaaa0cee8888ccee000cceeecccceeee
+-- 032:00088888008888880888cccc888ccccc88cccccc88cccccc88cccccc88cccccc
+-- 033:8888888888888888cccccccccccccccccccccccccccccccccccccccccccccccc
+-- 034:8888888088888888cccccc88ccccccc8cccccccccccccccccccccccccccccccc
+-- 035:0000000000000000800000008800000088000000880000008800000088000000
+-- 048:88cccccc88cccccc88cccccc88cccccc888ccccc0888cccc0088888800088888
+-- 049:cccccccccccccccccccccccccccccccccccccccccccccccc8888888888888888
+-- 050:ccccccccccccccccccccccccccccccccccccccccccccccc888cccc88888ccc80
+-- 051:8800000088000000880000008800000088000000800000000000000000000000
+-- 066:0088c88000088800000000000000000000000000000000000000000000000000
 -- </TILES>
 
 -- <WAVES>
