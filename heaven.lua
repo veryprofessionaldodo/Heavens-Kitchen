@@ -107,14 +107,19 @@ end
 function update_mouse()
 	mx, my, md = mouse()
 	if not md then
+		if selected ~= nil then
+			trace("MOUSE UP")
+			jump_to_closest_position(flasks[selected])
+		end
 		selected = nil
 	elseif selected == nil then
+		trace("SELECT")
 		slot = get_slot(mx)
 		selected = slot
 	elseif selected ~= nil then
+		trace("UPDATE MX")
 		flask = flasks[get_flask_at(slot)]
 		flask.mx = mx
-		trace("update "..flask.mx)
 	end
 end
 
@@ -142,6 +147,26 @@ function get_slot(mx)
 	end
 end
 
+function jump_to_closest_position(flask)
+	trace("jump "..flask.mx)
+	curr_diff = 240
+	closest = 1
+	for i=1, #drop_slots do
+		temp_diff_lower_bound = math.abs(flask.mx - drop_slots[i][1])
+		temp_diff_upper_bound = math.abs(flask.mx - drop_slots[i][2])
+		if temp_diff_lower_bound < curr_diff then
+			curr_diff = temp_diff_lower_bound
+			closest = i
+		elseif temp_diff_upper_bound < curr_diff then
+			curr_diff = temp_diff_upper_bound
+			closest = i
+		end
+	end
+	prev_flask = flasks[closest]
+	prev_flask.cur_slot = flask.cur_slot
+	flask.cur_slot = closest
+end
+
 -- draws
 function draw_main_menu()
 	print('HEAVENS KITCHEN', 30, 20, 7, false, 2, false)
@@ -158,18 +183,8 @@ end
 
 function draw_flask(flask)
 	for i = 1, #flask.fill_order do
-		-- x = flask.mx or flask.center_x 
-		-- x = x - FLASK_WIDTH / 2
-
-		x = 0
-		if flask.mx ~= nil then
-			x = flask.mx - FLASK_WIDTH / 2
-		else
-			x = flask.center_x - FLASK_WIDTH / 2
-		end
-
-		trace("draw "..x)
-
+		x = flask.mx or flask.center_x 
+		x = x - FLASK_WIDTH / 2
 		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
 		height = flask.fill_order[i][3]
 		color = flask.fill_order[i][1]
