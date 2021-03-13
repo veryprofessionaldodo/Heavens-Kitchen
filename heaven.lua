@@ -44,6 +44,19 @@ flask3 = {
 	cur_slot = 3,
 }
 
+orders = {
+	{
+		color = 2,
+		percentage = 0.5
+	},
+	{
+		color = 9,
+		percentage = 0.5
+	}
+}
+
+score = 0 -- total score of the player
+
 flasks = { flask1, flask2, flask3 } -- not ordered
 
 faucets = { 2, 9, 5 } -- red, yellow, blue faucets
@@ -63,6 +76,7 @@ CURR_STATE = states.MAIN_MENU
 
 FLASK_WIDTH = 30
 FLASK_OFFSET_Y = 4
+FLASK_HEIGHT = 84
 
 Z_KEYCODE = 26
 FAUCET_KEYCODE_1 = 28
@@ -171,6 +185,40 @@ function fill_flask(flask)
 		y = flask.fill_order[#flask.fill_order][3]
 		table.insert(flask.fill_order, {cur_color, y, y + 1})
 	end
+
+	check_if_flask_full(flask)
+end
+
+function check_if_flask_full(flask)
+	sum = 0
+	for i=1, #flask.fill_order do
+		sum = sum + flask.fill_order[i][3] - flask.fill_order[i][2]
+	end
+	if sum >= FLASK_HEIGHT then
+		local score = calculate_score(flask.fill_order)
+		flask.fill_order = {}
+	end
+	print(score, 0, 0, 6)
+end
+
+function calculate_score(fill_order)
+	total = 85
+	if #orders ~= #fill_order then
+		return 0
+	end
+	for i=1, #orders do
+		if orders[i].color == fill_order[i][1] then
+			local diff = math.abs((orders[i].percentage * FLASK_HEIGHT) - (fill_order[i][3] - fill_order[i][2]))
+			if diff ~= 0 then
+				score = math.floor(40 / diff)
+			else
+				score = 40
+			end
+		else
+			score = 0
+		end
+	end
+	return score
 end
 
 function update_orders()
@@ -278,6 +326,7 @@ end
 function draw_flasks()
 	for i = 1, #flasks do
 		draw_flask(flasks[i])
+		check_if_flask_full(flasks[i])
 	end
 
 	-- selected flask is always on top
