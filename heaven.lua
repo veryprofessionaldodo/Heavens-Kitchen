@@ -36,7 +36,7 @@ flask3 = {
 	cur_slot = 3,
 }
 
-flasks = { flask1, flask2, flask3 }
+flasks = { flask1, flask2, flask3 } -- not ordered
 
 faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 
@@ -90,33 +90,19 @@ function update_state_machine(event)
 	end
 end
 
-function fill_flask(flask)
-	cur_color = faucets[flask.cur_slot]
-	if #flask.fill_order ~= 0 and flask.fill_order[#flask.fill_order][1] == cur_color then
-		-- same color as the previous, update previous entry
-		flask.fill_order[#flask.fill_order][3] = flask.fill_order[#flask.fill_order][3] + 1;
-	else
-		-- different color as the previous, create new entry
-		table.insert(flask.fill_order, {cur_color, 0, 0})
-	end
-end
-
 function update_mouse()
 	mx, my, md = mouse()
 	if not md then
 		if selected ~= nil then
-			trace("MOUSE UP")
-			jump_to_closest_position(flasks[selected])
+			jump_to_closest_position(flasks[get_flask_at(selected)])
 		end
 		selected = nil
 	elseif selected == nil then
-		trace("SELECT")
 		slot = get_slot(mx)
 		selected = slot
 	elseif selected ~= nil then
-		trace("UPDATE MX")
 		flask = flasks[get_flask_at(slot)]
-		flask.mx = mx
+		flask.center_x = mx
 	end
 end
 
@@ -127,6 +113,17 @@ function update_flasks()
 		fill_flask(flask2)
 	elseif key(FAUCET_KEYCODE_3) then
 		fill_flask(flask3)
+	end
+end
+
+function fill_flask(flask)
+	cur_color = faucets[flask.cur_slot]
+	if #flask.fill_order ~= 0 and flask.fill_order[#flask.fill_order][1] == cur_color then
+		-- same color as the previous, update previous entry
+		flask.fill_order[#flask.fill_order][3] = flask.fill_order[#flask.fill_order][3] + 1;
+	else
+		-- different color as the previous, create new entry
+		table.insert(flask.fill_order, {cur_color, 0, 1})
 	end
 end
 
@@ -142,15 +139,15 @@ function get_slot(mx)
 		x1 = drop_slots[i][2]
 		if mx >= x0 and mx <= x1 then return i end
 	end
+	return nil
 end
 
 function jump_to_closest_position(flask)
-	trace("jump "..flask.mx)
 	curr_diff = 240
 	closest = 1
 	for i=1, #drop_slots do
-		temp_diff_lower_bound = math.abs(flask.mx - drop_slots[i][1])
-		temp_diff_upper_bound = math.abs(flask.mx - drop_slots[i][2])
+		temp_diff_lower_bound = math.abs(flask.center_x - drop_slots[i][1])
+		temp_diff_upper_bound = math.abs(flask.center_x - drop_slots[i][2])
 		if temp_diff_lower_bound < curr_diff then
 			curr_diff = temp_diff_lower_bound
 			closest = i
@@ -159,9 +156,13 @@ function jump_to_closest_position(flask)
 			closest = i
 		end
 	end
-	prev_flask = flasks[closest]
-	prev_flask.cur_slot = flask.cur_slot
+
+	-- swap stuff
+	closest_flask = flasks[get_flask_at(closest)]
+	closest_flask.cur_slot = flask.cur_slot
+	closest_flask.center_x = (drop_slots[closest_flask.cur_slot][2] + drop_slots[closest_flask.cur_slot][1]) / 2
 	flask.cur_slot = closest
+	flask.center_x = (drop_slots[flask.cur_slot][2] + drop_slots[flask.cur_slot][1]) / 2
 end
 
 -- draws
@@ -181,12 +182,17 @@ function draw_flasks()
 	for i = 1, #flasks do
 		draw_flask(flasks[i])
 	end
+
+	-- selected flask is always on top
+	if selected ~= nil then
+		selected_flask = flasks[get_flask_at(selected)]
+		draw_flask(selected_flask)
+	end
 end
 
 function draw_flask(flask)
 	for i = 1, #flask.fill_order do
-		x = flask.mx or flask.center_x
-		x = x - FLASK_WIDTH / 2
+		x = flask.center_x - FLASK_WIDTH / 2
 		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
 		height = flask.fill_order[i][3]
 		color = flask.fill_order[i][1]
