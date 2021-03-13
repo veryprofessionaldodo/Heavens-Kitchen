@@ -104,7 +104,7 @@ function draw_flask(flask)
 end
 
 function draw_orders(orders)
-		
+	spr(32, 230, 120, -1, 1, 0, 0, 3, 3)
 end
 
 -- init
