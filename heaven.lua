@@ -108,11 +108,11 @@ end
 
 function update_flasks()
 	if key(FAUCET_KEYCODE_1) then
-		fill_flask(flask1)
+		fill_flask(flasks[get_flask_at(1)])
 	elseif key(FAUCET_KEYCODE_2) then
-		fill_flask(flask2)
+		fill_flask(flasks[get_flask_at(2)])
 	elseif key(FAUCET_KEYCODE_3) then
-		fill_flask(flask3)
+		fill_flask(flasks[get_flask_at(3)])
 	end
 end
 
