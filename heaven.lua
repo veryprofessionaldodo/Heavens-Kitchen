@@ -27,28 +27,41 @@ levels_metadata = {
 }
 
 flask1 = {
-	center_x = 21, -- center x
+	center_x = 24, -- center x
 	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
 	cur_slot = 1, -- current slot the flask is placed in
 }
 
 flask2 = {
-	center_x = 71,
+	center_x = 74,
 	fill_order = {},
 	cur_slot = 2,
 }
 
 flask3 = {
-	center_x = 121,
+	center_x = 124,
 	fill_order = {}, 
 	cur_slot = 3,
 }
+
+orders = {
+	{
+		color = 2,
+		percentage = 0.5
+	},
+	{
+		color = 9,
+		percentage = 0.5
+	}
+}
+
+score = 0 -- total score of the player
 
 flasks = { flask1, flask2, flask3 } -- not ordered
 
 faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 
-drop_slots = { {6, 36}, {56, 86}, {106, 136} } -- ranges of the drop slots
+drop_slots = { {6, 42}, {56, 92}, {106, 142} } -- ranges of the drop slots
 
 selected = nil -- selected flask to drag
 
@@ -61,8 +74,9 @@ CLOCK_FREQ = 60 --Hz
 
 CURR_STATE = states.MAIN_MENU
 
-FLASK_WIDTH = 30
+FLASK_WIDTH = 36
 FLASK_OFFSET_Y = 4
+FLASK_HEIGHT = 84
 
 Z_KEYCODE = 26
 FAUCET_KEYCODE_1 = 28
@@ -82,11 +96,11 @@ MAX_NUMBER_OF_PARTICLES = 300
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = { 
-	{{2, 1}, pos = {168, 137}, target = {168, 8}}, 
-	{{2, 0.5}, {4, 0.5}, pos = {168, 137 + 44}, target = {168, 52}},
-	{{2, 0.5}, {4, 0.5}, pos = {168, 137 + 88}, target = {168, 96}},
-	{{2, 0.5}, {4, 0.5}, pos = {168, 137}, target = {168, 137}},
-	{{2, 0.5}, {4, 0.5}, pos = {168, 137}, target = {168, 137}}
+	{content = {{2, 1}}, pos = {168, 137}, target = {168, 8}}, 
+	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + 44}, target = {168, 52}},
+	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + 88}, target = {168, 96}},
+	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137}, target = {168, 137}},
+	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137}, target = {168, 137}}
 }
 
 completed_orders = {}
@@ -96,6 +110,19 @@ vertical_targets = { 8, 52, 96, 137 }
 function TIC()
 	update()
 	draw()
+
+	-- TODO: remove debug slot lines and center
+	-- for i = 1, #drop_slots do
+	-- 	l = drop_slots[i][1]
+	-- 	r = drop_slots[i][2]
+	-- 	line(l, 0, l, 135, 5)
+	-- 	line(r, 0, r, 135, 5)
+	-- end
+
+	-- for i = 1, #flasks do
+	-- 	x = flasks[i].center_x
+	-- 	line(x, 0, x, 135, 10)
+	-- end
 end
 
 -- updates
@@ -107,6 +134,7 @@ function update()
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		-- generateOrders() #TODO
+		level_timer()
 		update_orders()
 		update_mouse()
 		update_flasks()
@@ -149,14 +177,18 @@ function update_mouse()
 	end
 end
 
+function level_timer()
+end
+
+
 function update_flasks()
-	if key(FAUCET_KEYCODE_1) then
+	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
 		fill_flask(flasks[get_flask_at(1)])
 	end
-	if key(FAUCET_KEYCODE_2) then
+	if key(FAUCET_KEYCODE_2) and selected ~= 2 then
 		fill_flask(flasks[get_flask_at(2)])
 	end
-	if key(FAUCET_KEYCODE_3) then
+	if key(FAUCET_KEYCODE_3) and selected ~= 3 then
 		fill_flask(flasks[get_flask_at(3)])
 	end
 end
@@ -183,7 +215,39 @@ function fill_flask(flask)
 		table.insert(flask.fill_order, {cur_color, y, y + 0.1 * FILL_RATE})
 	end
 
-	
+	check_if_flask_full(flask)
+end
+
+function check_if_flask_full(flask)
+	sum = 0
+	for i=1, #flask.fill_order do
+		sum = sum + flask.fill_order[i][3] - flask.fill_order[i][2]
+	end
+	if sum >= FLASK_HEIGHT then
+		local score = calculate_score(flask.fill_order)
+		flask.fill_order = {}
+	end
+	print(score, 0, 0, 6)
+end
+
+function calculate_score(fill_order)
+	total = 85
+	if #orders ~= #fill_order then
+		return 0
+	end
+	for i=1, #orders do
+		if orders[i].color == fill_order[i][1] then
+			local diff = math.abs((orders[i].percentage * FLASK_HEIGHT) - (fill_order[i][3] - fill_order[i][2]))
+			if diff ~= 0 then
+				score = math.floor(40 / diff)
+			else
+				score = 40
+			end
+		else
+			score = 0
+		end
+	end
+	return score
 end
 
 function update_orders()
@@ -213,26 +277,23 @@ function get_slot(mx)
 end
 
 function mouse_up(flask)
-	curr_diff = 240
-	closest = 1
-	for i=1, #drop_slots do
-		temp_diff_lower_bound = math.abs(flask.center_x - drop_slots[i][1])
-		temp_diff_upper_bound = math.abs(flask.center_x - drop_slots[i][2])
-		if temp_diff_lower_bound < curr_diff then
-			curr_diff = temp_diff_lower_bound
-			closest = i
-		elseif temp_diff_upper_bound < curr_diff then
-			curr_diff = temp_diff_upper_bound
-			closest = i
-		end
-	end
-
-	-- swap stuff
+	closest = get_closest_slot(flask.center_x)
 	closest_flask = flasks[get_flask_at(closest)]
 	closest_flask.cur_slot = flask.cur_slot
 	closest_flask.center_x = (drop_slots[closest_flask.cur_slot][2] + drop_slots[closest_flask.cur_slot][1]) / 2
 	flask.cur_slot = closest
 	flask.center_x = (drop_slots[flask.cur_slot][2] + drop_slots[flask.cur_slot][1]) / 2
+end
+
+function get_closest_slot(x)
+	positions = { 
+		drop_slots[1][1], drop_slots[1][2], 
+		drop_slots[2][1], drop_slots[2][2], 
+		drop_slots[3][1], drop_slots[3][2] 
+	}
+	positions = map(function(a) return math.abs(x - a) end, positions)
+	idx = min_i(positions)
+	return math.ceil(idx / 2) 
 end
 
 function handle_timeout()
@@ -270,7 +331,6 @@ function draw()
 		draw_main_menu()
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		draw_game()
-		draw_orders()
 	end
 	rectb(160, 0, 80, 136, 6)
 	rectb(0, 0, 240, 136, 5)
@@ -286,6 +346,8 @@ end
 function draw_game()
 	draw_faucets()
 	draw_flasks()
+	draw_orders()
+	draw_timer()
 	draw_streams()
 end
 
@@ -323,9 +385,7 @@ function draw_stream(slot)
 		end
 	end
 
-	
 	-- draw foam
-
 	
 	-- draw bubbles
 end
@@ -343,6 +403,12 @@ function draw_particles()
 	for i = 1, #particles_blue do 
 		pix(particles_blue.pos[1], particles_blue.pos[2], particles_blue.color)
 	end
+end
+
+function draw_timer()
+	rect(42, 5, 155, 7, 4)
+	rectb(42, 5, 155, 7, 4)
+	print("Time Left", 100, 6, 0, false, 1, false)
 end
 
 function draw_flasks()
@@ -363,9 +429,9 @@ function draw_flask(flask)
 		color = flask.fill_order[i][1]
 		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
 		height = flask.fill_order[i][3] - flask.fill_order[i][2]
-		rect(x + 9,	y, FLASK_WIDTH, height, color)
+		rect(x + 3,	y, FLASK_WIDTH - 6, height, color)
 	end
-	spr(10, flask.center_x - FLASK_WIDTH / 2, 45, 0, 3, 0, 0, 2, 4)
+	spr(10, flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 end
 
 function draw_orders()
@@ -376,13 +442,13 @@ function draw_orders()
 	for i=1, math.min(#orders, 4) do
 		spr(12, orders[i].pos[1], orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
 		--Draw order elements
-		print(orders[i][1][2], orders[i].pos[1]+16, orders[i].pos[2] + 16)
+		print(orders[i].content[1][2], orders[i].pos[1]+16, orders[i].pos[2] + 16)
 	end
 
 	for i=1, #completed_orders do
 		spr(12, completed_orders[i].pos[1], completed_orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
 		--Draw order elements
-		print(completed_orders[i][1][2], completed_orders[i].pos[1]+16, completed_orders[i].pos[2] + 16)
+		print(completed_orders[i].content[1][2], completed_orders[i].pos[1]+16, completed_orders[i].pos[2] + 16)
 	end
 
 end
@@ -393,33 +459,58 @@ function draw_faucets()
 
 		-- draw red faucet 
 		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x,5,0,3,0,0,2,2)
+		spr(2,pos_red_x - 6, 5, 0, 3, 0, 0, 2, 2)
 
 		-- draw blue faucet
 		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x,5,0,3,0,0,2,2)
+		spr(4,pos_blue_x - 6, 5, 0, 3, 0, 0, 2, 2)
 
 		-- draw out of order faucet
 		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(8,pos_outoforder_x,5,0,3,0,0,2,2)
+		spr(8,pos_outoforder_x - 6, 5, 0, 3, 0, 0, 2, 2)
 	else  
 		width = drop_slots[1][2] - drop_slots[1][1]
 
 		-- draw red faucet 
 		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x,5,0,3,0,0,2,2)
+		spr(2,pos_red_x - 6, 5, 0, 3, 0, 0, 2, 2)
 
 		-- draw blue faucet
 		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x,5,0,3,0,0,2,2)
+		spr(4,pos_blue_x - 6, 5, 0, 3, 0, 0, 2, 2)
 
 		-- draw green faucet
 		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(6,pos_outoforder_x,5,0,3,0,0,2,2)
+		spr(6, pos_outoforder_x - 6, 5, 0, 3, 0, 0, 2, 2)
 	end
 end
 
--- init
+-- utils
+function map(func, tbl)
+	local newtbl = {}
+	for i, v in pairs(tbl) do
+		newtbl[i] = func(v)
+	end
+	return newtbl
+end
+
+-- Does not work for empty tables
+function min(tbl)
+	return tbl[min_i(tbl)]
+end
+
+-- Does not work for empty tables
+function min_i(tbl)
+	local idx, min = 1, tbl[1]
+	for i = 1, #tbl do
+		if tbl[i] < min then 
+			idx = i
+			min = tbl[i] 
+		end
+	end
+	return idx
+end
+
 function init()
 	update_state_machine(events.MAIN_MENU)
 	draw_main_menu()
