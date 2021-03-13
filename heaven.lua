@@ -177,13 +177,13 @@ end
 
 
 function update_flasks()
-	if key(FAUCET_KEYCODE_1) then
+	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
 		fill_flask(flasks[get_flask_at(1)])
 	end
-	if key(FAUCET_KEYCODE_2) then
+	if key(FAUCET_KEYCODE_2) and selected ~= 2 then
 		fill_flask(flasks[get_flask_at(2)])
 	end
-	if key(FAUCET_KEYCODE_3) then
+	if key(FAUCET_KEYCODE_3) and selected ~= 3 then
 		fill_flask(flasks[get_flask_at(3)])
 	end
 end
