@@ -1,6 +1,6 @@
 -- title:  Heaven's Kitchen
 -- author: Amogus
--- desc:   Cook creatures for God himself
+-- desc:   Play as a mad chemist working for God
 -- script: lua
 
 states = {
@@ -18,63 +18,239 @@ events = {
 	WON_GAME = 'won'
 }
 
+-- table with information for each level like time (possible others in the future)
+-- time in seconds
+levels_metadata = {
+	level_one = { time = 10 },
+	level_two = { time = 15 },
+	level_three = { time = 20 }
+}
+
 flask1 = {
-	center_x = 75, -- center x
+	center_x = 50, -- center x
 	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
-	cur_slot = 1 -- current slot the flask is placed in
+	cur_slot = 1, -- current slot the flask is placed in
 }
 
 flask2 = {
-	center_x = 115, -- center x
-	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
-	cur_slot = 2 -- current slot the flask is placed in
+	center_x = 100,
+	fill_order = {},
+	cur_slot = 2,
 }
 
 flask3 = {
-	center_x = 155, -- center x
-	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
-	cur_slot = 3 -- current slot the flask is placed in
+	center_x = 150,
+	fill_order = {}, 
+	cur_slot = 3,
 }
 
-flasks = { flask1, flask2, flask3 }
+flasks = { flask1, flask2, flask3 } -- not ordered
 
-faucets = { 2, 4, 9 } -- red, yellow, blue faucets
+faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 
-drop_slots = { {60, 90}, {100, 130}, {140, 170} } -- ranges of the drop slots
+drop_slots = { {35, 65}, {85, 115}, {135, 165} } -- ranges of the drop slots
+
+selected = nil -- selected flask to drag
+
+frame_count = 0 -- count of elapsed frames
 
 -- constants
-CURR_STATE = states.MAIN_MENU
-FLASK_WIDTH = 30
-FLASK_OFFSET_Y = 20
 SCREEN_WIDTH = 240
 SCREEN_HEIGHT = 136
+CLOCK_FREQ = 60 --Hz
+
+CURR_STATE = states.MAIN_MENU
+
+FLASK_WIDTH = 30
+FLASK_OFFSET_Y = 4
+
+Z_KEYCODE = 26
 FAUCET_KEYCODE_1 = 28
 FAUCET_KEYCODE_2 = 29
 FAUCET_KEYCODE_3 = 30
-Z_KEYCODE = 26
-BACKGROUND_COLOR = 13
 
+ORDER_START_POS = 8
+ORDER_PADDING = 44
+ORDER_DELTA = 15
+ORDER_OFF_SCREEN = 241
+
+BACKGROUND_COLOR = 0
+
+-- Single Order -> {{<color>, <percentage>}, <activity_flag>}
+orders = { 
+	{{2, 1}, pos = {168, 137}, target = {168, 8}}, 
+	{{2, 0.5}, {4, 0.5}, pos = {168, 137 + 44}, target = {168, 52}},
+	{{2, 0.5}, {4, 0.5}, pos = {168, 137 + 88}, target = {168, 96}},
+	{{2, 0.5}, {4, 0.5}, pos = {168, 137}, target = {168, 137}},
+	{{2, 0.5}, {4, 0.5}, pos = {168, 137}, target = {168, 137}}
+}
+
+completed_orders = {}
+vertical_targets = { 8, 52, 96, 137 }
+
+-- called at 60Hz by TIC-80
 function TIC()
 	update()
 	draw()
 end
 
+-- updates
 function update()
+	frame_count = frame_count + 1
 	if (CURR_STATE == states.MAIN_MENU) then
 		if keyp(Z_KEYCODE) then
 			update_state_machine(events.START_GAME)
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
-		if key(FAUCET_KEYCODE_1) then
-			fill_flask(flask1)
-		elseif key(FAUCET_KEYCODE_2) then
-			fill_flask(flask2)
-		elseif key(FAUCET_KEYCODE_3) then
-			fill_flask(flask3)
+		-- generateOrders() #TODO
+		update_orders()
+		update_mouse()
+		update_flasks()
+		handle_timeout()
+		-- toRemove = checkCompleteOrder() #TODO -> returns index of completed task
+		if keyp(1) then
+			remove_order(1)
 		end
 	end
 end
 
+function update_state_machine(event)
+	if event == events.MAIN_MENU then
+		CURR_STATE = states.MAIN_MENU
+	elseif event == events.START_GAME then
+		CURR_STATE = states.LEVEL_ONE
+	elseif event == events.NEXT_LEVEL then
+		if CURR_STATE == states.LEVEL_ONE then
+			CURR_STATE = states.LEVEL_TWO
+		elseif CURR_STATE == states.LEVEL_TWO then
+			CURR_STATE = states.LEVEL_THREE
+		end		
+	end
+end
+
+function update_mouse()
+	mx, my, md = mouse()
+	if not md then
+		if selected ~= nil then
+			mouse_up(flasks[get_flask_at(selected)])
+		end
+		selected = nil
+	elseif selected == nil then
+		slot = get_slot(mx)
+		selected = slot
+	elseif selected ~= nil then
+		flask = flasks[get_flask_at(slot)]
+		flask.center_x = mx
+	end
+end
+
+function update_flasks()
+	if key(FAUCET_KEYCODE_1) then
+		fill_flask(flasks[get_flask_at(1)])
+	end
+	if key(FAUCET_KEYCODE_2) then
+		fill_flask(flasks[get_flask_at(2)])
+	end
+	if key(FAUCET_KEYCODE_3) then
+		fill_flask(flasks[get_flask_at(3)])
+	end
+end
+
+function fill_flask(flask)
+	cur_color = faucets[flask.cur_slot]
+
+	if #flask.fill_order == 0 then
+		table.insert(flask.fill_order, {cur_color, 0, 0})
+	end
+
+	if flask.fill_order[#flask.fill_order][1] == cur_color then
+		-- same color as the previous, update previous entry
+		flask.fill_order[#flask.fill_order][3] = flask.fill_order[#flask.fill_order][3] + 1;
+	else
+		-- different color as the previous, create new entry
+		y = flask.fill_order[#flask.fill_order][3]
+		table.insert(flask.fill_order, {cur_color, y, y + 1})
+	end
+end
+
+function update_orders()
+	for i = 1, #orders do
+		orders[i].pos[1] = orders[i].pos[1] + (orders[i].target[1] - orders[i].pos[1]) / ORDER_DELTA
+		orders[i].pos[2] = orders[i].pos[2] + (orders[i].target[2] - orders[i].pos[2]) / ORDER_DELTA
+	end
+
+	for i = 1, #completed_orders do
+		completed_orders[i].pos[1] = completed_orders[i].pos[1] + (completed_orders[i].target[1] - completed_orders[i].pos[1]) / ORDER_DELTA
+		completed_orders[i].pos[2] = completed_orders[i].pos[2] + (completed_orders[i].target[2] - completed_orders[i].pos[2]) / ORDER_DELTA
+	end
+end
+
+function get_flask_at(slot)
+	for i = 1, #flasks do
+		if flasks[i].cur_slot == slot then return i end
+	end
+end
+
+function get_slot(mx)
+	for i = 1, #drop_slots do
+		x0 = drop_slots[i][1]
+		x1 = drop_slots[i][2]
+		if mx >= x0 and mx <= x1 then return i end
+	end
+end
+
+function mouse_up(flask)
+	curr_diff = 240
+	closest = 1
+	for i=1, #drop_slots do
+		temp_diff_lower_bound = math.abs(flask.center_x - drop_slots[i][1])
+		temp_diff_upper_bound = math.abs(flask.center_x - drop_slots[i][2])
+		if temp_diff_lower_bound < curr_diff then
+			curr_diff = temp_diff_lower_bound
+			closest = i
+		elseif temp_diff_upper_bound < curr_diff then
+			curr_diff = temp_diff_upper_bound
+			closest = i
+		end
+	end
+
+	-- swap stuff
+	closest_flask = flasks[get_flask_at(closest)]
+	closest_flask.cur_slot = flask.cur_slot
+	closest_flask.center_x = (drop_slots[closest_flask.cur_slot][2] + drop_slots[closest_flask.cur_slot][1]) / 2
+	flask.cur_slot = closest
+	flask.center_x = (drop_slots[flask.cur_slot][2] + drop_slots[flask.cur_slot][1]) / 2
+end
+
+function handle_timeout()
+	timeout = levels_metadata[CURR_STATE].time * CLOCK_FREQ
+	if frame_count >= timeout then
+		frame_count = 0
+		next_level()
+	end
+end
+
+function next_level()
+	update_state_machine(events.NEXT_LEVEL)
+
+	-- reset game world
+	for i = 1, #flasks do
+		flasks[i].fill_order = {}
+	end
+end
+
+function remove_order(index)
+		
+	for i = #orders, index + 1, -1 do
+		orders[i].target[2] = orders[i-1].target[2]
+	end
+
+	orders[index].target[1] = ORDER_OFF_SCREEN
+	table.insert(completed_orders, orders[index])
+	table.remove(orders, index)
+end
+
+-- draws
 function draw()
 	cls(BACKGROUND_COLOR)
 	if (CURR_STATE == states.MAIN_MENU) then
@@ -82,29 +258,10 @@ function draw()
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		draw_game()
 	end
+	rectb(160, 0, 80, 136, 6)
+	rectb(0, 0, 240, 136, 5)
 end
 
--- updates
-function update_state_machine(event)
-	if event == events.MAIN_MENU then
-		CURR_STATE = states.MAIN_MENU
-	elseif event == events.START_GAME then
-		CURR_STATE = states.LEVEL_ONE
-	end
-end
-
-function fill_flask(flask)
-	cur_color = faucets[flask.cur_slot]
-	if #flask.fill_order ~= 0 and flask.fill_order[#flask.fill_order][1] == cur_color then
-		-- same color as the previous, update previous entry
-		flask.fill_order[#flask.fill_order][3] = flask.fill_order[#flask.fill_order][3] + 1;
-	else
-		-- different color as the previous, create new entry
-		table.insert(flask.fill_order, {cur_color, 0, 0}) 
-	end
-end
-
--- draws
 function draw_main_menu()
 	print('HEAVENS KITCHEN', 30, 20, 7, false, 2, false)
 	print('From the minds of BOB, MOUZI 2', 30, 42, 15, false, 1, true)
@@ -113,18 +270,81 @@ function draw_main_menu()
 end
 
 function draw_game()
+	draw_faucets()
+	draw_flasks()
+end
+
+function draw_flasks()
 	for i = 1, #flasks do
 		draw_flask(flasks[i])
+	end
+
+	-- selected flask is always on top
+	if selected ~= nil then
+		selected_flask = flasks[get_flask_at(selected)]
+		draw_flask(selected_flask)
 	end
 end
 
 function draw_flask(flask)
+	x = flask.center_x - FLASK_WIDTH / 2
 	for i = 1, #flask.fill_order do
-		x = flask.center_x - FLASK_WIDTH
-		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
-		height = flask.fill_order[i][3]
 		color = flask.fill_order[i][1]
-		rect(x,	y, FLASK_WIDTH, height, color)
+		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
+		height = flask.fill_order[i][3] - flask.fill_order[i][2]
+		rect(x + 9,	y, FLASK_WIDTH, height, color)
+	end
+	spr(10, flask.center_x - FLASK_WIDTH / 2, 45, 0, 3, 0, 0, 3, 4)
+end
+
+function draw_orders(orders)
+	-- Orders are 8px from the edges
+	-- Orders are spaced 12px between each other
+	-- Orders are 32px by 16px and scaled by 2
+
+	for i=1, math.min(#orders, 4) do
+		spr(32, orders[i].pos[1], orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
+		--Draw order elements
+		print(orders[i][1][2], orders[i].pos[1]+16, orders[i].pos[2] + 16)
+	end
+
+	for i=1, #completed_orders do
+		spr(32, completed_orders[i].pos[1], completed_orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
+		--Draw order elements
+		print(completed_orders[i][1][2], completed_orders[i].pos[1]+16, completed_orders[i].pos[2] + 16)
+	end
+
+end
+
+function draw_faucets()
+	if CURR_STATE == states.LEVEL_ONE then
+		width = drop_slots[1][2] - drop_slots[1][1]
+
+		-- draw red faucet 
+		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
+		spr(2,pos_red_x,5,0,3,0,0,2,2)
+
+		-- draw blue faucet
+		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
+		spr(4,pos_blue_x,5,0,3,0,0,2,2)
+
+		-- draw out of order faucet
+		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
+		spr(8,pos_outoforder_x,5,0,3,0,0,2,2)
+	else  
+		width = drop_slots[1][2] - drop_slots[1][1]
+
+		-- draw red faucet 
+		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
+		spr(2,pos_red_x,5,0,3,0,0,2,2)
+
+		-- draw blue faucet
+		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
+		spr(4,pos_blue_x,5,0,3,0,0,2,2)
+
+		-- draw green faucet
+		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
+		spr(6,pos_outoforder_x,5,0,3,0,0,2,2)
 	end
 end
 
@@ -142,20 +362,24 @@ init()
 -- 005:888888888888888099999800c99998009999980099c9980099c9980099c99800
 -- 006:0000555500056566000566660005666c0055666c00566ccc00566ccc0066666c
 -- 007:666600006666700066667000c6667000c6666700ccc67700ccc66700c6667700
--- 008:00eeeeee00eeeeee00eeeee200eee42200ee4424004442240444424404444244
--- 009:eee44430ee444430224434304224434044244430142243401442434044423440
--- 010:00000000000c0000000c0000000c0c00000c0c00000c0000000d0c00000d0000
--- 011:00000000000c0000000c0000000d0000000d0000000e0000000d0000000d0000
--- 018:001122cc0011122200000022000000e2000000df000000de000000dd00000000
--- 019:cc22ff00222fff00220000002f000000ff000000ff000000ee00000000000000
--- 020:008999990089999c00099999000000ff000000ff000000dd000000dd00000000
--- 021:99999800c999980099999000ff000000ff000000ee000000ee00000000000000
--- 022:0056666c006666660007666600007777000000ff000000dd000000dd00000000
--- 023:c6666700666677006667700077770000ff000000ee000000ee00000000000000
--- 024:0344223404442444044222210344344300334333000333dd000000dd00000000
--- 025:1441133044431330211113303333300033000000ee000000ee00000000000000
--- 026:000e0000000d0000000d0000000d0000000e0000000d0000000ed0000000eeee
--- 027:000e0000000e0000000e0000000e00000c0e0000c00e000000ee0000eee00000
+-- 008:00eeeeee00eeeee200eee42200ee442400444224044442440444424403442234
+-- 009:ee44443022443430422443404424443014224340144243404442344014411330
+-- 010:0000000000c0000000c0000000c0c00000c0c00000c0000000c0c00000c00000
+-- 011:0000000000000c0000000c0000000c0000000d0000000d0000000c0000000d00
+-- 018:001122cc0011122200000022000000e2000000df0000000e0000000000000000
+-- 019:cc22ff00222fff00220000002f000000ff000000f00000000000000000000000
+-- 020:008999990089999c00099999000000ff000000ff0000000d0000000000000000
+-- 021:99999800c999980099999000ff000000ff000000e00000000000000000000000
+-- 022:0056666c006666660007666600007777000000ff0000000d0000000000000000
+-- 023:c6666700666677006667700077770000ff000000e00000000000000000000000
+-- 024:04442444044222210344344300334333000333ff0000000d0000000000000000
+-- 025:44431330211113303333300033f00000ff000000f00000000000000000000000
+-- 026:00d0000000d0000000c0000000d0000000d0000000c0000000d0000000d00000
+-- 027:00000d0000000d0000000d0000000d0000000d00000c0d00000c0e00000c0d00
+-- 042:00d0000000d0000000c0000000d0000000d0000000d0000000d0000000d00000
+-- 043:00000d0000000e0000000e0000000d0000000e0000000e0000000e0000000e00
+-- 058:00d0000000d00c0000d0000000dde000000ede000000eeee0000000000000000
+-- 059:000c0e00000c0e0000c00e000000de0000dee000eeee00000000000000000000
 -- </TILES>
 
 -- <SPRITES>
