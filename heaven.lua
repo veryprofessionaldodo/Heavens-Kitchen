@@ -21,19 +21,22 @@ events = {
 flask1 = {
 	center_x = 75, -- center x
 	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
-	cur_slot = 1 -- current slot the flask is placed in
+	cur_slot = 1, -- current slot the flask is placed in
+	mx = nil -- mouse offset
 }
 
 flask2 = {
-	center_x = 115, -- center x
-	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
-	cur_slot = 2 -- current slot the flask is placed in
+	center_x = 115,
+	fill_order = {}, 
+	cur_slot = 2,
+	mx = nil 
 }
 
 flask3 = {
-	center_x = 155, -- center x
-	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
-	cur_slot = 3 -- current slot the flask is placed in
+	center_x = 155,
+	fill_order = {}, 
+	cur_slot = 3,
+	mx = nil
 }
 
 flasks = { flask1, flask2, flask3 }
@@ -41,6 +44,8 @@ flasks = { flask1, flask2, flask3 }
 faucets = { 2, 4, 9 } -- red, yellow, blue faucets
 
 drop_slots = { {60, 90}, {100, 130}, {140, 170} } -- ranges of the drop slots
+
+selected = nil -- selected flask to drag
 
 -- constants
 CURR_STATE = states.MAIN_MENU
@@ -65,13 +70,8 @@ function update()
 			update_state_machine(events.START_GAME)
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
-		if key(FAUCET_KEYCODE_1) then
-			fill_flask(flask1)
-		elseif key(FAUCET_KEYCODE_2) then
-			fill_flask(flask2)
-		elseif key(FAUCET_KEYCODE_3) then
-			fill_flask(flask3)
-		end
+		update_mouse()
+		update_flasks()
 	end
 end
 
@@ -104,6 +104,44 @@ function fill_flask(flask)
 	end
 end
 
+function update_mouse()
+	mx, my, md = mouse()
+	if not md then
+		selected = nil
+	elseif selected == nil then
+		slot = get_slot(mx)
+		selected = slot
+	elseif selected ~= nil then
+		flask = flasks[get_flask_at(slot)]
+		flask.mx = mx
+		trace("update "..flask.mx)
+	end
+end
+
+function update_flasks()
+	if key(FAUCET_KEYCODE_1) then
+		fill_flask(flask1)
+	elseif key(FAUCET_KEYCODE_2) then
+		fill_flask(flask2)
+	elseif key(FAUCET_KEYCODE_3) then
+		fill_flask(flask3)
+	end
+end
+
+function get_flask_at(slot)
+	for i = 1, #flasks do
+		if flasks[i].cur_slot == slot then return i end
+	end
+end
+
+function get_slot(mx)
+	for i = 1, #drop_slots do
+		x0 = drop_slots[i][1]
+		x1 = drop_slots[i][2]
+		if mx >= x0 and mx <= x1 then return i end
+	end
+end
+
 -- draws
 function draw_main_menu()
 	print('HEAVENS KITCHEN', 30, 20, 7, false, 2, false)
@@ -120,7 +158,18 @@ end
 
 function draw_flask(flask)
 	for i = 1, #flask.fill_order do
-		x = flask.center_x - FLASK_WIDTH / 2
+		-- x = flask.mx or flask.center_x 
+		-- x = x - FLASK_WIDTH / 2
+
+		x = 0
+		if flask.mx ~= nil then
+			x = flask.mx - FLASK_WIDTH / 2
+		else
+			x = flask.center_x - FLASK_WIDTH / 2
+		end
+
+		trace("draw "..x)
+
 		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
 		height = flask.fill_order[i][3]
 		color = flask.fill_order[i][1]
