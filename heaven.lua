@@ -32,14 +32,30 @@ function update_state_machine(event)
 	end
 end
 
+function draw_main_menu()
+	cls(13)
+	print('HEAVENS KITCHEN', 30, 20, 7, false, 2.5, false)
+	print('From the minds of BOB, MOUZI 2', 30, 42, 15, false, 1, true)
+	print('and SPACEBAR', 30, 50, 15, false, 1, true)
+	print('Press Z to start...', 30, 116, 7, false, 1, true)
+end
+
 function init()
 	update_state_machine(events.MAIN_MENU)
+	draw_main_menu()
 end
 
 init()
 
 function TIC()
-	
+	if (CURR_STATE == states.MAIN_MENU) then
+		draw_main_menu()
+			if btnp(4) then
+				update_state_machine(events.START_GAME)
+			end
+		return
+	end
+
 	if btn(0) then y=y-1 end
 	if btn(1) then y=y+1 end
 	if btn(2) then x=x-1 end
