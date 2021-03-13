@@ -199,7 +199,10 @@ end
 function next_level()
 	update_state_machine(events.NEXT_LEVEL)
 
-	-- other code like reseting flasks and orders
+	-- reset game world
+	for i = 1, #flasks do
+		flasks[i].fill_order = {}
+	end
 end
 
 -- draws
