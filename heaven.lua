@@ -89,7 +89,7 @@ ORDER_START_POS = 8
 ORDER_PADDING = 44
 ORDER_DELTA = 15
 ORDER_OFF_SCREEN = 241
-FILL_RATE = 0.2
+FILL_RATE = 0.4
 
 BACKGROUND_COLOR = 0
 
@@ -131,6 +131,7 @@ function TIC()
 	-- 	line(x, 0, x, 135, 10)
 	-- end
 
+	rectb(0, 0, 240, 136, 5) -- screen box
 end
 
 -- updates
@@ -191,18 +192,8 @@ function update_mouse()
 end
 
 function update_flasks()
-	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
-		if not ANY_FAUCET_DROPPING then
-			sfx(32, 25, -1, 0, 6)
-			ANY_FAUCET_DROPPING = true
-		end
-	else
-		sfx(-1)
-		ANY_FAUCET_DROPPING = false
-	end
-
+	faucet_sfx()
 	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
-		--add particles
 		center_stream = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_red, 3)
 	end
@@ -210,7 +201,7 @@ function update_flasks()
 		center_stream = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_blue, 10)
 	end
-	if key(FAUCET_KEYCODE_3) and selected ~= 3 then
+	if key(FAUCET_KEYCODE_3) and selected ~= 3 and CURR_STATE ~= states.LEVEL_ONE then
 		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_green, 6)
 	end
@@ -229,6 +220,33 @@ function generate_stream_particles(center, particles, particle_color)
 end
 
 function randomFloat(lower, greater)
+    return lower + math.random()  * (greater - lower);
+end
+
+function faucet_sfx()
+	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) then
+		if not ANY_FAUCET_DROPPING then
+			sfx(32, 25, -1, 0, 6)
+			ANY_FAUCET_DROPPING = true
+		end
+	elseif key(FAUCET_KEYCODE_3) and CURR_STATE ~= states.LEVEL_ONE then
+		if not ANY_FAUCET_DROPPING then
+			sfx(32, 25, -1, 0, 6) -- play regular sound
+			ANY_FAUCET_DROPPING = true
+		end
+	elseif key(FAUCET_KEYCODE_3) and CURR_STATE == states.LEVEL_ONE then
+		if not ANY_FAUCET_DROPPING then
+			sfx(35, 25, -1, 0, 6) -- play disabled sound (level one)
+			ANY_FAUCET_DROPPING = true
+		end
+	else
+		sfx(-1)
+		ANY_FAUCET_DROPPING = false
+	end
+end
+
+
+function random_float(lower, greater)
     return lower + math.random()  * (greater - lower);
 end
 
@@ -327,16 +345,16 @@ end
 
 function update_stream_particle(particle, flask, height) 
 	if particle.color ~= 12 then
-		particle.velocity[1] = particle.velocity[1] + randomFloat(-0.01,0.01)
-		particle.size = math.max(math.min(particle.size + randomFloat(-0.4,0.3), 5),1)
+		particle.velocity[1] = particle.velocity[1] + random_float(-0.01,0.01)
+		particle.size = math.max(math.min(particle.size + random_float(-0.4,0.3), 5),1)
 	else 
 		-- has turned to foam
-		particle.size = math.max(math.min(particle.size + randomFloat(-0.4,0.3), 2),0)
+		particle.size = math.max(math.min(particle.size + random_float(-0.4,0.3), 2),0)
 		particle.velocity[2] = particle.velocity[2] - BUBBLES_GRAVITY
 		if particle.velocity[1] > 0 then
-			particle.velocity[1] = particle.velocity[1] - randomFloat(0.1,0.2)
+			particle.velocity[1] = particle.velocity[1] - random_float(0.1,0.2)
 		else 
-			particle.velocity[1] = particle.velocity[1] + randomFloat(0.1,0.2)
+			particle.velocity[1] = particle.velocity[1] + random_float(0.1,0.2)
 		end
 	end
 	
@@ -349,8 +367,8 @@ function update_stream_particle(particle, flask, height)
 	if particle.pos[2] > height and particle.color ~= 12 then
 		particle.pos[2] = particle.pos[2] - 0.5
 		particle.color = 12
-		particle.velocity[1] = randomFloat(-2,2)
-		particle.velocity[2] = randomFloat(PARTICLE_SPEED / 6 - 1, PARTICLE_SPEED / 6 + 1)
+		particle.velocity[1] = random_float(-2,2)
+		particle.velocity[2] = random_float(PARTICLE_SPEED / 6 - 1, PARTICLE_SPEED / 6 + 1)
 		fill_flask(flask)
 	elseif particle.pos[2] < height and particle.color == 12 then
 		particle.velocity[2] = -particle.velocity[2]/2 
@@ -441,14 +459,14 @@ function calculate_score(fill_order)
 	if fill_order == nil then
 		return 0
 	end
-	for i=1, #orders do
+	for i=1, 3 do
 		for j=1, #orders[i].content do
 			if #fill_order ~= #orders[i].content then
 				score = 0
 			elseif orders[i].content[j][1] == fill_order[j][1] then
 				local diff = math.ceil(math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[j][3] - fill_order[j][2])))
 				if diff ~= 0 then
-					score = math.floor(40 / diff)
+					score = math.floor((40 / diff) * 1.5)
 					if best_score < score then
 						best_score = score
 						best_score_index = i
@@ -622,7 +640,7 @@ function remove_order(index)
 
 	orders[index].target[1] = ORDER_OFF_SCREEN
 	table.insert(completed_orders, orders[index])
-	sfx(35, 65, 60, 1)
+	sfx(36, 65, 60, 1)
 	table.remove(orders, index)
 end
 
@@ -645,13 +663,14 @@ end
 
 function draw_game()
 	draw_flasks_fluid()
-	draw_particles()
-	draw_smokes()
-	draw_flasks_containers()
 	draw_faucets()
 	draw_orders()
 	draw_timer()
 	draw_score()
+	draw_particles()
+	draw_smokes()
+	draw_flasks_containers()
+	if selected ~= nil then	draw_selected_flask() end
 end
 
 function draw_smokes()
@@ -707,23 +726,11 @@ function draw_flasks_containers()
 	for i = 1, #flasks do
 		spr(10, flasks[i].center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 	end
-
-	-- selected flask is always on top
-	if selected ~= nil then
-		selected_flask = flasks[get_flask_at(selected)]
-		spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
-	end
 end
 
 function draw_flasks_fluid()
 	for i = 1, #flasks do
 		draw_flask_fluid(flasks[i])
-	end
-
-	-- selected flask is always on top
-	if selected ~= nil then
-		selected_flask = flasks[get_flask_at(selected)]
-		draw_flask_fluid(selected_flask)
 	end
 end
 
@@ -735,7 +742,13 @@ function draw_flask_fluid(flask)
 		height = math.ceil(flask.fill_order[i][3]) - math.ceil(flask.fill_order[i][2])
 		rect(x + 3,	y, FLASK_WIDTH - 6, height, color)
 	end
-	
+end
+
+function draw_selected_flask()
+	-- selected flask is always on top
+	selected_flask = flasks[get_flask_at(selected)]
+	draw_flask_fluid(selected_flask)
+	spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 end
 
 function draw_orders()
@@ -754,7 +767,7 @@ function draw_orders()
 end
 
 function create_order_ui(i, o)
-	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
+	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 3)
 		
 	for j=1, #o[i].content do
 
@@ -785,34 +798,23 @@ function create_order_ui(i, o)
 end
 
 function draw_faucets()
+	width = drop_slots[1][2] - drop_slots[1][1]
+
+	-- draw red faucet 
+	pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
+	spr(2,pos_red_x - 6, 0, 0, 3, 0, 0, 2, 2)
+
+	-- draw blue faucet
+	pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
+	spr(4,pos_blue_x - 6, 0, 0, 3, 0, 0, 2, 2)
+
+	-- draw out of order faucet
+	pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
+
 	if CURR_STATE == states.LEVEL_ONE then
-		width = drop_slots[1][2] - drop_slots[1][1]
-
-		-- draw red faucet 
-		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x - 6, 5, 0, 3, 0, 0, 2, 2)
-
-		-- draw blue faucet
-		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x - 6, 5, 0, 3, 0, 0, 2, 2)
-
-		-- draw out of order faucet
-		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(8,pos_outoforder_x - 6, 5, 0, 3, 0, 0, 2, 2)
-	else  
-		width = drop_slots[1][2] - drop_slots[1][1]
-
-		-- draw red faucet 
-		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x - 6, 5, 0, 3, 0, 0, 2, 2)
-
-		-- draw blue faucet
-		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x - 6, 5, 0, 3, 0, 0, 2, 2)
-
-		-- draw green faucet
-		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(6, pos_outoforder_x - 6, 5, 0, 3, 0, 0, 2, 2)
+		spr(8 ,pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
+	else
+		spr(6, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	end
 end
 
@@ -864,10 +866,10 @@ init()
 -- 009:ee44443022443430422443404424443014224340144243404442344014411330
 -- 010:0000000000c0000000c0000000c0c00000c0c00000c0000000c0c00000c00000
 -- 011:0000000000000c0000000c0000000c0000000d0000000d0000000c0000000d00
--- 012:0888888888cccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc
--- 013:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
--- 014:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
--- 015:88888880cccccc88ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8
+-- 012:0fffffffffccccccfcccccccfcccccccfcccccccfcccccccfcccccccfccccccc
+-- 013:ffffffffcccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-- 014:ffffffffcccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-- 015:fffffff0ccccccffcccccccfcccccccfcccccccfcccccccfcccccccfcccccccf
 -- 016:00e00e0000e00e0000e20e0000d22e000d2222e0d322222ed332333e0ddddee0
 -- 017:000000000e0000e00ee00ee000e90e0000e99e0000d89e0000d88e00000dd000
 -- 018:001122cc0011122200000022000000e2000000df0000000e0000000000000000
@@ -880,10 +882,10 @@ init()
 -- 025:44431330211113303333300033f00000ff000000f00000000000000000000000
 -- 026:00d0000000d0000000c0000000d0000000d0000000c0000000d0000000d00000
 -- 027:00000d0000000d0000000d0000000d0000000d00000c0d00000c0e00000c0d00
--- 028:8ccccccc8ccccccc8ccccccc8ccccccc88cccccc088888880000000000000000
--- 029:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
--- 030:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
--- 031:ccccccc8ccccccc8ccccccc8ccccccc8cccccc88888ccc800088c88000088800
+-- 028:fcccccccfcccccccfcccccccfcccccccffcccccc0fffffff0000000000000000
+-- 029:ccccccccccccccccccccccccccccccccccccccccffffffff0000000000000000
+-- 030:ccccccccccccccccccccccccccccccccccccccccffffffff0000000000000000
+-- 031:cccccccfcccccccfcccccccfcccccccfccccccfffffcccf000ffcff0000fff00
 -- 032:00e00e000e5000e0e555500ed555555ed655555ed665555ed666665e0dddddd0
 -- 042:00d0000000d0000000c0000000d0000000d0000000d0000000d0000000d00000
 -- 043:00000d0000000e0000000e0000000d0000000e0000000e0000000e0000000e00
@@ -938,7 +940,7 @@ init()
 -- 032:f810e830c840a860888068a048c028e008f0080008000800080008000800080008000800080008000800080008000800080008000800080008000800210000090900
 -- 033:060046009600c600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600700000000000
 -- 034:0700370057008600a600d600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600400000000000
--- 035:00001000200020002000300030004000400050005000500060006000700070008000900090009000a000b000b000c000c000d000d000e000e000f000500000000000
+-- 035:0730577097b0d7f0f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700d80000000000
 -- 050:090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900102000000000
 -- </SFX>
 
