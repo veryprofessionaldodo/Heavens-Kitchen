@@ -207,10 +207,6 @@ function update_flasks()
 	end
 end
 
-<<<<<<< HEAD
-function handle_faucet_sfx()
-	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
-=======
 function generate_stream_particles(center, particles, particle_color)
 	-- draw main stream
 	for i = 1, 25 do 
@@ -227,9 +223,8 @@ function randomFloat(lower, greater)
     return lower + math.random()  * (greater - lower);
 end
 
-function faucet_sfx()
-	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) then
->>>>>>> e0a8b6a71cdb62384e2fc90fe53cf1c82be25dfb
+function handle_faucet_sfx()
+	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
 		if not ANY_FAUCET_DROPPING then
 			if key(FAUCET_KEYCODE_3) and CURR_STATE == states.LEVEL_ONE then
 				sfx(35, 25, -1, 0, 6)
