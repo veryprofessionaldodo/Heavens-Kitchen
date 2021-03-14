@@ -96,16 +96,14 @@ FLASK3 = {
 	cur_slot = 3,
 }
 
+FLASKS = { FLASK1, FLASK2, FLASK3 }
+SELECTED = nil -- SELECTED flask to drag
+
+TOTAL_SCORE = 0
 TOTAL_STARS = 0
 CURRENT_STARS = 0
 
-TOTAL_SCORE = 0 -- total score of the player
-
-FLASKS = { FLASK1, FLASK2, FLASK3 } -- not ordered
-
 DROP_SLOTS = { {24, 60}, {74, 110}, {124, 160} } -- ranges of the drop slots
-
-SELECTED = nil -- SELECTED flask to drag
 
 SCREEN_WIDTH = 240
 SCREEN_HEIGHT = 136
@@ -152,7 +150,6 @@ ORDERS = {}
 COMPLETED_ORDERS = {}
 VERTICAL_TARGETS = { 8, 52, 96, 137 }
 
--- miguel code for sfx
 ANY_FAUCET_DROPPING = false
 
 -- transition particle system, each particle contains the follwoing 
@@ -1351,6 +1348,8 @@ function init()
 	CUR_STATE = STATES.MAIN_MENU
 end
 init()
+
+-- DO NOT EDIT BELOW ASSETS MANUALLY
 
 -- <TILES>
 -- 002:0033333100313111003111120011312200311222001122cc0012222200122222
