@@ -811,12 +811,41 @@ function draw_main_menu()
 	print('Press Z to start...', 30, 116, 7, false, 1, true)
 end
 
+function draw_continue_message()
+	print('PRESS Z TO CONTINUE', 160, 116, 7, false, 1, true)
+end
+
+function print_cutscene_message(message, x, y)
+	print(message, x, y, 12, false, 1, true)
+end
+
+function draw_god()
+	spr(257, 160, 15, 0, 3, 0, 0, 3, 4)
+end
+
 function draw_cutscene_zero()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	-- draw picture
+
+	print_cutscene_message('Congratulations!', 30, 80)
+	print_cutscene_message('You have been selected as a contestant', 30, 88)
+	print_cutscene_message('chef in Heaven\'s Kitchen!', 30, 96)
+
+	draw_continue_message()
 end
 
 function draw_how_to_play_one()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	print_cutscene_message('Open each faucet with your \'1\', \'2\'', 20, 30)
+	print_cutscene_message('and \'3\' keys and fill out the flasks.', 20, 38)
+
+	print_cutscene_message('You\'ll see my requests on the right side', 20, 54)
+	print_cutscene_message('with the ideal composition of each flask.', 20, 62)
+
+	print_cutscene_message('The green faucet is inoperational for now,', 20, 78)
+	print_cutscene_message('I\'ll get my best angels on the job to', 20, 86)
+	print_cutscene_message('fix it as fast as possible.', 20, 94)
+
+	draw_god()
+	draw_continue_message()
 end
 
 function draw_how_to_play_two()
