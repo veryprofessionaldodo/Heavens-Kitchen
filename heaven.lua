@@ -160,22 +160,6 @@ ANY_FAUCET_DROPPING = false
 function TIC()
 	update()
 	draw()	
-
-	-- TODO: remove debug slot lines and center
-	print(CURR_STATE, 100, 100)
-	-- for i = 1, #drop_slots do
-	--  	l = drop_slots[i][1]
-	--  	r = drop_slots[i][2]
-	-- 	line(l, 0, l, 135, 5)
-	-- 	line(r, 0, r, 135, 5)
-	-- end
-
-	-- for i = 1, #flasks do
-	-- 	x = flasks[i].center_x
-	-- 	line(x, 0, x, 135, 10)
-	-- end
-
-	-- rectb(0, 0, 240, 136, 5) -- screen box
 end
 
 -- updates
@@ -192,10 +176,6 @@ function update()
 		update_smokes()
 		handle_timeout()
 		if #orders == 0 then update_state_machine()	end
-		-- toRemove = checkCompleteOrder() #TODO -> returns index of completed task
-		if keyp(1) and #orders ~= 0 then
-			remove_order(math.random(1, math.min(3, #orders)))
-		end
 	end
 end
 
