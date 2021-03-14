@@ -955,6 +955,8 @@ function draw_cutscene_zero()
 end
 
 function draw_cutscene_one()
+	spr(320, 93, 10, 0, 2, 0, 0, 4, 4)
+
 	print_cutscene_message('I\'ve entrusted you with repopulating my', 53, 80)
 	print_cutscene_message('new planet with beautiful creatures.', 57, 88)
 	print_cutscene_message('My goal is to test your skills', 70, 96)
