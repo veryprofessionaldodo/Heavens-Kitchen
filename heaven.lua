@@ -52,19 +52,19 @@ levels_metadata = {
 		time = 1000
 	},
 	level_one = { 
-		time = 15,
+		time = 45,
 		max_steps = 2,
 		faucets = faucets,
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
-		time = 15,
+		time = 30,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
-		time = 15,
+		time = 25,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
@@ -88,6 +88,9 @@ flask3 = {
 	fill_order = {}, 
 	cur_slot = 3,
 }
+
+total_stars = 0
+current_stars = 0
 
 total_score = 0 -- total score of the player
 
@@ -132,6 +135,11 @@ RECT_HEIGHT = 100
 TIMER_Y = 10
 TIMER_HEIGHT = 100
 
+LEVEL_ONE_SCORE = 300
+LEVEL_TWO_SCORE = 450
+LEVEL_THREE_SCORE = 600
+
+-- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = {}
 
 completed_orders = {}
@@ -202,14 +210,17 @@ function update_state_machine()
 		CURR_STATE = states.LEVEL_ONE
 	elseif CURR_STATE == states.LEVEL_ONE then
 		CURR_STATE = states.RESULT_ONE
+		calculate_stars()
 	elseif CURR_STATE == states.RESULT_ONE then
 		CURR_STATE = states.LEVEL_TWO
 	elseif CURR_STATE == states.LEVEL_TWO then
 		CURR_STATE = states.RESULT_TWO
+		calculate_stars()
 	elseif CURR_STATE == states.RESULT_TWO then
 		CURR_STATE = states.LEVEL_THREE
 	elseif CURR_STATE == states.LEVEL_THREE then
 		CURR_STATE = states.RESULT_THREE
+		calculate_stars()
 	elseif CURR_STATE == states.RESULT_THREE then
 		CURR_STATE = states.RESULT_FINAL
 	elseif CURR_STATE == states.RESULT_FINAL then
@@ -217,6 +228,22 @@ function update_state_machine()
 	end
 
 	if has_value(playable_states, CURR_STATE) then setup_level() end
+end
+
+function calculate_stars()
+	local stars = 0
+	if CURR_STATE == states.RESULT_ONE then
+		stars = math.floor(total_score / (LEVEL_ONE_SCORE / 3))
+	elseif CURR_STATE == states.RESULT_TWO then
+		stars = math.floor(total_score / (LEVEL_TWO_SCORE / 3))
+	elseif CURR_STATE == states.RESULT_THREE then
+		stars = math.floor(total_score / (LEVEL_THREE_SCORE / 3))
+	end
+	if stars > 3 then
+		stars = 3
+	end
+	current_stars = stars;
+	total_stars = total_stars + current_stars;
 end
 
 function update_mouse()
@@ -644,6 +671,7 @@ function setup_level()
 	TIMER_HEIGHT = RECT_HEIGHT
 	TIMER_Y = 10
 	FRAME_COUNTER = 0
+	total_score = 0
 
 	-- empty flasks
 	for i = 1, #flasks do
@@ -801,19 +829,32 @@ end
 
 function draw_result_one()
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	draw_stars()
 end
 
 function draw_result_two()
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	draw_stars()
 end
 
 function draw_result_three()
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	draw_stars()
 end
 
 function draw_result_final()
 	-- use total_stars global to display diff stuff
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_stars()
+	for i=1, 3 do
+		if i <= current_stars then 
+			spr(36, 90 + 8 * i, 60, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela cheia
+		else
+			spr(34, 90 + 8 * i, 60, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela vazia
+		end
+	end 
 end
 
 function draw_game()
