@@ -190,7 +190,7 @@ function update_mouse()
 end
 
 function update_flasks()
-	faucet_sfx()
+	handle_faucet_sfx()
 	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
 		center_stream = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
 		generate_particles(center_stream, particles_red, 3)
@@ -205,20 +205,14 @@ function update_flasks()
 	end
 end
 
-function faucet_sfx()
-	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) then
+function handle_faucet_sfx()
+	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
 		if not ANY_FAUCET_DROPPING then
-			sfx(32, 25, -1, 0, 6)
-			ANY_FAUCET_DROPPING = true
-		end
-	elseif key(FAUCET_KEYCODE_3) and CURR_STATE ~= states.LEVEL_ONE then
-		if not ANY_FAUCET_DROPPING then
-			sfx(32, 25, -1, 0, 6) -- play regular sound
-			ANY_FAUCET_DROPPING = true
-		end
-	elseif key(FAUCET_KEYCODE_3) and CURR_STATE == states.LEVEL_ONE then
-		if not ANY_FAUCET_DROPPING then
-			sfx(35, 25, -1, 0, 6) -- play disabled sound (level one)
+			if key(FAUCET_KEYCODE_3) and CURR_STATE == states.LEVEL_ONE then
+				sfx(35, 25, -1, 0, 6)
+			else
+				sfx(32, 25, -1, 0, 6)
+			end
 			ANY_FAUCET_DROPPING = true
 		end
 	else
