@@ -1,6 +1,6 @@
 # Heaven's Kitchen
 
-Our X<sup>th</sup> place entry for IEEE U. Porto Student Branch 2021 RETRO JAM was **'Heaven's Kitchen'**, a game entirely developed for the **TIC-80 fantasy console** by a team of five software engineers. See every entry over [here](https://itch.io/jam/retrojam2021/entries).
+Our X<sup>th</sup> place entry for IEEE University of Porto Student Branch 2021 RETRO JAM was **'Heaven's Kitchen'**, a game entirely developed for the **TIC-80 fantasy console** by a team of five software engineers. See every entry over [here](https://itch.io/jam/retrojam2021/entries).
 
 ## Concept
 
