@@ -5,13 +5,17 @@
 
 states = {
 	MAIN_MENU = 'menu',
+	CUTSCENE_ONE = 'cutscene_one',
 	LEVEL_ONE = 'level_one',
+	CUTSCENE_TWO = 'cutscene_two',
 	LEVEL_TWO = 'level_two',
+	CUTSCENE_THREE = 'transtion_two',
 	LEVEL_THREE = 'level_three'
 }
 
 events = {
 	MAIN_MENU = 'main',
+	END_CUTSCENE = 'end_cutscene',
 	START_GAME = 'start',
 	NEXT_LEVEL = 'next',
 	LOST_GAME = 'lost',
@@ -24,19 +28,19 @@ faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 -- time in seconds
 levels_metadata = {
 	level_one = { 
-		time = 15,
+		time = 3,
 		max_steps = 2,
 		faucets = {faucets[1], faucets[2]},
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
-		time = 15 ,
+		time = 3 ,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
-		time = 15 ,
+		time = 3 ,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
@@ -142,6 +146,10 @@ function update()
 		if keyp(Z_KEYCODE) then
 			update_state_machine(events.START_GAME)
 		end
+	elseif (CURR_STATE == states.CUTSCENE_ONE or CURR_STATE == states.CUTSCENE_TWO or CURR_STATE == states.CUTSCENE_THREE) then
+		if keyp(Z_KEYCODE) then
+			update_state_machine(events.END_CUTSCENE)
+		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		update_orders()
 		update_mouse()
@@ -160,15 +168,23 @@ function update_state_machine(event)
 		--music(0)
 		CURR_STATE = states.MAIN_MENU
 	elseif event == events.START_GAME then
-		CURR_STATE = states.LEVEL_ONE
-		setup_level()
-	elseif event == events.NEXT_LEVEL then
-		if CURR_STATE == states.LEVEL_ONE then
+		CURR_STATE = states.CUTSCENE_ONE
+	elseif event == events.END_CUTSCENE then
+		if CURR_STATE == states.CUTSCENE_ONE then
+			CURR_STATE = states.LEVEL_ONE
+			setup_level()
+		elseif CURR_STATE == states.CUTSCENE_TWO then
 			CURR_STATE = states.LEVEL_TWO
 			setup_level()
-		elseif CURR_STATE == states.LEVEL_TWO then
+		elseif CURR_STATE == states.CUTSCENE_THREE then
 			CURR_STATE = states.LEVEL_THREE
 			setup_level()
+		end
+	elseif event == events.NEXT_LEVEL then
+		if CURR_STATE == states.LEVEL_ONE then
+			CURR_STATE = states.CUTSCENE_TWO
+		elseif CURR_STATE == states.LEVEL_TWO then
+			CURR_STATE = states.CUTSCENE_THREE
 		end		
 	end
 end
@@ -524,6 +540,12 @@ function draw()
 	cls(BACKGROUND_COLOR)
 	if (CURR_STATE == states.MAIN_MENU) then
 		draw_main_menu()
+	elseif (CURR_STATE == states.CUTSCENE_ONE) then
+		draw_first_cutscene()
+	elseif (CURR_STATE == states.CUTSCENE_TWO) then
+		draw_second_cutscene()
+	elseif (CURR_STATE == states.CUTSCENE_THREE) then
+		draw_third_cutscene()
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		draw_game()
 	end
@@ -534,6 +556,23 @@ function draw_main_menu()
 	print('From the minds of BOB, MOUZI 2', 30, 42, 15, false, 1, true)
 	print('and SPACEBAR', 30, 50, 15, false, 1, true)
 	print('Press Z to start...', 30, 116, 7, false, 1, true)
+end
+
+
+function draw_first_cutscene()
+	print('Lorem ipsum dolor sit amet, consectetur', 0, 0, 10)
+	print(' adipiscing elit', 0, 10, 10)
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_second_cutscene()
+	print('GOD', 0, 0, 2)
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_third_cutscene()
+	print('GOOD JOB', 0, 0, 2)
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
 
 function draw_game()
