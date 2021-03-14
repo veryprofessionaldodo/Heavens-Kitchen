@@ -28,19 +28,19 @@ faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 -- time in seconds
 levels_metadata = {
 	level_one = { 
-		time = 10,
+		time = 45,
 		max_steps = 2,
 		faucets = {faucets[1], faucets[2]},
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
-		time = 10,
+		time = 30,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
-		time = 10,
+		time = 25,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
@@ -64,6 +64,9 @@ flask3 = {
 	fill_order = {}, 
 	cur_slot = 3,
 }
+
+total_stars = 0
+current_stars = 0
 
 total_score = 0 -- total score of the player
 
@@ -107,6 +110,10 @@ FRAME_COUNTER = 0
 RECT_HEIGHT = 100
 TIMER_Y = 10
 TIMER_HEIGHT = 100
+
+LEVEL_ONE_SCORE = 300
+LEVEL_TWO_SCORE = 450
+LEVEL_THREE_SCORE = 600
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = {}
@@ -183,10 +190,26 @@ function update_state_machine(event)
 	elseif event == events.NEXT_LEVEL then
 		if CURR_STATE == states.LEVEL_ONE then
 			CURR_STATE = states.CUTSCENE_TWO
+			calculate_stars()
 		elseif CURR_STATE == states.LEVEL_TWO then
 			CURR_STATE = states.CUTSCENE_THREE
+			calculate_stars()
 		end		
 	end
+end
+
+function calculate_stars()
+	local stars = 0
+	if CURR_STATE == states.CUTSCENE_TWO then
+		stars = math.floor(total_score / (LEVEL_ONE_SCORE / 3))
+	elseif CURR_STATE == states.CUTSCENE_THREE then
+		stars = math.floor(total_score / (LEVEL_TWO_SCORE / 3))
+	end
+	if stars > 3 then
+		stars = 3
+	end
+	current_stars = stars;
+	total_stars = total_stars + current_stars;
 end
 
 function update_mouse()
@@ -622,6 +645,7 @@ function setup_level()
 	TIMER_HEIGHT = RECT_HEIGHT
 	TIMER_Y = 10
 	FRAME_COUNTER = 0
+	total_score = 0
 
 	-- empty flasks
 	for i = 1, #flasks do
@@ -743,12 +767,24 @@ function draw_first_cutscene()
 end
 
 function draw_second_cutscene()
-	print('GOD', 0, 0, 2)
+	for i=1, 3 do
+		if i <= current_stars then 
+			spr(34,90+8*i,60) -- numero da sprite de estrela cheia
+		else
+			spr(36,90+8*i,60) -- numero da sprite de estrela vazia
+		end
+	end
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
 
 function draw_third_cutscene()
-	print('GOOD JOB', 0, 0, 2)
+	for i=1, 3 do
+		if i <= current_stars then 
+			spr(34,90+8*i,60) -- numero da sprite de estrela cheia
+		else
+			spr(36,90+8*i,60) -- numero da sprite de estrela vazia
+		end
+	end
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
 
