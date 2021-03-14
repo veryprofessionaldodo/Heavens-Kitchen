@@ -4,18 +4,40 @@
 -- script: lua
 
 states = {
-	MAIN_MENU = 'menu',
+	MAIN_MENU = 'main_menu',
+	CUTSCENE_ZERO = 'cutscene_zero',
+	HOW_TO_PLAY_ONE = 'how_to_play_one',
+	TUTORIAL_ONE = 'tutorial_one',
+	HOW_TO_PLAY_TWO = 'how_to_play_two',
+	TUTORIAL_TWO = 'tutorial_two',
+	CUTSCENE_ONE = 'cutscene_one',
 	LEVEL_ONE = 'level_one',
+	RESULT_ONE = 'result_one',
 	LEVEL_TWO = 'level_two',
-	LEVEL_THREE = 'level_three'
+	RESULT_TWO = 'result_two',
+	LEVEL_THREE = 'level_three',
+	RESULT_THREE = 'result_three',
+	RESULT_FINAL = 'result_final'
 }
 
-events = {
-	MAIN_MENU = 'main',
-	START_GAME = 'start',
-	NEXT_LEVEL = 'next',
-	LOST_GAME = 'lost',
-	WON_GAME = 'won'
+skipable_states = {
+	states.MAIN_MENU,
+	states.CUTSCENE_ZERO,
+	states.HOW_TO_PLAY_ONE,
+	states.HOW_TO_PLAY_TWO,
+	states.CUTSCENE_ONE,
+	states.RESULT_ONE,
+	states.RESULT_TWO,
+	states.RESULT_THREE,
+	states.RESULT_FINAL,
+}
+
+playable_states = {
+	states.TUTORIAL_ONE,
+	states.TUTORIAL_TWO,
+	states.LEVEL_ONE,
+	states.LEVEL_TWO,
+	states.LEVEL_THREE
 }
 
 faucets = { 2, 9, 5 } -- red, yellow, blue faucets
@@ -23,20 +45,26 @@ faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 -- table with information for each level like time (possible others in the future)
 -- time in seconds
 levels_metadata = {
+	tutorial_one = { 
+		time = 1000
+	},
+	tutorial_two = { 
+		time = 1000
+	},
 	level_one = { 
 		time = 15,
 		max_steps = 2,
-		faucets = {faucets[1], faucets[2]},
+		faucets = faucets,
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
-		time = 15 ,
+		time = 15,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
-		time = 15 ,
+		time = 15,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
@@ -104,7 +132,6 @@ RECT_HEIGHT = 100
 TIMER_Y = 10
 TIMER_HEIGHT = 100
 
--- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = {}
 
 completed_orders = {}
@@ -116,10 +143,11 @@ ANY_FAUCET_DROPPING = false
 -- called at 60Hz by TIC-80
 function TIC()
 	update()
-	draw()
+	draw()	
 
 	-- TODO: remove debug slot lines and center
-	--  for i = 1, #drop_slots do
+	-- print(CURR_STATE, 100, 100)
+	-- for i = 1, #drop_slots do
 	--  	l = drop_slots[i][1]
 	--  	r = drop_slots[i][2]
 	-- 	line(l, 0, l, 135, 5)
@@ -131,23 +159,22 @@ function TIC()
 	-- 	line(x, 0, x, 135, 10)
 	-- end
 
-	rectb(0, 0, 240, 136, 5) -- screen box
+	-- rectb(0, 0, 240, 136, 5) -- screen box
 end
 
 -- updates
 function update()
 	FRAME_COUNTER = FRAME_COUNTER + 1
-	if (CURR_STATE == states.MAIN_MENU) then
-		if keyp(Z_KEYCODE) then
-			update_state_machine(events.START_GAME)
-		end
-	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
+	if has_value(skipable_states, CURR_STATE) and keyp(Z_KEYCODE) then
+		update_state_machine()
+	elseif has_value(playable_states, CURR_STATE) then
 		update_orders()
 		update_mouse()
 		update_flasks()
 		update_streams()
 		update_smokes()
 		handle_timeout()
+		if #orders == 0 then update_state_machine()	end
 		-- toRemove = checkCompleteOrder() #TODO -> returns index of completed task
 		if keyp(1) and #orders ~= 0 then
 			remove_order(math.random(1, math.min(3, #orders)))
@@ -155,22 +182,41 @@ function update()
 	end
 end
 
-function update_state_machine(event)
-	if event == events.MAIN_MENU then
-		--music(0)
-		CURR_STATE = states.MAIN_MENU
-	elseif event == events.START_GAME then
+function update_state_machine()
+	sfx(-1)
+	-- just advances linearly
+	-- could be done with indexes in the future
+	if CURR_STATE == states.MAIN_MENU then
+		CURR_STATE = states.CUTSCENE_ZERO
+	elseif CURR_STATE == states.CUTSCENE_ZERO then
+		CURR_STATE = states.HOW_TO_PLAY_ONE
+	elseif CURR_STATE == states.HOW_TO_PLAY_ONE then
+		CURR_STATE = states.TUTORIAL_ONE
+	elseif CURR_STATE == states.TUTORIAL_ONE then
+		CURR_STATE = states.HOW_TO_PLAY_TWO
+	elseif CURR_STATE == states.HOW_TO_PLAY_TWO then
+		CURR_STATE = states.TUTORIAL_TWO
+	elseif CURR_STATE == states.TUTORIAL_TWO then
+		CURR_STATE = states.CUTSCENE_ONE
+	elseif CURR_STATE == states.CUTSCENE_ONE then
 		CURR_STATE = states.LEVEL_ONE
-		setup_level()
-	elseif event == events.NEXT_LEVEL then
-		if CURR_STATE == states.LEVEL_ONE then
-			CURR_STATE = states.LEVEL_TWO
-			setup_level()
-		elseif CURR_STATE == states.LEVEL_TWO then
-			CURR_STATE = states.LEVEL_THREE
-			setup_level()
-		end		
+	elseif CURR_STATE == states.LEVEL_ONE then
+		CURR_STATE = states.RESULT_ONE
+	elseif CURR_STATE == states.RESULT_ONE then
+		CURR_STATE = states.LEVEL_TWO
+	elseif CURR_STATE == states.LEVEL_TWO then
+		CURR_STATE = states.RESULT_TWO
+	elseif CURR_STATE == states.RESULT_TWO then
+		CURR_STATE = states.LEVEL_THREE
+	elseif CURR_STATE == states.LEVEL_THREE then
+		CURR_STATE = states.RESULT_THREE
+	elseif CURR_STATE == states.RESULT_THREE then
+		CURR_STATE = states.RESULT_FINAL
+	elseif CURR_STATE == states.RESULT_FINAL then
+		CURR_STATE = states.MAIN_MENU
 	end
+
+	if has_value(playable_states, CURR_STATE) then setup_level() end
 end
 
 function update_mouse()
@@ -193,18 +239,26 @@ end
 
 function update_flasks()
 	handle_faucet_sfx()
-	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
+	if key(FAUCET_KEYCODE_1) and #smoke_red_particles < 10 then
 		center_stream = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_red, 3)
 	end
-	if key(FAUCET_KEYCODE_2) and selected ~= 2 then	
+	if key(FAUCET_KEYCODE_2) and #smoke_blue_particles < 10 then	
 		center_stream = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_blue, 10)
 	end
-	if key(FAUCET_KEYCODE_3) and selected ~= 3 and CURR_STATE ~= states.LEVEL_ONE then
+	if key(FAUCET_KEYCODE_3) and #smoke_green_particles < 10 and CURR_STATE ~= states.TUTORIAL_ONE then
 		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_green, 6)
 	end
+
+	-- handle transition of flasks
+	for i = 1, #flasks do
+		cur_slot = flasks[i].cur_slot
+		final_center = (drop_slots[cur_slot][1] + drop_slots[cur_slot][2]) / 2
+		flasks[i].center_x = flasks[i].center_x + (final_center - flasks[i].center_x) / 10
+	end	
+	
 end
 
 function generate_stream_particles(center, particles, particle_color)
@@ -226,7 +280,7 @@ end
 function handle_faucet_sfx()
 	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
 		if not ANY_FAUCET_DROPPING then
-			if key(FAUCET_KEYCODE_3) and CURR_STATE == states.LEVEL_ONE then
+			if key(FAUCET_KEYCODE_3) and CURR_STATE == states.TUTORIAL_ONE then
 				sfx(35, 25, -1, 0, 6)
 			else
 				sfx(32, 25, -1, 0, 6)
@@ -246,22 +300,25 @@ end
 
 function update_smokes() 
 	center = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
-	update_smoke(smoke_red_particles, center)
+	red_flask = flasks[get_flask_at(1)]
+	update_smoke(smoke_red_particles, center, red_flask)
 	
 	center = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
-	update_smoke(smoke_blue_particles, center)
+	blue_flask = flasks[get_flask_at(2)]
+	update_smoke(smoke_blue_particles, center, blue_flask)
 	
 	center = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
-	update_smoke(smoke_green_particles, center)
+	green_flask = flasks[get_flask_at(3)]
+	update_smoke(smoke_green_particles, center, green_flask)
 end
 
-function update_smoke(particles, center) 
+function update_smoke(particles, center, flask) 
 	width = 30
 	height = 84
-	max_prox_x = 5
+
 	i = 1
 	for j = 1, #particles do 
-		update_smoke_particle(particles[j], center, width, height)
+		update_smoke_particle(particles[j], flask.center_x, width, height)
 	end
 	while i < #particles do 
 		if particles[i].time_to_live <= 0 then
@@ -285,12 +342,14 @@ function update_smoke_particle(particle, center, width, height)
 	particle.size = particle.size + random_float(-0.2, -0.1)
 	
 	if particle.pos[1] < center - width/2 then 
-		particle.velocity[1] = random_float(0.1, 0.8)
+		particle.velocity[1] = particle.velocity[1] + random_float(0.1, 0.8)
 	elseif particle.pos[1] > center + width/2 then
-		particle.velocity[1] = random_float(-0.8, -0.1)
+		particle.velocity[1] = particle.velocity[1] + random_float(-0.8, -0.1)
+	else 
+		particle.velocity[1] = particle.velocity[1] + random_float(-0.1, 0.1)
 	end
 
-	particle.velocity[1] = random_float(-0.1, 0.1)
+	
 
 	if height - particle.pos[2] < max_prox_x then 
 		particle.velocity[2] = particle.velocity[2] + random_float(-0.1, -0.01)
@@ -300,24 +359,35 @@ function update_smoke_particle(particle, center, width, height)
 		particle.velocity[2] = particle.velocity[2] + random_float(-0.01, 0.01)
 	end
 
-	--velocity_y = randomFloat(-1, 1)
+	--velocity_y = random_float(-1, 1)
 	-- update properties
 	particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	particle.pos[2] = particle.pos[2] + particle.velocity[2]
+
+	particle.pos[1] = math.min(math.max(particle.pos[1], center - width / 2), center + width / 2)
+
+	-- check if bounce is necessary
+	if particle.pos[1] == center + width / 2 then 
+		particle.velocity[1] = random_float(-2,-1)
+		particle.pos[1] = particle.pos[1] + particle.velocity[1]
+	elseif particle.pos[1] == center - width / 2 then 
+		particle.velocity[1] = random_float(1,2)
+		particle.pos[1] = particle.pos[1] + particle.velocity[1]
+	end
 end
 
 function update_streams() 
 	red_flask = flasks[get_flask_at(1)]
-	update_stream(particles_red, red_flask)
+	update_stream(particles_red, red_flask, smoke_red_particles)
 	
 	blue_flask = flasks[get_flask_at(2)]
-	update_stream(particles_blue, blue_flask)
+	update_stream(particles_blue, blue_flask, smoke_blue_particles)
 	
 	green_flask = flasks[get_flask_at(3)]
-	update_stream(particles_green, green_flask)
+	update_stream(particles_green, green_flask, smoke_green_particles)
 end
 
-function update_stream(particles, flask)
+function update_stream(particles, flask, smoke_particles)
 	height = 131
 	order_length = #flask.fill_order
 
@@ -329,6 +399,10 @@ function update_stream(particles, flask)
 	while i <= #particles do 
 		update_stream_particle(particles[i], flask, height)
 
+		if #smoke_particles > 10 then 
+			particles[i].time_to_live = particles[i].time_to_live / 10
+		end
+
 		if particles[i].time_to_live <= 0 then 
 			table.remove(particles, i)
 		else 
@@ -338,6 +412,8 @@ function update_stream(particles, flask)
 end
 
 function update_stream_particle(particle, flask, height) 
+	center = flask.center_x
+
 	if particle.color ~= 12 then
 		particle.velocity[1] = particle.velocity[1] + random_float(-0.01,0.01)
 		particle.size = math.max(math.min(particle.size + random_float(-0.4,0.3), 5),1)
@@ -357,15 +433,36 @@ function update_stream_particle(particle, flask, height)
 	particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	particle.pos[2] = particle.pos[2] + particle.velocity[2]
 
+	final_height = height
+
+	if particle.pos[1] < center - FLASK_WIDTH / 2 or particle.pos[1] > center + FLASK_WIDTH / 2 then
+		final_height = 1000
+	end
+
 	-- check if particle has reached stream
-	if particle.pos[2] > height and particle.color ~= 12 then
+	if particle.pos[2] > final_height and particle.color ~= 12 then
 		particle.pos[2] = particle.pos[2] - 0.5
 		particle.color = 12
 		particle.velocity[1] = random_float(-2,2)
 		particle.velocity[2] = random_float(PARTICLE_SPEED / 6 - 1, PARTICLE_SPEED / 6 + 1)
 		fill_flask(flask)
-	elseif particle.pos[2] < height and particle.color == 12 then
+	elseif particle.pos[2] < final_height and particle.color == 12 then
 		particle.velocity[2] = -particle.velocity[2]/2 
+	elseif particle.pos[2] > 160 then
+		particle.time_to_live = 0
+	end
+
+	if particle.color == 12 then
+		particle.pos[1] = math.min(math.max(particle.pos[1], center - width / 2), center + width / 2)
+	end
+
+	-- check if bounce is necessary
+	if particle.pos[1] == center + width / 2 and color == 12 then 
+		particle.velocity[1] = random_float(-2,-1)
+		particle.pos[1] = particle.pos[1] + particle.velocity[1]
+	elseif particle.pos[1] == center - width / 2 and color == 12 then 
+		particle.velocity[1] = random_float(1,2)
+		particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	end
 end
 
@@ -400,7 +497,7 @@ function check_if_flask_full(flask)
 
 		explosion_octave = math.random(26, 46)
 		sfx(37, explosion_octave, -1, 0, 10, 0)
-		generate_smoke_particles(flask.cur_slot)
+		generate_smoke_particles(flask)
 	end
 end
 
@@ -412,15 +509,15 @@ smoke_red_particles = {}
 smoke_blue_particles = {}
 smoke_green_particles = {}
 
-function generate_smoke_particles(slot)
-	center_stream = (drop_slots[slot][1] + drop_slots[slot][2]) / 2 - 2
-
+function generate_smoke_particles(flask)
+	slot = flask.cur_slot
+	
 	if slot == 1 then
-		generate_smoke(center_stream, smoke_red_particles, 12, 4, 3)
-	elseif slot == 2 then
-		generate_smoke(center_stream, smoke_blue_particles, 12, 11, 10)
+		generate_smoke(flask.center_x, smoke_red_particles, 12, 4, 3)
+	elseif slot == 2 then	
+		generate_smoke(flask.center_x, smoke_blue_particles, 12, 11, 10)
 	elseif slot == 3 then
-		generate_smoke(center_stream, smoke_green_particles, 12, 5, 6)
+		generate_smoke(flask.center_x, smoke_green_particles, 12, 5, 6)
 	end
 end
 
@@ -455,7 +552,7 @@ function calculate_score(fill_order)
 	if fill_order == nil then
 		return 0
 	end
-	for i=1, 3 do
+	for i=1, math.min(3, #orders) do
 		for j=1, #orders[i].content do
 			if #fill_order ~= #orders[i].content then
 				score = 0
@@ -514,9 +611,9 @@ function mouse_up(flask)
 	closest = get_closest_slot(flask.center_x)
 	closest_flask = flasks[get_flask_at(closest)]
 	closest_flask.cur_slot = flask.cur_slot
-	closest_flask.center_x = (drop_slots[closest_flask.cur_slot][2] + drop_slots[closest_flask.cur_slot][1]) / 2
+	--closest_flask.center_x = (drop_slots[closest_flask.cur_slot][2] + drop_slots[closest_flask.cur_slot][1]) / 2
 	flask.cur_slot = closest
-	flask.center_x = (drop_slots[flask.cur_slot][2] + drop_slots[flask.cur_slot][1]) / 2
+	--flask.center_x = (drop_slots[flask.cur_slot][2] + drop_slots[flask.cur_slot][1]) / 2
 end
 
 function get_closest_slot(x)
@@ -539,17 +636,14 @@ function handle_timeout()
 		TIMER_HEIGHT = TIMER_HEIGHT - timer_incr
 	end
 
-	if FRAME_COUNTER >= timeout then
-		FRAME_COUNTER = 0
-		update_state_machine(events.NEXT_LEVEL)
-	end
+	if FRAME_COUNTER >= timeout then update_state_machine()	end
 end
 
 function setup_level()
 	--music(2)
-	TIMER_LENGTH = RECT_LENGTH
 	TIMER_HEIGHT = RECT_HEIGHT
 	TIMER_Y = 10
+	FRAME_COUNTER = 0
 
 	-- empty flasks
 	for i = 1, #flasks do
@@ -557,12 +651,28 @@ function setup_level()
 	end
 
 	-- generate orders for next level
-	orders = generate_orders(
-		30, 
-		levels_metadata[CURR_STATE].max_steps, 
-		levels_metadata[CURR_STATE].faucets, 
-		levels_metadata[CURR_STATE].percentages
-	)
+	if CURR_STATE == states.TUTORIAL_ONE then
+		orders = {
+			{ content = {{faucets[1], 1}}, pos = {168, 137}, target = {168, vertical_targets[1] } },
+			{ content = {{faucets[2], 1}}, pos = {168 + ORDER_PADDING, 137}, target = {168, vertical_targets[2] } },
+			{ content = {{faucets[1], 1}}, pos = {168 + ORDER_PADDING * 2, 137}, target = {168, vertical_targets[3] } },
+			{ content = {{faucets[2], 1}}, pos = {168, 137}, target = {168, vertical_targets[4] } },
+		}
+	elseif CURR_STATE == states.TUTORIAL_TWO then
+		orders = {
+			{ content = {{faucets[1], 0.5}, {faucets[2], 0.5}}, pos = {168, 137}, target = {168, vertical_targets[1] } },
+			{ content = {{faucets[2], 0.25}, {faucets[3], 0.75}}, pos = {168 + ORDER_PADDING, 137}, target = {168, vertical_targets[2] } },
+			{ content = {{faucets[3], 1}}, pos = {168, 137}, target = {168, vertical_targets[3] } },
+			{ content = {{faucets[3], 0.5}, {faucets[1], 0.5}}, pos = {168 + ORDER_PADDING * 2, 137}, target = {168, vertical_targets[4] } },
+		}
+	else
+		orders = generate_orders(
+			30, 
+			levels_metadata[CURR_STATE].max_steps, 
+			levels_metadata[CURR_STATE].faucets, 
+			levels_metadata[CURR_STATE].percentages
+		)
+	end
 end
 
 function generate_orders(norders, max_steps, faucets, percentages)
@@ -645,7 +755,23 @@ function draw()
 	cls(BACKGROUND_COLOR)
 	if (CURR_STATE == states.MAIN_MENU) then
 		draw_main_menu()
-	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
+	elseif (CURR_STATE == states.CUTSCENE_ZERO) then
+		draw_cutscene_zero()
+	elseif (CURR_STATE == states.HOW_TO_PLAY_ONE) then
+		draw_how_to_play_one()
+	elseif (CURR_STATE == states.HOW_TO_PLAY_TWO) then
+		draw_how_to_play_two()
+	elseif (CURR_STATE == states.CUTSCENE_ONE) then
+		draw_cutscene_one()
+	elseif (CURR_STATE == states.RESULT_ONE) then
+		draw_result_one()
+	elseif (CURR_STATE == states.RESULT_TWO) then
+		draw_result_two()
+	elseif (CURR_STATE == states.RESULT_THREE) then
+		draw_result_three()
+	elseif (CURR_STATE == states.RESULT_FINAL) then
+		draw_result_final()
+	elseif has_value(playable_states, CURR_STATE) then
 		draw_game()
 	end
 end
@@ -655,6 +781,39 @@ function draw_main_menu()
 	print('From the minds of BOB, MOUZI 2', 30, 42, 15, false, 1, true)
 	print('and SPACEBAR', 30, 50, 15, false, 1, true)
 	print('Press Z to start...', 30, 116, 7, false, 1, true)
+end
+
+function draw_cutscene_zero()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_how_to_play_one()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_how_to_play_two()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_cutscene_one()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_result_one()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_result_two()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_result_three()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_result_final()
+	-- use total_stars global to display diff stuff
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
 
 function draw_game()
@@ -679,7 +838,7 @@ function draw_smoke(particles)
 	for i = 1, #particles do 
 		-- if is shrinking, draw a circle
 		if particles[i].color == particles[i].color_2 or particles[i].color == particles[i].color_3 then 
-			circ(particles[i].pos[1], particles[i].pos[2], particles[i].size, particles[i].color)
+			circ(particles[i].pos[1], particles[i].pos[2], particles[i].size / 2, particles[i].color)
 		else
 			rect(particles[i].pos[1], particles[i].pos[2], particles[i].size, particles[i].size, particles[i].color)
 		end
@@ -744,6 +903,29 @@ function draw_selected_flask()
 	-- selected flask is always on top
 	selected_flask = flasks[get_flask_at(selected)]
 	draw_flask_fluid(selected_flask)
+
+	particles = nil
+	if selected_flask.cur_slot == 1 then
+		particles = particles_red
+	elseif selected_flask.cur_slot == 2 then
+		particles = particles_blue
+	elseif selected_flask.cur_slot == 3 then
+		particles = particles_green
+	end
+
+	for i = 1, #particles do 
+		--particles_red.pos[1]
+		rect(particles[i].pos[1], particles[i].pos[2], math.floor(particles[i].size), math.floor(particles[i].size), particles[i].color)
+	end
+
+	if selected_flask.cur_slot == 1 then
+		draw_smoke(smoke_red_particles)
+	elseif selected_flask.cur_slot == 2 then
+		draw_smoke(smoke_blue_particles)
+	elseif selected_flask.cur_slot == 3 then
+		draw_smoke(smoke_green_particles)
+	end
+
 	spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 end
 
@@ -751,7 +933,6 @@ function draw_orders()
 	-- Orders are 8px from the edges
 	-- Orders are spaced 12px between each other
 	-- Orders are 32px by 16px and scaled by 2
-
 	for i=1, math.min(#orders, 4) do
 		create_order_ui(i, orders)
 	end
@@ -805,8 +986,8 @@ function draw_faucets()
 	-- draw out of order faucet
 	pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
 
-	if CURR_STATE == states.LEVEL_ONE then
-		spr(8 ,pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
+	if CURR_STATE == states.TUTORIAL_ONE then
+		spr(8, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	else
 		spr(6, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	end
@@ -818,6 +999,16 @@ function draw_score()
 end
 
 -- utils
+function has_value (tab, val)
+    for index, value in ipairs(tab) do
+        if value == val then
+            return true
+        end
+    end
+
+    return false
+end
+
 function map(func, tbl)
 	local newtbl = {}
 	for i, v in pairs(tbl) do
@@ -844,7 +1035,7 @@ function min_i(tbl)
 end
 
 function init()
-	update_state_machine(events.MAIN_MENU)
+	CURR_STATE = states.MAIN_MENU
 	draw_main_menu()
 end
 init()
