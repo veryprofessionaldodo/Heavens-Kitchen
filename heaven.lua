@@ -53,31 +53,31 @@ faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 -- time in seconds
 levels_metadata = {
 	tutorial_one = { 
-		time = 3,
+		time = 1000,
 		max_steps = 1,
 		faucets = {faucets[1], faucets[2]},
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	tutorial_two = { 
-		time = 3,
+		time = 1000,
 		max_steps = 2,
 		faucets = {faucets[1], faucets[2]},
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_one = { 
-		time = 3,
+		time = 15,
 		max_steps = 2,
-		faucets = {faucets[1], faucets[2]},
+		faucets = faucets,
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
-		time = 3,
+		time = 15,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
-		time = 3,
+		time = 15,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
@@ -157,25 +157,22 @@ ANY_FAUCET_DROPPING = false
 -- called at 60Hz by TIC-80
 function TIC()
 	update()
-	draw()
-	
-	print(CURR_STATE, 100, 100)
-
-
+	draw()	
 	-- TODO: remove debug slot lines and center
-	for i = 1, #drop_slots do
-	 	l = drop_slots[i][1]
-	 	r = drop_slots[i][2]
-		line(l, 0, l, 135, 5)
-		line(r, 0, r, 135, 5)
-	end
+	-- print(CURR_STATE, 100, 100)
+	-- for i = 1, #drop_slots do
+	--  	l = drop_slots[i][1]
+	--  	r = drop_slots[i][2]
+	-- 	line(l, 0, l, 135, 5)
+	-- 	line(r, 0, r, 135, 5)
+	-- end
 
-	for i = 1, #flasks do
-		x = flasks[i].center_x
-		line(x, 0, x, 135, 10)
-	end
+	-- for i = 1, #flasks do
+	-- 	x = flasks[i].center_x
+	-- 	line(x, 0, x, 135, 10)
+	-- end
 
-	rectb(0, 0, 240, 136, 5) -- screen box
+	-- rectb(0, 0, 240, 136, 5) -- screen box
 end
 
 -- updates
@@ -190,6 +187,7 @@ function update()
 		update_streams()
 		update_smokes()
 		handle_timeout()
+		if #orders == 0 then update_state_machine()	end
 		-- toRemove = checkCompleteOrder() #TODO -> returns index of completed task
 		if keyp(1) and #orders ~= 0 then
 			remove_order(math.random(1, math.min(3, #orders)))
@@ -262,7 +260,7 @@ function update_flasks()
 		center_stream = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_blue, 10)
 	end
-	if key(FAUCET_KEYCODE_3) and #smoke_green_particles < 10 and CURR_STATE ~= states.LEVEL_ONE then
+	if key(FAUCET_KEYCODE_3) and #smoke_green_particles < 10 and CURR_STATE ~= states.TUTORIAL_ONE then
 		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_green, 6)
 	end
@@ -299,7 +297,7 @@ end
 function handle_faucet_sfx()
 	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
 		if not ANY_FAUCET_DROPPING then
-			if key(FAUCET_KEYCODE_3) and CURR_STATE == states.LEVEL_ONE then
+			if key(FAUCET_KEYCODE_3) and CURR_STATE == states.TUTORIAL_ONE then
 				sfx(35, 25, -1, 0, 6)
 			else
 				sfx(32, 25, -1, 0, 6)
@@ -571,7 +569,7 @@ function calculate_score(fill_order)
 	if fill_order == nil then
 		return 0
 	end
-	for i=1, 3 do
+	for i=1, math.min(3, #orders) do
 		for j=1, #orders[i].content do
 			if #fill_order ~= #orders[i].content then
 				score = 0
@@ -655,15 +653,11 @@ function handle_timeout()
 		TIMER_HEIGHT = TIMER_HEIGHT - timer_incr
 	end
 
-	if FRAME_COUNTER >= timeout then
-		FRAME_COUNTER = 0
-		update_state_machine()
-	end
+	if FRAME_COUNTER >= timeout then update_state_machine()	end
 end
 
 function setup_level()
 	--music(2)
-	TIMER_LENGTH = RECT_LENGTH
 	TIMER_HEIGHT = RECT_HEIGHT
 	TIMER_Y = 10
 	FRAME_COUNTER = 0
@@ -675,7 +669,19 @@ function setup_level()
 
 	-- generate orders for next level
 	if CURR_STATE == states.TUTORIAL_ONE then
+		orders = {
+			{ content = {{faucets[1], 1}}, pos = {168, 137}, target = {168, vertical_targets[1] } },
+			{ content = {{faucets[2], 1}}, pos = {168 + ORDER_PADDING, 137}, target = {168, vertical_targets[2] } },
+			{ content = {{faucets[1], 1}}, pos = {168 + ORDER_PADDING * 2, 137}, target = {168, vertical_targets[3] } },
+			{ content = {{faucets[2], 1}}, pos = {168, 137}, target = {168, vertical_targets[4] } },
+		}
 	elseif CURR_STATE == states.TUTORIAL_TWO then
+		orders = {
+			{ content = {{faucets[1], 0.5}, {faucets[2], 0.5}}, pos = {168, 137}, target = {168, vertical_targets[1] } },
+			{ content = {{faucets[2], 0.25}, {faucets[3], 0.75}}, pos = {168 + ORDER_PADDING, 137}, target = {168, vertical_targets[2] } },
+			{ content = {{faucets[3], 1}}, pos = {168, 137}, target = {168, vertical_targets[3] } },
+			{ content = {{faucets[3], 0.5}, {faucets[1], 0.5}}, pos = {168 + ORDER_PADDING * 2, 137}, target = {168, vertical_targets[4] } },
+		}
 	else
 		orders = generate_orders(
 			30, 
@@ -973,8 +979,8 @@ function draw_faucets()
 	-- draw out of order faucet
 	pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
 
-	if CURR_STATE == states.LEVEL_ONE then
-		spr(8 ,pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
+	if CURR_STATE == states.TUTORIAL_ONE then
+		spr(8, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	else
 		spr(6, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	end
