@@ -401,18 +401,18 @@ function setup_level()
 
 	-- generate orders for next level
 	if CURR_STATE == states.LEVEL_ONE then
-		orders = generate_orders(5, 10, 2, {faucets[1], faucets[2]}, {0.25, 0.50, 0.75, 1})
+		orders = generate_orders(20, 2, {faucets[1], faucets[2]}, {0.25, 0.50, 0.75, 1})
 	elseif CURR_STATE == states.LEVEL_TWO then
-		orders = generate_orders(5, 10, 3, faucets, {0.15, 0.25, 0.50, 0.75, 0.85, 1})
+		orders = generate_orders(20, 3, faucets, {0.15, 0.25, 0.50, 0.75, 0.85, 1})
 	elseif CURR_STATE == states.LEVEL_THREE then
-		orders = generate_orders(5, 10, 3, faucets, {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1})
+		orders = generate_orders(20, 3, faucets, {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1})
 	end
 end
 
-function generate_orders(min_orders, max_orders, max_steps, faucets, percentages)
+function generate_orders(norders, max_steps, faucets, percentages)
 	-- orders
 	local orders = {}
-	for o = 1, math.random(min_orders, max_orders) do
+	for o = 1, norders do
 		pos = {168, 137 + (o - 1) * ORDER_PADDING }
 		target = { 168, vertical_targets[o] or 137 }
 		
