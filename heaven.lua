@@ -4,22 +4,40 @@
 -- script: lua
 
 states = {
-	MAIN_MENU = 'menu',
+	MAIN_MENU = 'main_menu',
+	CUTSCENE_ZERO = 'cutscene_zero',
+	HOW_TO_PLAY_ONE = 'how_to_play_one',
+	TUTORIAL_ONE = 'tutorial_one',
+	HOW_TO_PLAY_TWO = 'how_to_play_two',
+	TUTORIAL_TWO = 'tutorial_two',
 	CUTSCENE_ONE = 'cutscene_one',
 	LEVEL_ONE = 'level_one',
-	CUTSCENE_TWO = 'cutscene_two',
+	RESULT_ONE = 'result_one',
 	LEVEL_TWO = 'level_two',
-	CUTSCENE_THREE = 'transtion_two',
-	LEVEL_THREE = 'level_three'
+	RESULT_TWO = 'result_two',
+	LEVEL_THREE = 'level_three',
+	RESULT_THREE = 'result_three',
+	RESULT_FINAL = 'result_final'
 }
 
-events = {
-	MAIN_MENU = 'main',
-	END_CUTSCENE = 'end_cutscene',
-	START_GAME = 'start',
-	NEXT_LEVEL = 'next',
-	LOST_GAME = 'lost',
-	WON_GAME = 'won'
+skipable_states = {
+	states.MAIN_MENU,
+	states.CUTSCENE_ZERO,
+	states.HOW_TO_PLAY_ONE,
+	states.HOW_TO_PLAY_TWO,
+	states.CUTSCENE_ONE,
+	states.RESULT_ONE,
+	states.RESULT_TWO,
+	states.RESULT_THREE,
+	states.RESULT_FINAL,
+}
+
+playable_states = {
+	states.TUTORIAL_ONE,
+	states.TUTORIAL_TWO,
+	states.LEVEL_ONE,
+	states.LEVEL_TWO,
+	states.LEVEL_THREE
 }
 
 faucets = { 2, 9, 5 } -- red, yellow, blue faucets
@@ -27,20 +45,26 @@ faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 -- table with information for each level like time (possible others in the future)
 -- time in seconds
 levels_metadata = {
+	tutorial_one = { 
+		time = 1000
+	},
+	tutorial_two = { 
+		time = 1000
+	},
 	level_one = { 
-		time = 10,
+		time = 45,
 		max_steps = 2,
-		faucets = {faucets[1], faucets[2]},
+		faucets = faucets,
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
-		time = 10,
+		time = 30,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
-		time = 10,
+		time = 25,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
@@ -64,6 +88,9 @@ flask3 = {
 	fill_order = {}, 
 	cur_slot = 3,
 }
+
+total_stars = 0
+current_stars = 0
 
 total_score = 0 -- total score of the player
 
@@ -109,6 +136,10 @@ RECT_HEIGHT = 100
 TIMER_Y = 10
 TIMER_HEIGHT = 100
 
+LEVEL_ONE_SCORE = 300
+LEVEL_TWO_SCORE = 450
+LEVEL_THREE_SCORE = 600
+
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = {}
 
@@ -121,10 +152,11 @@ ANY_FAUCET_DROPPING = false
 -- called at 60Hz by TIC-80
 function TIC()
 	update()
-	draw()
+	draw()	
 
 	-- TODO: remove debug slot lines and center
-	--  for i = 1, #drop_slots do
+	-- print(CURR_STATE, 100, 100)
+	-- for i = 1, #drop_slots do
 	--  	l = drop_slots[i][1]
 	--  	r = drop_slots[i][2]
 	-- 	line(l, 0, l, 135, 5)
@@ -136,28 +168,23 @@ function TIC()
 	-- 	line(x, 0, x, 135, 10)
 	-- end
 
-	rectb(0, 0, 240, 136, 5) -- screen box
+	-- rectb(0, 0, 240, 136, 5) -- screen box
 end
 
 -- updates
 function update()
 	FRAME_COUNTER = FRAME_COUNTER + 1
-	if (CURR_STATE == states.MAIN_MENU) then
-		if keyp(Z_KEYCODE) then
-			update_state_machine(events.START_GAME)
-		end
-	elseif (CURR_STATE == states.CUTSCENE_ONE or CURR_STATE == states.CUTSCENE_TWO or CURR_STATE == states.CUTSCENE_THREE) then
-		if keyp(Z_KEYCODE) then
-			update_state_machine(events.END_CUTSCENE)
-		end
-	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
-		update_creatures()
+	if has_value(skipable_states, CURR_STATE) and keyp(Z_KEYCODE) then
+		update_state_machine()
+	elseif has_value(playable_states, CURR_STATE) then
 		update_orders()
 		update_mouse()
+		update_creatures()
 		update_flasks()
 		update_streams()
 		update_smokes()
 		handle_timeout()
+		if #orders == 0 then update_state_machine()	end
 		-- toRemove = checkCompleteOrder() #TODO -> returns index of completed task
 		if keyp(1) and #orders ~= 0 then
 			remove_order(math.random(1, math.min(3, #orders)))
@@ -165,33 +192,60 @@ function update()
 	end
 end
 
-function update_state_machine(event)
-	-- Clear all running sound effects on state switch
+function update_state_machine()
 	sfx(-1)
-
-	if event == events.MAIN_MENU then
-		--music(0)
-		CURR_STATE = states.MAIN_MENU
-	elseif event == events.START_GAME then
+	-- just advances linearly
+	-- could be done with indexes in the future
+	if CURR_STATE == states.MAIN_MENU then
+		CURR_STATE = states.CUTSCENE_ZERO
+	elseif CURR_STATE == states.CUTSCENE_ZERO then
+		CURR_STATE = states.HOW_TO_PLAY_ONE
+	elseif CURR_STATE == states.HOW_TO_PLAY_ONE then
+		CURR_STATE = states.TUTORIAL_ONE
+	elseif CURR_STATE == states.TUTORIAL_ONE then
+		CURR_STATE = states.HOW_TO_PLAY_TWO
+	elseif CURR_STATE == states.HOW_TO_PLAY_TWO then
+		CURR_STATE = states.TUTORIAL_TWO
+	elseif CURR_STATE == states.TUTORIAL_TWO then
 		CURR_STATE = states.CUTSCENE_ONE
-	elseif event == events.END_CUTSCENE then
-		if CURR_STATE == states.CUTSCENE_ONE then
-			CURR_STATE = states.LEVEL_ONE
-			setup_level()
-		elseif CURR_STATE == states.CUTSCENE_TWO then
-			CURR_STATE = states.LEVEL_TWO
-			setup_level()
-		elseif CURR_STATE == states.CUTSCENE_THREE then
-			CURR_STATE = states.LEVEL_THREE
-			setup_level()
-		end
-	elseif event == events.NEXT_LEVEL then
-		if CURR_STATE == states.LEVEL_ONE then
-			CURR_STATE = states.CUTSCENE_TWO
-		elseif CURR_STATE == states.LEVEL_TWO then
-			CURR_STATE = states.CUTSCENE_THREE
-		end		
+	elseif CURR_STATE == states.CUTSCENE_ONE then
+		CURR_STATE = states.LEVEL_ONE
+	elseif CURR_STATE == states.LEVEL_ONE then
+		CURR_STATE = states.RESULT_ONE
+		calculate_stars()
+	elseif CURR_STATE == states.RESULT_ONE then
+		CURR_STATE = states.LEVEL_TWO
+	elseif CURR_STATE == states.LEVEL_TWO then
+		CURR_STATE = states.RESULT_TWO
+		calculate_stars()
+	elseif CURR_STATE == states.RESULT_TWO then
+		CURR_STATE = states.LEVEL_THREE
+	elseif CURR_STATE == states.LEVEL_THREE then
+		CURR_STATE = states.RESULT_THREE
+		calculate_stars()
+	elseif CURR_STATE == states.RESULT_THREE then
+		CURR_STATE = states.RESULT_FINAL
+	elseif CURR_STATE == states.RESULT_FINAL then
+		CURR_STATE = states.MAIN_MENU
 	end
+
+	if has_value(playable_states, CURR_STATE) then setup_level() end
+end
+
+function calculate_stars()
+	local stars = 0
+	if CURR_STATE == states.RESULT_ONE then
+		stars = math.floor(total_score / (LEVEL_ONE_SCORE / 3))
+	elseif CURR_STATE == states.RESULT_TWO then
+		stars = math.floor(total_score / (LEVEL_TWO_SCORE / 3))
+	elseif CURR_STATE == states.RESULT_THREE then
+		stars = math.floor(total_score / (LEVEL_THREE_SCORE / 3))
+	end
+	if stars > 3 then
+		stars = 3
+	end
+	current_stars = stars;
+	total_stars = total_stars + current_stars;
 end
 
 function update_mouse()
@@ -222,7 +276,7 @@ function update_flasks()
 		center_stream = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_blue, 10)
 	end
-	if key(FAUCET_KEYCODE_3) and #smoke_green_particles < 10 and CURR_STATE ~= states.LEVEL_ONE then
+	if key(FAUCET_KEYCODE_3) and #smoke_green_particles < 10 and CURR_STATE ~= states.TUTORIAL_ONE then
 		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_green, 6)
 	end
@@ -281,7 +335,7 @@ end
 function handle_faucet_sfx()
 	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
 		if not ANY_FAUCET_DROPPING then
-			if key(FAUCET_KEYCODE_3) and CURR_STATE == states.LEVEL_ONE then
+			if key(FAUCET_KEYCODE_3) and CURR_STATE == states.TUTORIAL_ONE then
 				sfx(35, 25, -1, 0, 6)
 			else
 				sfx(32, 25, -1, 0, 6)
@@ -343,11 +397,11 @@ function update_smoke_particle(particle, center, width, height)
 	particle.size = particle.size + random_float(-0.2, -0.1)
 	
 	if particle.pos[1] < center - width/2 then 
-		particle.velocity[1] = particle.velocity[1] + randomFloat(0.1, 0.8)
+		particle.velocity[1] = particle.velocity[1] + random_float(0.1, 0.8)
 	elseif particle.pos[1] > center + width/2 then
-		particle.velocity[1] = particle.velocity[1] + randomFloat(-0.8, -0.1)
+		particle.velocity[1] = particle.velocity[1] + random_float(-0.8, -0.1)
 	else 
-		particle.velocity[1] = particle.velocity[1] + randomFloat(-0.1, 0.1)
+		particle.velocity[1] = particle.velocity[1] + random_float(-0.1, 0.1)
 	end
 
 	
@@ -360,7 +414,7 @@ function update_smoke_particle(particle, center, width, height)
 		particle.velocity[2] = particle.velocity[2] + random_float(-0.01, 0.01)
 	end
 
-	--velocity_y = randomFloat(-1, 1)
+	--velocity_y = random_float(-1, 1)
 	-- update properties
 	particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	particle.pos[2] = particle.pos[2] + particle.velocity[2]
@@ -611,7 +665,7 @@ function calculate_score(fill_order)
 	if fill_order == nil then
 		return 0
 	end
-	for i=1, 3 do
+	for i=1, math.min(3, #orders) do
 		for j=1, #orders[i].content do
 			if #fill_order ~= #orders[i].content then
 				score = 0
@@ -693,18 +747,15 @@ function handle_timeout()
 		TIMER_HEIGHT = TIMER_HEIGHT - timer_incr
 	end
 
-	if FRAME_COUNTER >= timeout then
-		FRAME_COUNTER = 0
-		update_state_machine(events.NEXT_LEVEL)
-	end
+	if FRAME_COUNTER >= timeout then update_state_machine()	end
 end
 
 function setup_level()
 	--music(2)
-	TIMER_LENGTH = RECT_LENGTH
 	TIMER_HEIGHT = RECT_HEIGHT
 	TIMER_Y = 10
 	FRAME_COUNTER = 0
+	total_score = 0
 
 	-- empty flasks
 	for i = 1, #flasks do
@@ -712,12 +763,28 @@ function setup_level()
 	end
 
 	-- generate orders for next level
-	orders = generate_orders(
-		30, 
-		levels_metadata[CURR_STATE].max_steps, 
-		levels_metadata[CURR_STATE].faucets, 
-		levels_metadata[CURR_STATE].percentages
-	)
+	if CURR_STATE == states.TUTORIAL_ONE then
+		orders = {
+			{ content = {{faucets[1], 1}}, pos = {168, 137}, target = {168, vertical_targets[1] } },
+			{ content = {{faucets[2], 1}}, pos = {168 + ORDER_PADDING, 137}, target = {168, vertical_targets[2] } },
+			{ content = {{faucets[1], 1}}, pos = {168 + ORDER_PADDING * 2, 137}, target = {168, vertical_targets[3] } },
+			{ content = {{faucets[2], 1}}, pos = {168, 137}, target = {168, vertical_targets[4] } },
+		}
+	elseif CURR_STATE == states.TUTORIAL_TWO then
+		orders = {
+			{ content = {{faucets[1], 0.5}, {faucets[2], 0.5}}, pos = {168, 137}, target = {168, vertical_targets[1] } },
+			{ content = {{faucets[2], 0.25}, {faucets[3], 0.75}}, pos = {168 + ORDER_PADDING, 137}, target = {168, vertical_targets[2] } },
+			{ content = {{faucets[3], 1}}, pos = {168, 137}, target = {168, vertical_targets[3] } },
+			{ content = {{faucets[3], 0.5}, {faucets[1], 0.5}}, pos = {168 + ORDER_PADDING * 2, 137}, target = {168, vertical_targets[4] } },
+		}
+	else
+		orders = generate_orders(
+			30, 
+			levels_metadata[CURR_STATE].max_steps, 
+			levels_metadata[CURR_STATE].faucets, 
+			levels_metadata[CURR_STATE].percentages
+		)
+	end
 end
 
 function generate_orders(norders, max_steps, faucets, percentages)
@@ -800,13 +867,23 @@ function draw()
 	cls(BACKGROUND_COLOR)
 	if (CURR_STATE == states.MAIN_MENU) then
 		draw_main_menu()
+	elseif (CURR_STATE == states.CUTSCENE_ZERO) then
+		draw_cutscene_zero()
+	elseif (CURR_STATE == states.HOW_TO_PLAY_ONE) then
+		draw_how_to_play_one()
+	elseif (CURR_STATE == states.HOW_TO_PLAY_TWO) then
+		draw_how_to_play_two()
 	elseif (CURR_STATE == states.CUTSCENE_ONE) then
-		draw_first_cutscene()
-	elseif (CURR_STATE == states.CUTSCENE_TWO) then
-		draw_second_cutscene()
-	elseif (CURR_STATE == states.CUTSCENE_THREE) then
-		draw_third_cutscene()
-	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
+		draw_cutscene_one()
+	elseif (CURR_STATE == states.RESULT_ONE) then
+		draw_result_one()
+	elseif (CURR_STATE == states.RESULT_TWO) then
+		draw_result_two()
+	elseif (CURR_STATE == states.RESULT_THREE) then
+		draw_result_three()
+	elseif (CURR_STATE == states.RESULT_FINAL) then
+		draw_result_final()
+	elseif has_value(playable_states, CURR_STATE) then
 		draw_game()
 	end
 end
@@ -818,21 +895,50 @@ function draw_main_menu()
 	print('Press Z to start...', 30, 116, 7, false, 1, true)
 end
 
-
-function draw_first_cutscene()
-	print('Lorem ipsum dolor sit amet, consectetur', 0, 0, 10)
-	print(' adipiscing elit', 0, 10, 10)
+function draw_cutscene_zero()
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
 
-function draw_second_cutscene()
-	print('GOD', 0, 0, 2)
+function draw_how_to_play_one()
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
 
-function draw_third_cutscene()
-	print('GOOD JOB', 0, 0, 2)
+function draw_how_to_play_two()
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_cutscene_one()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_result_one()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	draw_stars()
+end
+
+function draw_result_two()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	draw_stars()
+end
+
+function draw_result_three()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	draw_stars()
+end
+
+function draw_result_final()
+	-- use total_stars global to display diff stuff
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_stars()
+	for i=1, 3 do
+		if i <= current_stars then 
+			spr(36, 90 + 8 * i, 60, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela cheia
+		else
+			spr(34, 90 + 8 * i, 60, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela vazia
+		end
+	end 
 end
 
 function draw_game()
@@ -959,7 +1065,6 @@ function draw_orders()
 	-- Orders are 8px from the edges
 	-- Orders are spaced 12px between each other
 	-- Orders are 32px by 16px and scaled by 2
-
 	for i=1, math.min(#orders, 4) do
 		create_order_ui(i, orders)
 	end
@@ -967,12 +1072,10 @@ function draw_orders()
 	for i=1, #completed_orders do
 		create_order_ui(i, completed_orders)
 	end
-
 end
 
 function create_order_ui(i, o)
 	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 3)
-		
 	for j=1, #o[i].content do
 
 		colorSpr = -1
@@ -1015,8 +1118,8 @@ function draw_faucets()
 	-- draw out of order faucet
 	pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
 
-	if CURR_STATE == states.LEVEL_ONE then
-		spr(8 ,pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
+	if CURR_STATE == states.TUTORIAL_ONE then
+		spr(8, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	else
 		spr(6, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	end
@@ -1028,6 +1131,16 @@ function draw_score()
 end
 
 -- utils
+function has_value (tab, val)
+    for index, value in ipairs(tab) do
+        if value == val then
+            return true
+        end
+    end
+
+    return false
+end
+
 function map(func, tbl)
 	local newtbl = {}
 	for i, v in pairs(tbl) do
@@ -1054,7 +1167,7 @@ function min_i(tbl)
 end
 
 function init()
-	update_state_machine(events.MAIN_MENU)
+	CURR_STATE = states.MAIN_MENU
 	draw_main_menu()
 end
 init()
@@ -1070,12 +1183,12 @@ init()
 -- 009:ee44443022443430422443404424443014224340144243404442344014411330
 -- 010:0000000000c0000000c0000000c0c00000c0c00000c0000000c0c00000c00000
 -- 011:0000000000000c0000000c0000000c0000000d0000000d0000000c0000000d00
--- 012:0fffffffffccccccfcccccccfcccccccfcccccccfcccccccfcccccccfccccccc
--- 013:ffffffffcccccccccccccccccccccccccccccccccccccccccccccccccccccccc
--- 014:ffffffffcccccccccccccccccccccccccccccccccccccccccccccccccccccccc
--- 015:fffffff0ccccccffcccccccfcccccccfcccccccfcccccccfcccccccfcccccccf
--- 016:00c00e0000e00e0000ec0e0000d22e000d2222e0d322222ed332333e0ddddee0
--- 017:000000000e0000e00ee00ee000e90e0000ec9e0000d89e0000d88e00000dd000
+-- 012:0999999999cccccc9ccccccc9ccccccc9ccccccc9ccccccc9ccccccc9ccccccc
+-- 013:99999999cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-- 014:99999999cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-- 015:99999990cccccc99ccccccc9ccccccc9ccccccc9ccccccc9ccccccc9ccccccc9
+-- 016:00d00e0000e00e0000e20e0000d22e000d2212e0d322222ed332333e0ddddee0
+-- 017:000000000e0000e00ee00ee000ea0e0000e99e0000d89e0000d88e00000dd000
 -- 018:001122cc0011122200000022000000e2000000df0000000e0000000000000000
 -- 019:cc22ff00222fff00220000002f000000ff000000f00000000000000000000000
 -- 020:008999990089999c00099999000000ff000000ff0000000d0000000000000000
@@ -1086,13 +1199,21 @@ init()
 -- 025:44431330211113303333300033f00000ff000000f00000000000000000000000
 -- 026:00d0000000d0000000c0000000d0000000d0000000c0000000d0000000d00000
 -- 027:00000d0000000d0000000d0000000d0000000d00000c0d00000c0e00000c0d00
--- 028:fcccccccfcccccccfcccccccfcccccccffcccccc0fffffff0000000000000000
--- 029:ccccccccccccccccccccccccccccccccccccccccffffffff0000000000000000
--- 030:ccccccccccccccccccccccccccccccccccccccccffffffff0000000000000000
--- 031:cccccccfcccccccfcccccccfcccccccfccccccfffffcccf000ffcff0000fff00
--- 032:00e00e000e5000e0e5c5500edc55555ed655555ed665555ed666665e0dddddd0
+-- 028:9ccccccc9ccccccc9ccccccc9ccccccc99cccccc099999990000000000000000
+-- 029:cccccccccccccccccccccccccccccccccccccccc999999990000000000000000
+-- 030:cccccccccccccccccccccccccccccccccccccccc999999990000000000000000
+-- 031:ccccccc9ccccccc9ccccccc9ccccccc9cccccc99999ccc900099c99000099900
+-- 032:00e00e000e5000d0e555500dd455555dd645555ed665555ed666665e0dddddd0
+-- 034:0000000d000000dc000000dc00000ddcddddddccdccccccc0ddccccc00ddcccd
+-- 035:d0000000dd000000dd000000cdd00000cdddddddddddddddddddddd0ddddde00
+-- 036:000000040000004c0000004c000004cc44444cc4c4cccc44044cc44400444444
+-- 037:40000000c4000000440000004440000044444444444c443144c4431044443300
 -- 042:00d0000000d0000000c0000000d0000000d0000000d0000000d0000000d00000
 -- 043:00000d0000000e0000000e0000000d0000000e0000000e0000000e0000000e00
+-- 050:000dcddd000ddddd00eddddd00eddddd0eedddeeeeddeff0edeef000eee00000
+-- 051:dddde000ddddf000ddedef00deddee00eeeddde00eeeedee000fffdf00000fff
+-- 052:00044c44000444c4003444440034444403444333144333101333100033300000
+-- 053:4444300044443000444443004444430033444330033331300003331300000311
 -- 058:00d0000000d00c0000d0000000dde000000ede000000eeee0000000000000000
 -- 059:000c0e00000c0e0000c00e000000de0000dee000eeee00000000000000000000
 -- 064:0000000000c0000000c0000000c0c00000c0c00000c0000000c0c00000c00000
