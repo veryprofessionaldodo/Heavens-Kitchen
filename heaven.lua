@@ -53,25 +53,25 @@ FAUCETS = { 2, 9, 5 } -- red, yellow, blue FAUCETS
 -- percentages
 LEVELS_METADATA = {
 	tutorial_one = { 
-		time = 5-- math.huge -- no timeout for tutorials
+		time = math.huge -- no timeout for tutorials
 	},
 	tutorial_two = { 
-		time = 5 -- math.huge -- no timeout for tutorials
+		time = math.huge -- no timeout for tutorials
 	},
 	level_one = { 
-		time = 5, --90,
+		time = 90,
 		max_steps = 2,
 		FAUCETS = FAUCETS,
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
-		time = 5, --60,
+		time = 60,
 		max_steps = 3,
 		FAUCETS = FAUCETS,
 		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
-		time = 5, --60,
+		time = 60,
 		max_steps = 3,
 		FAUCETS = FAUCETS,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
