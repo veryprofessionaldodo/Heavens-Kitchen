@@ -143,9 +143,9 @@ RECT_HEIGHT = 100
 TIMER_Y = 10
 TIMER_HEIGHT = 100
 
-LEVEL_ONE_SCORE = 300
-LEVEL_TWO_SCORE = 450
-LEVEL_THREE_SCORE = 600
+LEVEL_ONE_SCORE = 1050
+LEVEL_TWO_SCORE = 510
+LEVEL_THREE_SCORE = 570
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = {}
