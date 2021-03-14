@@ -849,7 +849,15 @@ function draw_how_to_play_one()
 end
 
 function draw_how_to_play_two()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	print_cutscene_message('Fantastic job!', 20, 46)
+	print_cutscene_message('You now know the basics of how to operate', 20, 54)
+	print_cutscene_message('the H.E.C.K. machine.', 20, 62)
+
+	print_cutscene_message('You are ready to face a bigger challenge', 20, 78)
+	print_cutscene_message('and work with the fully-functioning device!', 20, 86)
+
+	draw_god()
+	draw_continue_message()
 end
 
 function draw_cutscene_one()
