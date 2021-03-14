@@ -1123,8 +1123,12 @@ function draw_game()
 	draw_flasks_fluid()
 	draw_faucets()
 	draw_orders()
-	draw_timer()
-	draw_score()
+
+	if CURR_STATE ~= states.TUTORIAL_ONE and CURR_STATE ~= states.TUTORIAL_TWO then
+		draw_timer()
+		draw_score()
+	end
+
 	draw_particles()
 	draw_creatures()
 	draw_smokes()
