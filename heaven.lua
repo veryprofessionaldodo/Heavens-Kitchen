@@ -4,43 +4,80 @@
 -- script: lua
 
 states = {
-	MAIN_MENU = 'menu',
+	MAIN_MENU = 'main_menu',
+	CUTSCENE_ZERO = 'cutscene_zero',
+	HOW_TO_PLAY_ONE = 'how_to_play_one',
+	TUTORIAL_ONE = 'tutorial_one',
+	HOW_TO_PLAY_TWO = 'how_to_play_two',
+	TUTORIAL_TWO = 'tutorial_two',
 	CUTSCENE_ONE = 'cutscene_one',
 	LEVEL_ONE = 'level_one',
-	CUTSCENE_TWO = 'cutscene_two',
+	RESULT_ONE = 'result_one',
 	LEVEL_TWO = 'level_two',
-	CUTSCENE_THREE = 'transtion_two',
-	LEVEL_THREE = 'level_three'
+	RESULT_TWO = 'result_two',
+	LEVEL_THREE = 'level_three',
+	RESULT_THREE = 'result_three',
+	RESULT_FINAL = 'result_final'
 }
 
-events = {
-	MAIN_MENU = 'main',
-	END_CUTSCENE = 'end_cutscene',
-	START_GAME = 'start',
-	NEXT_LEVEL = 'next',
-	LOST_GAME = 'lost',
-	WON_GAME = 'won'
+skipable_states = {
+	states.MAIN_MENU,
+	states.CUTSCENE_ZERO,
+	states.HOW_TO_PLAY_ONE,
+	states.HOW_TO_PLAY_TWO,
+	states.CUTSCENE_ONE,
+	states.RESULT_ONE,
+	states.RESULT_TWO,
+	states.RESULT_THREE,
+	states.RESULT_FINAL,
 }
+
+playable_states = {
+	states.TUTORIAL_ONE,
+	states.TUTORIAL_TWO,
+	states.LEVEL_ONE,
+	states.LEVEL_TWO,
+	states.LEVEL_THREE
+}
+
+-- events = {
+-- 	MAIN_MENU = 'main',
+-- 	END_CUTSCENE = 'end_cutscene',
+-- 	START_GAME = 'start',
+-- 	NEXT = 'next',
+-- }
 
 faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 
 -- table with information for each level like time (possible others in the future)
 -- time in seconds
 levels_metadata = {
+	tutorial_one = { 
+		time = 3,
+		max_steps = 1,
+		faucets = {faucets[1], faucets[2]},
+		percentages = {0.25, 0.50, 0.75, 1}
+	},
+	tutorial_two = { 
+		time = 3,
+		max_steps = 2,
+		faucets = {faucets[1], faucets[2]},
+		percentages = {0.25, 0.50, 0.75, 1}
+	},
 	level_one = { 
-		time = 10,
+		time = 3,
 		max_steps = 2,
 		faucets = {faucets[1], faucets[2]},
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
-		time = 10,
+		time = 3,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
-		time = 10,
+		time = 3,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
@@ -121,19 +158,22 @@ ANY_FAUCET_DROPPING = false
 function TIC()
 	update()
 	draw()
+	
+	print(CURR_STATE, 100, 100)
+
 
 	-- TODO: remove debug slot lines and center
-	--  for i = 1, #drop_slots do
-	--  	l = drop_slots[i][1]
-	--  	r = drop_slots[i][2]
-	-- 	line(l, 0, l, 135, 5)
-	-- 	line(r, 0, r, 135, 5)
-	-- end
+	for i = 1, #drop_slots do
+	 	l = drop_slots[i][1]
+	 	r = drop_slots[i][2]
+		line(l, 0, l, 135, 5)
+		line(r, 0, r, 135, 5)
+	end
 
-	-- for i = 1, #flasks do
-	-- 	x = flasks[i].center_x
-	-- 	line(x, 0, x, 135, 10)
-	-- end
+	for i = 1, #flasks do
+		x = flasks[i].center_x
+		line(x, 0, x, 135, 10)
+	end
 
 	rectb(0, 0, 240, 136, 5) -- screen box
 end
@@ -141,15 +181,9 @@ end
 -- updates
 function update()
 	FRAME_COUNTER = FRAME_COUNTER + 1
-	if (CURR_STATE == states.MAIN_MENU) then
-		if keyp(Z_KEYCODE) then
-			update_state_machine(events.START_GAME)
-		end
-	elseif (CURR_STATE == states.CUTSCENE_ONE or CURR_STATE == states.CUTSCENE_TWO or CURR_STATE == states.CUTSCENE_THREE) then
-		if keyp(Z_KEYCODE) then
-			update_state_machine(events.END_CUTSCENE)
-		end
-	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
+	if has_value(skipable_states, CURR_STATE) and keyp(Z_KEYCODE) then
+		update_state_machine()
+	elseif has_value(playable_states, CURR_STATE) then
 		update_orders()
 		update_mouse()
 		update_flasks()
@@ -163,30 +197,40 @@ function update()
 	end
 end
 
-function update_state_machine(event)
-	if event == events.MAIN_MENU then
-		--music(0)
-		CURR_STATE = states.MAIN_MENU
-	elseif event == events.START_GAME then
+function update_state_machine()
+	-- just advances linearly
+	-- could be done with indexes in the future
+	if CURR_STATE == states.MAIN_MENU then
+		CURR_STATE = states.CUTSCENE_ZERO
+	elseif CURR_STATE == states.CUTSCENE_ZERO then
+		CURR_STATE = states.HOW_TO_PLAY_ONE
+	elseif CURR_STATE == states.HOW_TO_PLAY_ONE then
+		CURR_STATE = states.TUTORIAL_ONE
+	elseif CURR_STATE == states.TUTORIAL_ONE then
+		CURR_STATE = states.HOW_TO_PLAY_TWO
+	elseif CURR_STATE == states.HOW_TO_PLAY_TWO then
+		CURR_STATE = states.TUTORIAL_TWO
+	elseif CURR_STATE == states.TUTORIAL_TWO then
 		CURR_STATE = states.CUTSCENE_ONE
-	elseif event == events.END_CUTSCENE then
-		if CURR_STATE == states.CUTSCENE_ONE then
-			CURR_STATE = states.LEVEL_ONE
-			setup_level()
-		elseif CURR_STATE == states.CUTSCENE_TWO then
-			CURR_STATE = states.LEVEL_TWO
-			setup_level()
-		elseif CURR_STATE == states.CUTSCENE_THREE then
-			CURR_STATE = states.LEVEL_THREE
-			setup_level()
-		end
-	elseif event == events.NEXT_LEVEL then
-		if CURR_STATE == states.LEVEL_ONE then
-			CURR_STATE = states.CUTSCENE_TWO
-		elseif CURR_STATE == states.LEVEL_TWO then
-			CURR_STATE = states.CUTSCENE_THREE
-		end		
+	elseif CURR_STATE == states.CUTSCENE_ONE then
+		CURR_STATE = states.LEVEL_ONE
+	elseif CURR_STATE == states.LEVEL_ONE then
+		CURR_STATE = states.RESULT_ONE
+	elseif CURR_STATE == states.RESULT_ONE then
+		CURR_STATE = states.LEVEL_TWO
+	elseif CURR_STATE == states.LEVEL_TWO then
+		CURR_STATE = states.RESULT_TWO
+	elseif CURR_STATE == states.RESULT_TWO then
+		CURR_STATE = states.LEVEL_THREE
+	elseif CURR_STATE == states.LEVEL_THREE then
+		CURR_STATE = states.RESULT_THREE
+	elseif CURR_STATE == states.RESULT_THREE then
+		CURR_STATE = states.RESULT_FINAL
+	elseif CURR_STATE == states.RESULT_FINAL then
+		CURR_STATE = states.MAIN_MENU
 	end
+
+	if has_value(playable_states, CURR_STATE) then setup_level() end
 end
 
 function update_mouse()
@@ -612,7 +656,7 @@ function handle_timeout()
 
 	if FRAME_COUNTER >= timeout then
 		FRAME_COUNTER = 0
-		update_state_machine(events.NEXT_LEVEL)
+		update_state_machine()
 	end
 end
 
@@ -629,12 +673,16 @@ function setup_level()
 	end
 
 	-- generate orders for next level
-	orders = generate_orders(
-		30, 
-		levels_metadata[CURR_STATE].max_steps, 
-		levels_metadata[CURR_STATE].faucets, 
-		levels_metadata[CURR_STATE].percentages
-	)
+	if CURR_STATE == states.TUTORIAL_ONE then
+	elseif CURR_STATE == states.TUTORIAL_TWO then
+	else
+		orders = generate_orders(
+			30, 
+			levels_metadata[CURR_STATE].max_steps, 
+			levels_metadata[CURR_STATE].faucets, 
+			levels_metadata[CURR_STATE].percentages
+		)
+	end
 end
 
 function generate_orders(norders, max_steps, faucets, percentages)
@@ -723,7 +771,7 @@ function draw()
 		draw_second_cutscene()
 	elseif (CURR_STATE == states.CUTSCENE_THREE) then
 		draw_third_cutscene()
-	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
+	elseif has_value(playable_states, CURR_STATE) then
 		draw_game()
 	end
 end
@@ -734,7 +782,6 @@ function draw_main_menu()
 	print('and SPACEBAR', 30, 50, 15, false, 1, true)
 	print('Press Z to start...', 30, 116, 7, false, 1, true)
 end
-
 
 function draw_first_cutscene()
 	print('Lorem ipsum dolor sit amet, consectetur', 0, 0, 10)
@@ -938,6 +985,16 @@ function draw_score()
 end
 
 -- utils
+function has_value (tab, val)
+    for index, value in ipairs(tab) do
+        if value == val then
+            return true
+        end
+    end
+
+    return false
+end
+
 function map(func, tbl)
 	local newtbl = {}
 	for i, v in pairs(tbl) do
@@ -964,7 +1021,7 @@ function min_i(tbl)
 end
 
 function init()
-	update_state_machine(events.MAIN_MENU)
+	CURR_STATE = states.MAIN_MENU
 	draw_main_menu()
 end
 init()
