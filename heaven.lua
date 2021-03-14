@@ -404,6 +404,8 @@ function check_if_flask_full(flask)
 		total_score = total_score + score
 		flask.fill_order = {}
 
+		explosion_octave = math.random(26, 46)
+		sfx(37, explosion_octave, -1, 0, 10, 0)
 		generate_smoke_particles(flask.cur_slot)
 	end
 end
@@ -421,7 +423,7 @@ function generate_smoke_particles(slot)
 
 	if slot == 1 then
 		generate_smoke(center_stream, smoke_red_particles, 12, 4, 3)
-	elseif slot == 2 then	
+	elseif slot == 2 then
 		generate_smoke(center_stream, smoke_blue_particles, 12, 11, 10)
 	elseif slot == 3 then
 		generate_smoke(center_stream, smoke_green_particles, 12, 5, 6)
