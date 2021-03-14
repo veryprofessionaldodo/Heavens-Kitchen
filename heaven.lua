@@ -50,10 +50,10 @@ faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 -- time in seconds
 levels_metadata = {
 	tutorial_one = { 
-		time = 1000
+		time = math.huge -- no timeout for tutorials
 	},
 	tutorial_two = { 
-		time = 1000
+		time = math.huge -- no timeout for tutorials
 	},
 	level_one = { 
 		time = 45,
