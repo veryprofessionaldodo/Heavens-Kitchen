@@ -3,7 +3,7 @@
 -- desc:   Play as a mad chemist working for God
 -- script: lua
 
-states = {
+STATES = {
 	MAIN_MENU = 'main_menu',
 	CUTSCENE_ZERO = 'cutscene_zero',
 	CUTSCENE_ONE = 'cutscene_one',
@@ -22,36 +22,36 @@ states = {
 	RESULT_FINAL = 'result_final'
 }
 
-skipable_states = {
-	states.MAIN_MENU,
-	states.CUTSCENE_ZERO,
-	states.CUTSCENE_ONE,
-	states.CUTSCENE_TWO,
-	states.HOW_TO_PLAY_ONE,
-	states.HOW_TO_PLAY_TWO,
-	states.CUTSCENE_THREE,
-	states.RESULT_ONE,
-	states.RESULT_TWO,
-	states.RESULT_THREE,
-	states.RESULT_FINAL,
+SKIPPABLE_STATES = {
+	STATES.MAIN_MENU,
+	STATES.CUTSCENE_ZERO,
+	STATES.CUTSCENE_ONE,
+	STATES.CUTSCENE_TWO,
+	STATES.HOW_TO_PLAY_ONE,
+	STATES.HOW_TO_PLAY_TWO,
+	STATES.CUTSCENE_THREE,
+	STATES.RESULT_ONE,
+	STATES.RESULT_TWO,
+	STATES.RESULT_THREE,
+	STATES.RESULT_FINAL,
 }
 
-playable_states = {
-	states.TUTORIAL_ONE,
-	states.TUTORIAL_TWO,
-	states.LEVEL_ONE,
-	states.LEVEL_TWO,
-	states.LEVEL_THREE
+PLAYABLE_STATES = {
+	STATES.TUTORIAL_ONE,
+	STATES.TUTORIAL_TWO,
+	STATES.LEVEL_ONE,
+	STATES.LEVEL_TWO,
+	STATES.LEVEL_THREE
 }
 
-faucets = { 2, 9, 5 } -- red, yellow, blue faucets
+FAUCETS = { 2, 9, 5 } -- red, yellow, blue FAUCETS
 
 -- table with information for each level like time (possible others in the future)
 -- time in seconds
 -- max steps as max steps for recipes
--- faucets as faucets allowed
+-- FAUCETS as FAUCETS allowed
 -- percentages
-levels_metadata = {
+LEVELS_METADATA = {
 	tutorial_one = { 
 		time = math.huge -- no timeout for tutorials
 	},
@@ -61,58 +61,55 @@ levels_metadata = {
 	level_one = { 
 		time = 90,
 		max_steps = 2,
-		faucets = faucets,
+		FAUCETS = FAUCETS,
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
 		time = 60,
 		max_steps = 3,
-		faucets = faucets,
+		FAUCETS = FAUCETS,
 		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
 		time = 60,
 		max_steps = 3,
-		faucets = faucets,
+		FAUCETS = FAUCETS,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
 	}
 }
 
-flask1 = {
+FLASK1 = {
 	center_x = 42, -- center x
 	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
 	cur_slot = 1, -- current slot the flask is placed in
 }
 
-flask2 = {
+FLASK2 = {
 	center_x = 92,
 	fill_order = {},
 	cur_slot = 2,
 }
 
-flask3 = {
+FLASK3 = {
 	center_x = 142,
 	fill_order = {}, 
 	cur_slot = 3,
 }
 
-total_stars = 0
-current_stars = 0
+FLASKS = { FLASK1, FLASK2, FLASK3 }
+SELECTED = nil -- SELECTED flask to drag
 
-total_score = 0 -- total score of the player
+TOTAL_SCORE = 0
+TOTAL_STARS = 0
+CURRENT_STARS = 0
 
-flasks = { flask1, flask2, flask3 } -- not ordered
+DROP_SLOTS = { {24, 60}, {74, 110}, {124, 160} } -- ranges of the drop slots
 
-drop_slots = { {24, 60}, {74, 110}, {124, 160} } -- ranges of the drop slots
-
-selected = nil -- selected flask to drag
-
--- constants
 SCREEN_WIDTH = 240
 SCREEN_HEIGHT = 136
 CLOCK_FREQ = 60 --Hz
 
-CURR_STATE = states.MAIN_MENU
+CUR_STATE = STATES.MAIN_MENU
 
 FLASK_WIDTH = 36
 FLASK_OFFSET_Y = 4
@@ -148,13 +145,40 @@ LEVEL_TWO_SCORE = 510
 LEVEL_THREE_SCORE = 570
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
-orders = {}
+ORDERS = {}
 
-completed_orders = {}
-vertical_targets = { 8, 52, 96, 137 }
+COMPLETED_ORDERS = {}
+VERTICAL_TARGETS = { 8, 52, 96, 137 }
 
--- miguel code for sfx
 ANY_FAUCET_DROPPING = false
+
+-- transition particle system, each particle contains the follwoing 
+-- components: position, velocity, color, size, color, color_2, color_3
+-- (used for transitions) and time_to_live
+-- used to check if stream can be activated or not
+SMOKE_RED_PARTICLES = {}
+SMOKE_GREEN_PARTICLES = {}
+SMOKE_BLUE_PARTICLES = {}
+
+-- particles are simple objects that have five components:
+-- position, velocity, color time-to-live, and size
+PARTICLES_RED = {}
+PARTICLES_GREEN = {}
+PARTICLES_BLUE = {}
+
+HAIR_THRESHOLD = 35
+PERSON_THRESHOLD = 30
+COW_THRESHOLD = 20
+FROG_THRESHOLD = 10
+TIME_UNTIL_CREATURE_DROP = 100
+
+-- contains the CREATURES, and each contain the following information:
+-- flask, position, y_velocity, starting sprite, width, height
+CREATURES = {}
+
+HALO_ANIM_COUNTER = 0
+HALO_HEIGHT = 3
+HALO_SPEED = 0.3
 
 -- called at 60Hz by TIC-80
 function TIC()
@@ -165,9 +189,9 @@ end
 -- updates
 function update()
 	FRAME_COUNTER = FRAME_COUNTER + 1
-	if has_value(skipable_states, CURR_STATE) and keyp(Z_KEYCODE) then
+	if has_value(SKIPPABLE_STATES, CUR_STATE) and keyp(Z_KEYCODE) then
 		update_state_machine()
-	elseif has_value(playable_states, CURR_STATE) then
+	elseif has_value(PLAYABLE_STATES, CUR_STATE) then
 		update_orders()
 		update_mouse()
 		update_creatures()
@@ -175,156 +199,146 @@ function update()
 		update_streams()
 		update_smokes()
 		handle_timeout()
-		if #orders == 0 then update_state_machine()	end
+		if #ORDERS == 0 then update_state_machine()	end
 	end
 end
 
 function update_state_machine()
+	-- stops all SFX
 	sfx(-1)
-	-- just advances linearly
-	-- could be done with indexes in the future
-	if CURR_STATE == states.MAIN_MENU then
-		CURR_STATE = states.CUTSCENE_ZERO
-	elseif CURR_STATE == states.CUTSCENE_ZERO then
-		CURR_STATE = states.CUTSCENE_ONE
-	elseif CURR_STATE == states.CUTSCENE_ONE then
-		CURR_STATE = states.CUTSCENE_TWO
-	elseif CURR_STATE == states.CUTSCENE_TWO then
-		CURR_STATE = states.HOW_TO_PLAY_ONE
-	elseif CURR_STATE == states.HOW_TO_PLAY_ONE then
-		CURR_STATE = states.TUTORIAL_ONE
-	elseif CURR_STATE == states.TUTORIAL_ONE then
-		CURR_STATE = states.HOW_TO_PLAY_TWO
-	elseif CURR_STATE == states.HOW_TO_PLAY_TWO then
-		CURR_STATE = states.TUTORIAL_TWO
-	elseif CURR_STATE == states.TUTORIAL_TWO then
-		CURR_STATE = states.CUTSCENE_THREE
-	elseif CURR_STATE == states.CUTSCENE_THREE then
+
+	-- advances state machine to next state
+	-- may run additional logic in between
+	if CUR_STATE == STATES.MAIN_MENU then
+		CUR_STATE = STATES.CUTSCENE_ZERO
+	elseif CUR_STATE == STATES.CUTSCENE_ZERO then
+		CUR_STATE = STATES.CUTSCENE_ONE
+	elseif CUR_STATE == STATES.CUTSCENE_ONE then
+		CUR_STATE = STATES.CUTSCENE_TWO
+	elseif CUR_STATE == STATES.CUTSCENE_TWO then
+		CUR_STATE = STATES.HOW_TO_PLAY_ONE
+	elseif CUR_STATE == STATES.HOW_TO_PLAY_ONE then
+		CUR_STATE = STATES.TUTORIAL_ONE
+	elseif CUR_STATE == STATES.TUTORIAL_ONE then
+		CUR_STATE = STATES.HOW_TO_PLAY_TWO
+	elseif CUR_STATE == STATES.HOW_TO_PLAY_TWO then
+		CUR_STATE = STATES.TUTORIAL_TWO
+	elseif CUR_STATE == STATES.TUTORIAL_TWO then
+		CUR_STATE = STATES.CUTSCENE_THREE
+	elseif CUR_STATE == STATES.CUTSCENE_THREE then
 		music(2)
-		CURR_STATE = states.LEVEL_ONE
-	elseif CURR_STATE == states.LEVEL_ONE then
+		CUR_STATE = STATES.LEVEL_ONE
+	elseif CUR_STATE == STATES.LEVEL_ONE then
 		music(1)
-		CURR_STATE = states.RESULT_ONE
+		CUR_STATE = STATES.RESULT_ONE
 		calculate_stars()
-	elseif CURR_STATE == states.RESULT_ONE then
+	elseif CUR_STATE == STATES.RESULT_ONE then
 		music(2)
-		CURR_STATE = states.LEVEL_TWO
-	elseif CURR_STATE == states.LEVEL_TWO then
+		CUR_STATE = STATES.LEVEL_TWO
+	elseif CUR_STATE == STATES.LEVEL_TWO then
 		music(1)
-		CURR_STATE = states.RESULT_TWO
+		CUR_STATE = STATES.RESULT_TWO
 		calculate_stars()
-	elseif CURR_STATE == states.RESULT_TWO then
+	elseif CUR_STATE == STATES.RESULT_TWO then
 		music(2)
-		CURR_STATE = states.LEVEL_THREE
-	elseif CURR_STATE == states.LEVEL_THREE then
+		CUR_STATE = STATES.LEVEL_THREE
+	elseif CUR_STATE == STATES.LEVEL_THREE then
 		music(1)
-		CURR_STATE = states.RESULT_THREE
+		CUR_STATE = STATES.RESULT_THREE
 		calculate_stars()
-	elseif CURR_STATE == states.RESULT_THREE then
-		if total_stars >= 4 then
-			music(4)
-		else
-			music(3)
-		end
-		CURR_STATE = states.RESULT_FINAL
-	elseif CURR_STATE == states.RESULT_FINAL then
+	elseif CUR_STATE == STATES.RESULT_THREE then
+		music(ifthenelse(TOTAL_STARS >= 4, 4, 3))
+		CUR_STATE = STATES.RESULT_FINAL
+	elseif CUR_STATE == STATES.RESULT_FINAL then
 		init()
 	end
 
-	if has_value(playable_states, CURR_STATE) then setup_level() end
+	if has_value(PLAYABLE_STATES, CUR_STATE) then setup_level() end
 end
 
 function calculate_stars()
 	local stars = 0
-	if CURR_STATE == states.RESULT_ONE then
-		stars = math.floor(total_score / (LEVEL_ONE_SCORE / 3))
-	elseif CURR_STATE == states.RESULT_TWO then
-		stars = math.floor(total_score / (LEVEL_TWO_SCORE / 3))
-	elseif CURR_STATE == states.RESULT_THREE then
-		stars = math.floor(total_score / (LEVEL_THREE_SCORE / 3))
+	if CUR_STATE == STATES.RESULT_ONE then
+		stars = math.floor(TOTAL_SCORE / (LEVEL_ONE_SCORE / 3))
+	elseif CUR_STATE == STATES.RESULT_TWO then
+		stars = math.floor(TOTAL_SCORE / (LEVEL_TWO_SCORE / 3))
+	elseif CUR_STATE == STATES.RESULT_THREE then
+		stars = math.floor(TOTAL_SCORE / (LEVEL_THREE_SCORE / 3))
 	end
-	if stars > 3 then
-		stars = 3
-	end
-	current_stars = stars;
-	total_stars = total_stars + current_stars;
+	CURRENT_STARS = ifthenelse(stars > 3, 3, stars)
+	TOTAL_STARS = TOTAL_STARS + CURRENT_STARS
 end
 
 function update_mouse()
-	mx, my, md = mouse()
+	local mx, _my, md = mouse()
 	if not md then
-		if selected ~= nil then
+		if SELECTED ~= nil then
 			sfx(34, 25, -1, 1, 8)
-			mouse_up(flasks[get_flask_at(selected)])
+			mouse_up(FLASKS[get_flask_at(SELECTED)])
 		end
-		selected = nil
-	elseif selected == nil then
+		SELECTED = nil
+	elseif SELECTED == nil then
 		sfx(33, 80, -1, 3, 8)
-		slot = get_slot(mx)
-		selected = slot
-	elseif selected ~= nil then
-		flask = flasks[get_flask_at(slot)]
-		flask.center_x = mx
+		local slot = get_slot(mx)
+		SELECTED = slot
+	elseif SELECTED ~= nil then
+		FLASKS[get_flask_at(SELECTED)].center_x = mx
 	end
 end
 
 function update_flasks()
 	handle_faucet_sfx()
-	if key(FAUCET_KEYCODE_1) and #smoke_red_particles < 10 then
-		center_stream = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
-		generate_stream_particles(center_stream, particles_red, 3)
+	if key(FAUCET_KEYCODE_1) and #SMOKE_RED_PARTICLES < 10 then
+		local center_stream = (DROP_SLOTS[1][1] + DROP_SLOTS[1][2]) / 2 - 2
+		generate_stream_particles(center_stream, PARTICLES_RED, 3)
 	end
-	if key(FAUCET_KEYCODE_2) and #smoke_blue_particles < 10 then	
-		center_stream = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
-		generate_stream_particles(center_stream, particles_blue, 10)
+	if key(FAUCET_KEYCODE_2) and #SMOKE_BLUE_PARTICLES < 10 then	
+		local center_stream = (DROP_SLOTS[2][1] + DROP_SLOTS[2][2]) / 2 - 2
+		generate_stream_particles(center_stream, PARTICLES_BLUE, 10)
 	end
-	if key(FAUCET_KEYCODE_3) and #smoke_green_particles < 10 and CURR_STATE ~= states.TUTORIAL_ONE then
-		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
-		generate_stream_particles(center_stream, particles_green, 6)
+	if key(FAUCET_KEYCODE_3) and #SMOKE_GREEN_PARTICLES < 10 and CUR_STATE ~= STATES.TUTORIAL_ONE then
+		local center_stream = (DROP_SLOTS[3][1] + DROP_SLOTS[3][2]) / 2 - 2
+		generate_stream_particles(center_stream, PARTICLES_GREEN, 6)
 	end
 
-	-- handle transition of flasks
-	if selected == nil then
-		for i = 1, #flasks do
-			cur_slot = flasks[i].cur_slot
-			final_center = (drop_slots[cur_slot][1] + drop_slots[cur_slot][2]) / 2
-			flasks[i].center_x = flasks[i].center_x + (final_center - flasks[i].center_x) / FLASK_TRANSITION_TIME
+	-- handle transition of FLASKS
+	if SELECTED == nil then
+		for i = 1, #FLASKS do
+			local cur_slot = FLASKS[i].cur_slot
+			local final_center = (DROP_SLOTS[cur_slot][1] + DROP_SLOTS[cur_slot][2]) / 2
+			FLASKS[i].center_x = FLASKS[i].center_x + (final_center - FLASKS[i].center_x) / FLASK_TRANSITION_TIME
 		end	
 	end
 end
 
 function update_creatures() 
-	i = 1
+	local i = 1
 
-	while i < #creatures + 1 do
-		creatures[i].time_to_drop = creatures[i].time_to_drop - 1
+	while i < #CREATURES + 1 do
+		CREATURES[i].time_to_drop = CREATURES[i].time_to_drop - 1
 
-		if creatures[i].time_to_drop <= 0 then 
-			creatures[i].velocity_y = creatures[i].velocity_y + 0.5
+		if CREATURES[i].time_to_drop <= 0 then 
+			CREATURES[i].velocity_y = CREATURES[i].velocity_y + 0.5
 		else 
-			creatures[i].pos[1] = creatures[i].flask.center_x
+			CREATURES[i].pos[1] = CREATURES[i].flask.center_x
 		end
 
-		creatures[i].pos[2] = creatures[i].pos[2] + creatures[i].velocity_y
+		CREATURES[i].pos[2] = CREATURES[i].pos[2] + CREATURES[i].velocity_y
 
-		if creatures[i].pos[2] > 200 then
-			table.remove(creatures, i)
+		if CREATURES[i].pos[2] > 200 then
+			table.remove(CREATURES, i)
 		else 
 			i = i + 1
 		end
 	end
 end
 
-function randomFloat(lower, greater)
-    return lower + math.random()  * (greater - lower);
-end
-
 function generate_stream_particles(center, particles, particle_color)
 	-- draw main stream
-	for i = 1, 25 do 
-		pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
-		pos_y = math.random(39, 40)
-		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={random_float(-0.1,0.1), random_float(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = random_float(1,3), time_to_live=random_float(20,40)}
+	for _ = 1, 25 do 
+		local pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
+		local pos_y = math.random(39, 40)
+		local particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={random_float(-0.1,0.1), random_float(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = random_float(1,3), time_to_live=random_float(20,40)}
 		if #particles < NUMBER_OF_STREAM_PARTICLES then
 			table.insert(particles, particle)
 		end
@@ -338,7 +352,7 @@ end
 function handle_faucet_sfx()
 	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
 		if not ANY_FAUCET_DROPPING then
-			if key(FAUCET_KEYCODE_3) and CURR_STATE == states.TUTORIAL_ONE then
+			if key(FAUCET_KEYCODE_3) and CUR_STATE == STATES.TUTORIAL_ONE then
 				sfx(35, 25, -1, 0, 6)
 			else
 				sfx(32, 25, -1, 0, 6)
@@ -346,35 +360,31 @@ function handle_faucet_sfx()
 			ANY_FAUCET_DROPPING = true
 		end
 	else
+		-- stop all SFX
 		sfx(-1)
 		ANY_FAUCET_DROPPING = false
 	end
 end
 
-
-function random_float(lower, greater)
-    return lower + math.random()  * (greater - lower);
-end
-
 function update_smokes() 
-	center = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
-	red_flask = flasks[get_flask_at(1)]
-	update_smoke(smoke_red_particles, center, red_flask)
+	local center = (DROP_SLOTS[1][1] + DROP_SLOTS[1][2]) / 2 - 2
+	local red_flask = FLASKS[get_flask_at(1)]
+	update_smoke(SMOKE_RED_PARTICLES, center, red_flask)
 	
-	center = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
-	blue_flask = flasks[get_flask_at(2)]
-	update_smoke(smoke_blue_particles, center, blue_flask)
+	local center = (DROP_SLOTS[2][1] + DROP_SLOTS[2][2]) / 2 - 2
+	local blue_flask = FLASKS[get_flask_at(2)]
+	update_smoke(SMOKE_BLUE_PARTICLES, center, blue_flask)
 	
-	center = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
-	green_flask = flasks[get_flask_at(3)]
-	update_smoke(smoke_green_particles, center, green_flask)
+	local center = (DROP_SLOTS[3][1] + DROP_SLOTS[3][2]) / 2 - 2
+	local green_flask = FLASKS[get_flask_at(3)]
+	update_smoke(SMOKE_GREEN_PARTICLES, center, green_flask)
 end
 
 function update_smoke(particles, center, flask) 
 	width = 30
-	height = 84
+	local height = 84
 
-	i = 1
+	local i = 1
 	for j = 1, #particles do 
 		update_smoke_particle(particles[j], flask.center_x, width, height)
 	end
@@ -382,7 +392,7 @@ function update_smoke(particles, center, flask)
 		if particles[i].time_to_live <= 0 then
 			table.remove(particles, i, center)
 		else 
-			i = i +1
+			i = i + 1
 		end
 	end
 end
@@ -407,8 +417,6 @@ function update_smoke_particle(particle, center, width, height)
 		particle.velocity[1] = particle.velocity[1] + random_float(-0.1, 0.1)
 	end
 
-	
-
 	if height - particle.pos[2] < max_prox_x then 
 		particle.velocity[2] = particle.velocity[2] + random_float(-0.1, -0.01)
 	elseif particle.pos[2] < 47 then
@@ -421,7 +429,6 @@ function update_smoke_particle(particle, center, width, height)
 	-- update properties
 	particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	particle.pos[2] = particle.pos[2] + particle.velocity[2]
-
 	particle.pos[1] = math.min(math.max(particle.pos[1], center - width / 2), center + width / 2)
 
 	-- check if bounce is necessary
@@ -435,25 +442,24 @@ function update_smoke_particle(particle, center, width, height)
 end
 
 function update_streams() 
-	red_flask = flasks[get_flask_at(1)]
-	update_stream(particles_red, red_flask, smoke_red_particles)
+	local red_flask = FLASKS[get_flask_at(1)]
+	update_stream(PARTICLES_RED, red_flask, SMOKE_RED_PARTICLES)
 	
-	blue_flask = flasks[get_flask_at(2)]
-	update_stream(particles_blue, blue_flask, smoke_blue_particles)
+	local blue_flask = FLASKS[get_flask_at(2)]
+	update_stream(PARTICLES_BLUE, blue_flask, SMOKE_BLUE_PARTICLES)
 	
-	green_flask = flasks[get_flask_at(3)]
-	update_stream(particles_green, green_flask, smoke_green_particles)
+	local green_flask = FLASKS[get_flask_at(3)]
+	update_stream(PARTICLES_GREEN, green_flask, SMOKE_GREEN_PARTICLES)
 end
 
 function update_stream(particles, flask, smoke_particles)
-	height = 131
-	order_length = #flask.fill_order
+	local height = 131
 
-	if order_length > 0 then
-		height = 131 - flask.fill_order[order_length][3]
+	if #flask.fill_order > 0 then
+		height = 131 - flask.fill_order[#flask.fill_order][3]
 	end
 
-	i = 1
+	local i = 1
 	while i <= #particles do 
 		if #smoke_particles > 10 then 
 			particles[i].time_to_live = particles[i].time_to_live / 10
@@ -524,7 +530,7 @@ function update_stream_particle(particle, flask, height)
 end
 
 function fill_flask(flask)
-	cur_color = faucets[flask.cur_slot]
+	cur_color = FAUCETS[flask.cur_slot]
 
 	if #flask.fill_order == 0 then
 		table.insert(flask.fill_order, {cur_color, 0, 0})
@@ -543,39 +549,28 @@ function fill_flask(flask)
 end
 
 function check_if_flask_full(flask)
-	sum = 0
+	local sum = 0
 	for i=1, #flask.fill_order do
 		sum = sum + flask.fill_order[i][3] - flask.fill_order[i][2]
 	end
 	if sum >= FLASK_HEIGHT then
 		local score = calculate_score(flask.fill_order)
-		total_score = total_score + score
+		TOTAL_SCORE = TOTAL_SCORE + score
 		flask.fill_order = {}
 
-		explosion_octave = math.random(26, 46)
+		local explosion_octave = math.random(26, 46)
 		sfx(37, explosion_octave, -1, 0, 10, 0)
 		generate_smoke_particles(flask)
 		add_creature(flask, score)
 	end
 end
 
-HAIR_THRESHOLD = 35
-PERSON_THRESHOLD = 30
-COW_THRESHOLD = 20
-FROG_THRESHOLD = 10
-TIME_UNTIL_CREATURE_DROP = 100
-
--- contains the creatures, and each contain the following information:
--- flask, position, y_velocity, starting sprite, width, height
-creatures = {}
-
-function add_creature(flask, score)
-		
-	pos_x = flask.center_x
-	pos_y = 85
-	place_width = 2 
-	place_height = 2
-	sprite = 66
+function add_creature(flask, score)	
+	local pos_x = flask.center_x
+	local pos_y = 85
+	local place_width = 2 
+	local place_height = 2
+	local sprite = 66
 	
 	if score > HAIR_THRESHOLD then
 		random = random_float(0,1)
@@ -613,41 +608,31 @@ function add_creature(flask, score)
 		sprite = 74
 	end
 
-	creature = {flask=flask, pos={pos_x, pos_y}, spr = sprite, time_to_drop = TIME_UNTIL_CREATURE_DROP, velocity_y = 0, width=place_width, height=place_height}
-	table.insert(creatures, creature)
+	local creature = {flask=flask, pos={pos_x, pos_y}, spr = sprite, time_to_drop = TIME_UNTIL_CREATURE_DROP, velocity_y = 0, width=place_width, height=place_height}
+	table.insert(CREATURES, creature)
 end
 
--- transition particle system, each particle contains the follwoing 
--- components: position, velocity, color, size, color, color_2, color_3
--- (used for transitions) and time_to_live
--- used to check if stream can be activated or not
-smoke_red_particles = {}
-smoke_blue_particles = {}
-smoke_green_particles = {}
-
-function generate_smoke_particles(flask)
-	slot = flask.cur_slot
-	
-	if slot == 1 then
-		generate_smoke(flask.center_x, smoke_red_particles, 12, 4, 3)
-	elseif slot == 2 then	
-		generate_smoke(flask.center_x, smoke_blue_particles, 12, 11, 10)
-	elseif slot == 3 then
-		generate_smoke(flask.center_x, smoke_green_particles, 12, 5, 6)
+function generate_smoke_particles(flask)	
+	if flask.cur_slot == 1 then
+		generate_smoke(flask.center_x, SMOKE_RED_PARTICLES, 12, 4, 3)
+	elseif flask.cur_slot == 2 then	
+		generate_smoke(flask.center_x, SMOKE_BLUE_PARTICLES, 12, 11, 10)
+	elseif flask.cur_slot == 3 then
+		generate_smoke(flask.center_x, SMOKE_GREEN_PARTICLES, 12, 5, 6)
 	end
 end
 
 function generate_smoke(center, particles, smoke_col_1, smoke_col_2, smoke_col_3)
 	width = 30
-	height = 84
+	local height = 84
 	max_prox_x = 5
-	particle_size = (width * height / NUMBER_OF_SMOKE_PARTICLES)
+	local particle_size = (width * height / NUMBER_OF_SMOKE_PARTICLES)
 	for i = 1, width do 
 		for j = 1, height do 
-			pos_x = center - width/2 + i + particle_size / 2
-			pos_y = height/2 + j + particle_size / 2
+			local pos_x = center - width/2 + i + particle_size / 2
+			local pos_y = height/2 + j + particle_size / 2
 
-			velocity_x = random_float(-0.05,0.05)
+			local velocity_x = random_float(-0.05,0.05)
 			-- if it is close to the bounds, make the velocity not as intense
 			if i < max_prox_x then
 				velocity_x = random_float(-0.05, -0.01)
@@ -655,8 +640,8 @@ function generate_smoke(center, particles, smoke_col_1, smoke_col_2, smoke_col_3
 				velocity_x = random_float(0.01, 0.05)
 			end
 
-			velocity_y = random_float(-1, 1)
-			particle = {size = particle_size, pos={pos_x, pos_y}, velocity={velocity_x, velocity_y}, color=smoke_col_1, color_2= smoke_col_2, color_3=smoke_col_3, time_to_live=random_float(30,60)}
+			local velocity_y = random_float(-1, 1)
+			local particle = {size = particle_size, pos={pos_x, pos_y}, velocity={velocity_x, velocity_y}, color=smoke_col_1, color_2= smoke_col_2, color_3=smoke_col_3, time_to_live=random_float(30,60)}
 			table.insert(particles, particle)
 		end
 	end
@@ -668,14 +653,14 @@ function calculate_score(fill_order)
 	if fill_order == nil then
 		return 0
 	end
-	for i=1, math.min(3, #orders) do
+	for i=1, math.min(3, #ORDERS) do
 		local failed = false
 		local total_diff = 0
-		for j=1, #orders[i].content do
-			if #fill_order ~= #orders[i].content then
+		for j=1, #ORDERS[i].content do
+			if #fill_order ~= #ORDERS[i].content then
 				failed = true
-			elseif orders[i].content[j][1] == fill_order[j][1] then
-				total_diff = total_diff + math.ceil(math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[j][3] - fill_order[j][2])))
+			elseif ORDERS[i].content[j][1] == fill_order[j][1] then
+				total_diff = total_diff + math.ceil(math.abs((ORDERS[i].content[j][2] * FLASK_HEIGHT) - (fill_order[j][3] - fill_order[j][2])))
 			else
 				failed = true
 			end
@@ -683,7 +668,7 @@ function calculate_score(fill_order)
 		if not failed then
 			if total_diff ~= 0 then
 				local failed_percentage = total_diff / 84;
-				score = math.ceil(40 - (failed_percentage * 40))
+				local score = math.ceil(40 - (failed_percentage * 40))
 				if best_score < score then
 					best_score = score
 					best_score_index = i
@@ -704,53 +689,51 @@ function calculate_score(fill_order)
 end
 
 function update_orders()
-	for i = 1, #orders do
-		orders[i].pos[1] = orders[i].pos[1] + (orders[i].target[1] - orders[i].pos[1]) / ORDER_DELTA
-		orders[i].pos[2] = orders[i].pos[2] + (orders[i].target[2] - orders[i].pos[2]) / ORDER_DELTA
+	for i = 1, #ORDERS do
+		ORDERS[i].pos[1] = ORDERS[i].pos[1] + (ORDERS[i].target[1] - ORDERS[i].pos[1]) / ORDER_DELTA
+		ORDERS[i].pos[2] = ORDERS[i].pos[2] + (ORDERS[i].target[2] - ORDERS[i].pos[2]) / ORDER_DELTA
 	end
 
-	for i = 1, #completed_orders do
-		completed_orders[i].pos[1] = completed_orders[i].pos[1] + (completed_orders[i].target[1] - completed_orders[i].pos[1]) / ORDER_DELTA
-		completed_orders[i].pos[2] = completed_orders[i].pos[2] + (completed_orders[i].target[2] - completed_orders[i].pos[2]) / ORDER_DELTA
+	for i = 1, #COMPLETED_ORDERS do
+		COMPLETED_ORDERS[i].pos[1] = COMPLETED_ORDERS[i].pos[1] + (COMPLETED_ORDERS[i].target[1] - COMPLETED_ORDERS[i].pos[1]) / ORDER_DELTA
+		COMPLETED_ORDERS[i].pos[2] = COMPLETED_ORDERS[i].pos[2] + (COMPLETED_ORDERS[i].target[2] - COMPLETED_ORDERS[i].pos[2]) / ORDER_DELTA
 	end
 end
 
 function get_flask_at(slot)
-	for i = 1, #flasks do
-		if flasks[i].cur_slot == slot then return i end
-	end
+	for i = 1, #FLASKS do if FLASKS[i].cur_slot == slot then return i end end
 end
 
 function get_slot(mx)
-	for i = 1, #drop_slots do
-		x0 = drop_slots[i][1]
-		x1 = drop_slots[i][2]
+	for i = 1, #DROP_SLOTS do
+		local x0 = DROP_SLOTS[i][1]
+		local x1 = DROP_SLOTS[i][2]
 		if mx >= x0 and mx <= x1 then return i end
 	end
 end
 
 function mouse_up(flask)
-	closest = get_closest_slot(flask.center_x)
-	closest_flask = flasks[get_flask_at(closest)]
+	local closest = get_closest_slot(flask.center_x)
+	local closest_flask = FLASKS[get_flask_at(closest)]
 	closest_flask.cur_slot = flask.cur_slot
 	flask.cur_slot = closest
 end
 
 function get_closest_slot(x)
-	positions = { 
-		drop_slots[1][1], drop_slots[1][2], 
-		drop_slots[2][1], drop_slots[2][2], 
-		drop_slots[3][1], drop_slots[3][2] 
+	local positions = { 
+		DROP_SLOTS[1][1], DROP_SLOTS[1][2], 
+		DROP_SLOTS[2][1], DROP_SLOTS[2][2], 
+		DROP_SLOTS[3][1], DROP_SLOTS[3][2] 
 	}
-	positions = map(function(a) return math.abs(x - a) end, positions)
-	idx = min_i(positions)
+	local positions = map(function(a) return math.abs(x - a) end, positions)
+	local idx = min_i(positions)
 	return math.ceil(idx / 2) 
 end
 
 function handle_timeout()
-	timeout = levels_metadata[CURR_STATE].time * CLOCK_FREQ
+	local timeout = LEVELS_METADATA[CUR_STATE].time * CLOCK_FREQ
 
-	timer_incr = RECT_HEIGHT/levels_metadata[CURR_STATE].time
+	local timer_incr = RECT_HEIGHT/LEVELS_METADATA[CUR_STATE].time
 	if((FRAME_COUNTER % CLOCK_FREQ) == 0) then
 		TIMER_Y = TIMER_Y + timer_incr
 		TIMER_HEIGHT = TIMER_HEIGHT - timer_incr
@@ -763,66 +746,64 @@ function setup_level()
 	TIMER_HEIGHT = RECT_HEIGHT
 	TIMER_Y = 10
 	FRAME_COUNTER = 0
-	total_score = 0
+	TOTAL_SCORE = 0
 
-	-- empty flasks
-	for i = 1, #flasks do
-		flasks[i].fill_order = {}
-	end
+	-- empty FLASKS
+	for i = 1, #FLASKS do FLASKS[i].fill_order = {} end
 
-	-- remove creature
-	creatures = {}
+	-- remove creatures
+	CREATURES = {}
 
-	-- remover particles 
-	particles_red = {}
-	particles_blue = {}
-	particles_green = {}
+	-- remove particles
+	PARTICLES_RED = {}
+	PARTICLES_BLUE = {}
+	PARTICLES_GREEN = {}
 
-	smoke_red_particles = {}
-	smoke_blue_particles = {}
-	smoke_green_particles = {}
+	SMOKE_RED_PARTICLES = {}
+	SMOKE_BLUE_PARTICLES = {}
+	SMOKE_GREEN_PARTICLES = {}
 
 	-- generate orders for next level
-	if CURR_STATE == states.TUTORIAL_ONE then
-		orders = {
-			{ content = {{faucets[1], 1}}, pos = {168, 137}, target = {168, vertical_targets[1] } },
-			{ content = {{faucets[2], 1}}, pos = {168 + ORDER_PADDING, 137}, target = {168, vertical_targets[2] } },
-			{ content = {{faucets[1], 1}}, pos = {168 + ORDER_PADDING * 2, 137}, target = {168, vertical_targets[3] } },
-			{ content = {{faucets[2], 1}}, pos = {168, 137}, target = {168, vertical_targets[4] } },
+	if CUR_STATE == STATES.TUTORIAL_ONE then
+		ORDERS = {
+			{ content = {{FAUCETS[1], 1}}, pos = {168, 137}, target = {168, VERTICAL_TARGETS[1] } },
+			{ content = {{FAUCETS[2], 1}}, pos = {168 + ORDER_PADDING, 137}, target = {168, VERTICAL_TARGETS[2] } },
+			{ content = {{FAUCETS[1], 1}}, pos = {168 + ORDER_PADDING * 2, 137}, target = {168, VERTICAL_TARGETS[3] } },
+			{ content = {{FAUCETS[2], 1}}, pos = {168, 137}, target = {168, VERTICAL_TARGETS[4] } },
 		}
-	elseif CURR_STATE == states.TUTORIAL_TWO then
-		orders = {
-			{ content = {{faucets[1], 0.5}, {faucets[2], 0.5}}, pos = {168, 137}, target = {168, vertical_targets[1] } },
-			{ content = {{faucets[2], 0.25}, {faucets[3], 0.75}}, pos = {168 + ORDER_PADDING, 137}, target = {168, vertical_targets[2] } },
-			{ content = {{faucets[3], 1}}, pos = {168, 137}, target = {168, vertical_targets[3] } },
-			{ content = {{faucets[3], 0.5}, {faucets[1], 0.5}}, pos = {168 + ORDER_PADDING * 2, 137}, target = {168, vertical_targets[4] } },
+	elseif CUR_STATE == STATES.TUTORIAL_TWO then
+		ORDERS = {
+			{ content = {{FAUCETS[1], 0.5}, {FAUCETS[2], 0.5}}, pos = {168, 137}, target = {168, VERTICAL_TARGETS[1] } },
+			{ content = {{FAUCETS[2], 0.25}, {FAUCETS[3], 0.75}}, pos = {168 + ORDER_PADDING, 137}, target = {168, VERTICAL_TARGETS[2] } },
+			{ content = {{FAUCETS[3], 1}}, pos = {168, 137}, target = {168, VERTICAL_TARGETS[3] } },
+			{ content = {{FAUCETS[3], 0.5}, {FAUCETS[1], 0.5}}, pos = {168 + ORDER_PADDING * 2, 137}, target = {168, VERTICAL_TARGETS[4] } },
 		}
 	else
-		orders = generate_orders(
+		ORDERS = generate_orders(
 			40,
-			levels_metadata[CURR_STATE].max_steps, 
-			levels_metadata[CURR_STATE].faucets, 
-			levels_metadata[CURR_STATE].percentages
+			LEVELS_METADATA[CUR_STATE].max_steps, 
+			LEVELS_METADATA[CUR_STATE].FAUCETS, 
+			LEVELS_METADATA[CUR_STATE].percentages
 		)
 	end
 end
 
-function generate_orders(norders, max_steps, faucets, percentages)
-	-- orders
-	local orders = {}
+function generate_orders(norders, max_steps, FAUCETS, percentages)
+	-- ORDERS
+	local new_orders = {}
 	for o = 1, norders do
-		pos = {168, 137 + (o - 1) * ORDER_PADDING }
-		target = { 168, vertical_targets[o] or 137 }
+		local pos = {168, 137 + (o - 1) * ORDER_PADDING }
+		local target = { 168, VERTICAL_TARGETS[o] or 137 }
 		
 		-- what a mess lol 
 		-- generate first pair (color, p)
-		ps = { percentages[math.random(1, #percentages)] }
-		colors = { faucets[math.random(1, #faucets)] }
+		local ps = { percentages[math.random(1, #percentages)] }
+		local colors = { FAUCETS[math.random(1, #FAUCETS)] }
 
 		-- if first p1 is less than 1, generate another one
 		-- generate also another color, different from the last
 		if ps[1] < 1.0 and max_steps > 1 then
-			p2 = nil
+			local p2 = nil
 			if max_steps == 2 then
 				p2 = 1.0 - ps[1]
 			else
@@ -833,9 +814,9 @@ function generate_orders(norders, max_steps, faucets, percentages)
 			end
 			table.insert(ps, p2)
 			
-			color = faucets[math.random(1, #faucets)]
+			local color = FAUCETS[math.random(1, #FAUCETS)]
 			while color == colors[1] do
-				color = faucets[math.random(1, #faucets)]
+				color = FAUCETS[math.random(1, #FAUCETS)]
 			end
 			table.insert(colors, color)
 		end
@@ -843,17 +824,17 @@ function generate_orders(norders, max_steps, faucets, percentages)
 		-- if first p1 + p2 is still less than 1, generate another one
 		-- generate also another color, different from the last
 		if ps[1] < 1.0 and ps[1] + ps[2] < 1.0 and max_steps > 2 then
-			p3 = 1.0 - (ps[1] + ps[2])
+			local p3 = 1.0 - (ps[1] + ps[2])
 			table.insert(ps, p3)
 			
-			color = faucets[math.random(1, #faucets)]
+			local color = FAUCETS[math.random(1, #FAUCETS)]
 			while color == colors[2] do
-				color = faucets[math.random(1, #faucets)]
+				color = FAUCETS[math.random(1, #FAUCETS)]
 			end
 			table.insert(colors, color)
 		end
 
-		sanity_check = 0.0
+		local sanity_check = 0.0
 		for i = 1, #ps do
 			sanity_check = sanity_check + ps[i]
 		end
@@ -861,53 +842,53 @@ function generate_orders(norders, max_steps, faucets, percentages)
 			ps[#ps] = ps[#ps] + (1.0 - sanity_check)
 		end
 
-		content = {}
+		local content = {}
 		for i = 1, #ps do
 			table.insert(content, { colors[i], ps[i] })
 		end		
 
-		table.insert(orders, { content = content, pos = pos, target = target })
+		table.insert(new_orders, { content = content, pos = pos, target = target })
 	end
-	return orders
+	return new_orders
 end
 
 function remove_order(index)
-	for i = #orders, index + 1, -1 do
-		orders[i].target[2] = orders[i-1].target[2]
+	for i = #ORDERS, index + 1, -1 do
+		ORDERS[i].target[2] = ORDERS[i-1].target[2]
 	end
 
-	orders[index].target[1] = ORDER_OFF_SCREEN
-	table.insert(completed_orders, orders[index])
+	ORDERS[index].target[1] = ORDER_OFF_SCREEN
+	table.insert(COMPLETED_ORDERS, ORDERS[index])
 	sfx(36, 65, 60, 1)
-	table.remove(orders, index)
+	table.remove(ORDERS, index)
 end
 
 -- draws
 function draw()
 	cls(BACKGROUND_COLOR)
-	if (CURR_STATE == states.MAIN_MENU) then
+	if (CUR_STATE == STATES.MAIN_MENU) then
 		draw_main_menu()
-	elseif (CURR_STATE == states.CUTSCENE_ZERO) then
+	elseif (CUR_STATE == STATES.CUTSCENE_ZERO) then
 		draw_cutscene_zero()
-	elseif (CURR_STATE == states.CUTSCENE_ONE) then
+	elseif (CUR_STATE == STATES.CUTSCENE_ONE) then
 		draw_cutscene_one()
-	elseif (CURR_STATE == states.CUTSCENE_TWO) then
+	elseif (CUR_STATE == STATES.CUTSCENE_TWO) then
 		draw_cutscene_two()
-	elseif (CURR_STATE == states.HOW_TO_PLAY_ONE) then
+	elseif (CUR_STATE == STATES.HOW_TO_PLAY_ONE) then
 		draw_how_to_play_one()
-	elseif (CURR_STATE == states.HOW_TO_PLAY_TWO) then
+	elseif (CUR_STATE == STATES.HOW_TO_PLAY_TWO) then
 		draw_how_to_play_two()
-	elseif (CURR_STATE == states.CUTSCENE_THREE) then
+	elseif (CUR_STATE == STATES.CUTSCENE_THREE) then
 		draw_cutscene_three()
-	elseif (CURR_STATE == states.RESULT_ONE) then
+	elseif (CUR_STATE == STATES.RESULT_ONE) then
 		draw_result_one()
-	elseif (CURR_STATE == states.RESULT_TWO) then
+	elseif (CUR_STATE == STATES.RESULT_TWO) then
 		draw_result_two()
-	elseif (CURR_STATE == states.RESULT_THREE) then
+	elseif (CUR_STATE == STATES.RESULT_THREE) then
 		draw_result_three()
-	elseif (CURR_STATE == states.RESULT_FINAL) then
+	elseif (CUR_STATE == STATES.RESULT_FINAL) then
 		draw_result_final()
-	elseif has_value(playable_states, CURR_STATE) then
+	elseif has_value(PLAYABLE_STATES, CUR_STATE) then
 		draw_game()
 	end
 end
@@ -918,7 +899,6 @@ function draw_main_menu()
 	print('From the minds of BOB, MOUZI 2', 20, 60, 15, false, 1, true)
 	print('and SPACEBAR', 20, 68, 15, false, 1, true)
 	print('Press Z to start...', 20, 116, 7, false, 1, true)
-
 	draw_god()
 end
 
@@ -930,13 +910,9 @@ function print_cutscene_message(message, x, y)
 	print(message, x, y, 12, false, 1, true)
 end
 
-
-HALO_ANIM_COUNTER = 0
-HALO_HEIGHT = 3
-HALO_SPEED = 0.3
 function draw_god()
 	HALO_ANIM_COUNTER = HALO_ANIM_COUNTER + 0.1 * HALO_SPEED
-	pos_y = -15 + math.sin(HALO_ANIM_COUNTER) * HALO_HEIGHT
+	local pos_y = -15 + math.sin(HALO_ANIM_COUNTER) * HALO_HEIGHT
 
 	spr(186, 160, 50, 0, 2, 0, 0, 6, 5)
 
@@ -948,7 +924,7 @@ function draw_cutscene_zero()
 	spr(260, 93, 10, 0, 2, 0, 0, 4, 4)
 
 	print_cutscene_message('Congratulations!', 93, 84)
-	print_cutscene_message('You have been selected as a contestant', 53, 92)
+	print_cutscene_message('You have been SELECTED as a contestant', 53, 92)
 	print_cutscene_message('chef in Heaven\'s Kitchen!', 76, 100)
 
 	draw_continue_message()
@@ -958,7 +934,7 @@ function draw_cutscene_one()
 	spr(320, 93, 10, 0, 2, 0, 0, 4, 4)
 
 	print_cutscene_message('I\'ve entrusted you with repopulating my', 53, 80)
-	print_cutscene_message('new planet with beautiful creatures.', 57, 88)
+	print_cutscene_message('new planet with beautiful CREATURES.', 57, 88)
 	print_cutscene_message('My goal is to test your skills', 70, 96)
 	print_cutscene_message('in *true* molecular cuisine.', 73, 104)
 
@@ -989,7 +965,7 @@ end
 
 function draw_how_to_play_one()
 	print_cutscene_message('Open each faucet with your \'1\', \'2\'', 20, 30)
-	print_cutscene_message('and \'3\' keys and fill out the flasks.', 20, 38)
+	print_cutscene_message('and \'3\' keys and fill out the FLASKS.', 20, 38)
 
 	print_cutscene_message('You\'ll see my requests on the right side', 20, 54)
 	print_cutscene_message('with the ideal composition of each flask.', 20, 62)
@@ -1018,17 +994,17 @@ function draw_how_to_play_two()
 end
 
 function draw_result_one()
-	if current_stars == 0 or current_stars == 1 then
+	if CURRENT_STARS == 0 or CURRENT_STARS == 1 then
 		print_cutscene_message('You surprise me... by how bad you are.', 20, 46)
 		print_cutscene_message('I\'m praying for you to do', 20, 54)
 		print_cutscene_message('better next time. For your sake.', 20, 62)
 	end
 
-	if current_stars == 2 then
+	if CURRENT_STARS == 2 then
 		print_cutscene_message('I have seen worse performances...', 20, 46)
 	end
 
-	if current_stars == 3 then
+	if CURRENT_STARS == 3 then
 		print_cutscene_message('Beautifully done, my child!', 20, 46)
 		print_cutscene_message('I see great things in you. I hope', 20, 54)
 		print_cutscene_message('you keep up the great work.', 20, 62)
@@ -1040,19 +1016,19 @@ function draw_result_one()
 end
 
 function draw_result_two()
-	if current_stars == 0 or current_stars == 1 then
+	if CURRENT_STARS == 0 or CURRENT_STARS == 1 then
 		print_cutscene_message('WHAT THE FORK ARE YOU DOING?', 20, 46)
 		print_cutscene_message('You are entirely destroying my plan!', 20, 54)
 		print_cutscene_message('DO. BETTER. Or else.', 20, 62)
 	end
 
-	if current_stars == 2 then
+	if CURRENT_STARS == 2 then
 		print_cutscene_message('*sigh*', 20, 46)
 		print_cutscene_message('Alright. This is fine.', 20, 54)
 		print_cutscene_message('You can still fix this... I believe.', 20, 62)
 	end
 
-	if current_stars == 3 then
+	if CURRENT_STARS == 3 then
 		print_cutscene_message('I am amazed!', 20, 46)
 		print_cutscene_message('You are truly made in my image.', 20, 54)
 	end
@@ -1063,17 +1039,17 @@ function draw_result_two()
 end
 
 function draw_result_three()
-	if current_stars == 0 or current_stars == 1 then
+	if CURRENT_STARS == 0 or CURRENT_STARS == 1 then
 		print_cutscene_message('WHY DID YOU MAKE THEM HAVE TWELVE EYES?', 20, 46)
 	end
 
-	if current_stars == 2 then
+	if CURRENT_STARS == 2 then
 		print_cutscene_message('Would you look at that!', 20, 46)
-		print_cutscene_message('Some of those creatures might actually', 20, 54)
+		print_cutscene_message('Some of those CREATURES might actually', 20, 54)
 		print_cutscene_message('not drool themselves!', 20, 62)
 	end
 
-	if current_stars == 3 then
+	if CURRENT_STARS == 3 then
 		print_cutscene_message('It\'s like you were born for this!', 20, 46)
 		print_cutscene_message('Wait... *checks notes*', 20, 54)
 		print_cutscene_message('You were.', 20, 62)
@@ -1085,7 +1061,7 @@ function draw_result_three()
 end
 
 function draw_result_final()
-	if total_stars >= 7 then
+	if TOTAL_STARS >= 7 then
 		spr(392, 130, 0, 40, 2, 0, 0, 8, 8)
 		print_cutscene_message('Where once there was a desert', 10, 28)
 		print_cutscene_message('wasteland now lives a thriving', 10, 36)
@@ -1096,7 +1072,7 @@ function draw_result_final()
 		print_cutscene_message('and curing over half of all', 10, 76)
 		print_cutscene_message('all known diseases.', 10, 84)
 
-	elseif total_stars >= 4 and total_stars <= 6 then
+	elseif TOTAL_STARS >= 4 and TOTAL_STARS <= 6 then
 		spr(392, 130, 0, 40, 2, 0, 0, 8, 8)
 		print_cutscene_message('You\'ve successfully planted', 10, 36)
 		print_cutscene_message('the first life forms that will', 10, 44)
@@ -1105,15 +1081,15 @@ function draw_result_final()
 		print_cutscene_message('bright, and your job here', 10, 68)
 		print_cutscene_message('is done.', 10, 76)
 
-	elseif total_stars >= 1 and total_stars <= 3 then
+	elseif TOTAL_STARS >= 1 and TOTAL_STARS <= 3 then
 		spr(384, 130, 0, 40, 2, 0, 0, 8, 8)
 		print_cutscene_message('God drops to Its knees, stunned', 10, 36)
 		print_cutscene_message('at the horror you\'ve created.', 10, 44)
-		print_cutscene_message('Mutated creatures fill the land,', 10, 52)
+		print_cutscene_message('Mutated CREATURES fill the land,', 10, 52)
 		print_cutscene_message('preying on each other. You\'re', 10, 60)
 		print_cutscene_message('promptly fired from the kitchen.', 10, 68)
 
-	elseif total_stars == 0 then
+	elseif TOTAL_STARS == 0 then
 		spr(384, 130, 0, 40, 2, 0, 0, 8, 8)
 		print_cutscene_message('You find yourself sweating profoundly', 10, 36)
 		print_cutscene_message('and, oddly enough, 4 million', 10, 44)
@@ -1127,7 +1103,7 @@ end
 
 function draw_stars()
 	for i=1, 3 do
-		if i <= current_stars then 
+		if i <= CURRENT_STARS then 
 			spr(36, 0 + 22 * i, 80, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela cheia
 		else
 			spr(34, 0 + 22 * i, 80, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela vazia
@@ -1140,37 +1116,35 @@ function draw_game()
 	draw_flasks_fluid()
 	draw_faucets()
 	draw_orders()
-
-	if CURR_STATE ~= states.TUTORIAL_ONE and CURR_STATE ~= states.TUTORIAL_TWO then
-		draw_timer()
-		draw_score()
-	end
-
 	draw_particles()
 	draw_creatures()
 	draw_smokes()
 	draw_flasks_containers()
-	if selected ~= nil then	draw_selected_flask() end
+	
+	if CUR_STATE ~= STATES.TUTORIAL_ONE and CUR_STATE ~= STATES.TUTORIAL_TWO then
+		draw_timer()
+		draw_score()
+	end
+
+	if SELECTED ~= nil then	draw_selected_flask() end
 end
 
 function draw_background()
 	spr(128, 0, 0, 0, 2, 0, 0, 8, 8)
 	spr(128, 90, 0, 0, 2, 0, 0, 8, 8)
 	spr(128, 140, 0, 0, 2, 0, 0, 8, 8)
-
 end
 
-
 function draw_creatures() 
-	for i = 1, #creatures do 
-		spr(creatures[i].spr, creatures[i].pos[1] - FLASK_WIDTH / 2 + 2, creatures[i].pos[2], 0, 2, 0, 0, creatures[i].width, creatures[i].height)
+	for i = 1, #CREATURES do 
+		spr(CREATURES[i].spr, CREATURES[i].pos[1] - FLASK_WIDTH / 2 + 2, CREATURES[i].pos[2], 0, 2, 0, 0, CREATURES[i].width, CREATURES[i].height)
 	end
 end
 
 function draw_smokes()
-	draw_smoke(smoke_red_particles)
-	draw_smoke(smoke_green_particles)
-	draw_smoke(smoke_blue_particles)
+	draw_smoke(SMOKE_RED_PARTICLES)
+	draw_smoke(SMOKE_GREEN_PARTICLES)
+	draw_smoke(SMOKE_BLUE_PARTICLES)
 end
 
 function draw_smoke(particles)
@@ -1184,24 +1158,18 @@ function draw_smoke(particles)
 	end
 end
 
--- particles are simple objects that have five components:
--- position, velocity, color time-to-live, and size
-particles_red = {}
-particles_green = {}
-particles_blue = {}
-
 function draw_particles()
-	for i = 1, #particles_red do 
-		--particles_red.pos[1]
-		rect(particles_red[i].pos[1], particles_red[i].pos[2], math.floor(particles_red[i].size), math.floor(particles_red[i].size), particles_red[i].color)
+	for i = 1, #PARTICLES_RED do 
+		--PARTICLES_RED.pos[1]
+		rect(PARTICLES_RED[i].pos[1], PARTICLES_RED[i].pos[2], math.floor(PARTICLES_RED[i].size), math.floor(PARTICLES_RED[i].size), PARTICLES_RED[i].color)
 	end
 
-	for i = 1, #particles_green do 
-		rect(particles_green[i].pos[1], particles_green[i].pos[2], math.floor(particles_green[i].size), math.floor(particles_green[i].size), particles_green[i].color)
+	for i = 1, #PARTICLES_GREEN do 
+		rect(PARTICLES_GREEN[i].pos[1], PARTICLES_GREEN[i].pos[2], math.floor(PARTICLES_GREEN[i].size), math.floor(PARTICLES_GREEN[i].size), PARTICLES_GREEN[i].color)
 	end
 
-	for i = 1, #particles_blue do 
-		rect(particles_blue[i].pos[1], particles_blue[i].pos[2], math.floor(particles_blue[i].size), math.floor(particles_blue[i].size), particles_blue[i].color)
+	for i = 1, #PARTICLES_BLUE do 
+		rect(PARTICLES_BLUE[i].pos[1], PARTICLES_BLUE[i].pos[2], math.floor(PARTICLES_BLUE[i].size), math.floor(PARTICLES_BLUE[i].size), PARTICLES_BLUE[i].color)
 	end
 end
 
@@ -1209,7 +1177,7 @@ function draw_timer()
 	rect(7, 10, 6, 100, 3)
 	rect(7, TIMER_Y, 6, math.floor(TIMER_HEIGHT+0.5), 4)
 	rectb(7, 10, 7, 100, 4)
-	str = "TIME"
+	local str = "TIME"
 	for i = 1, #str do
 		local c = str:sub(i,i)
 		print(c, 8, 37 + i*7)
@@ -1217,52 +1185,52 @@ function draw_timer()
 end
 
 function draw_flasks_containers() 
-	for i = 1, #flasks do
-		spr(10, flasks[i].center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
+	for i = 1, #FLASKS do
+		spr(10, FLASKS[i].center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 	end
 end
 
 function draw_flasks_fluid()
-	for i = 1, #flasks do
-		draw_flask_fluid(flasks[i])
+	for i = 1, #FLASKS do
+		draw_flask_fluid(FLASKS[i])
 	end
 end
 
 function draw_flask_fluid(flask)
-	x = flask.center_x - FLASK_WIDTH / 2
+	local x = flask.center_x - FLASK_WIDTH / 2
 	for i = 1, #flask.fill_order do
-		color = flask.fill_order[i][1]
-		y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
-		height = math.ceil(flask.fill_order[i][3]) - math.ceil(flask.fill_order[i][2])
+		local color = flask.fill_order[i][1]
+		local y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
+		local height = math.ceil(flask.fill_order[i][3]) - math.ceil(flask.fill_order[i][2])
 		rect(x + 3,	y, FLASK_WIDTH - 6, height, color)
 	end
 end
 
 function draw_selected_flask()
-	-- selected flask is always on top
-	selected_flask = flasks[get_flask_at(selected)]
+	-- SELECTED flask is always on top
+	local selected_flask = FLASKS[get_flask_at(SELECTED)]
 	draw_flask_fluid(selected_flask)
 
-	particles = nil
+	local particles = nil
 	if selected_flask.cur_slot == 1 then
-		particles = particles_red
+		particles = PARTICLES_RED
 	elseif selected_flask.cur_slot == 2 then
-		particles = particles_blue
+		particles = PARTICLES_BLUE
 	elseif selected_flask.cur_slot == 3 then
-		particles = particles_green
+		particles = PARTICLES_GREEN
 	end
 
 	for i = 1, #particles do 
-		--particles_red.pos[1]
+		--PARTICLES_RED.pos[1]
 		rect(particles[i].pos[1], particles[i].pos[2], math.floor(particles[i].size), math.floor(particles[i].size), particles[i].color)
 	end
 
 	if selected_flask.cur_slot == 1 then
-		draw_smoke(smoke_red_particles)
+		draw_smoke(SMOKE_RED_PARTICLES)
 	elseif selected_flask.cur_slot == 2 then
-		draw_smoke(smoke_blue_particles)
+		draw_smoke(SMOKE_BLUE_PARTICLES)
 	elseif selected_flask.cur_slot == 3 then
-		draw_smoke(smoke_green_particles)
+		draw_smoke(SMOKE_GREEN_PARTICLES)
 	end
 
 	spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
@@ -1272,19 +1240,18 @@ function draw_orders()
 	-- Orders are 8px from the edges
 	-- Orders are spaced 12px between each other
 	-- Orders are 32px by 16px and scaled by 2
-	for i=1, math.min(#orders, 4) do
-		create_order_ui(i, orders)
+	for i=1, math.min(#ORDERS, 4) do
+		create_order_ui(i, ORDERS)
 	end
 
-	for i=1, #completed_orders do
-		create_order_ui(i, completed_orders)
+	for i=1, #COMPLETED_ORDERS do
+		create_order_ui(i, COMPLETED_ORDERS)
 	end
 end
 
 function create_order_ui(i, o)
 	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 3)
 	for j=1, #o[i].content do
-
 		colorSpr = -1
 		if o[i].content[j][1] == 2 then
 			colorSpr = 16
@@ -1312,20 +1279,20 @@ function create_order_ui(i, o)
 end
 
 function draw_faucets()
-	width = drop_slots[1][2] - drop_slots[1][1]
+	local width = DROP_SLOTS[1][2] - DROP_SLOTS[1][1]
 
 	-- draw red faucet 
-	pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
+	local pos_red_x = (DROP_SLOTS[1][1] + DROP_SLOTS[1][2])/2 - width/2
 	spr(2,pos_red_x - 6, 0, 0, 3, 0, 0, 2, 2)
 
 	-- draw blue faucet
-	pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
+	local pos_blue_x = (DROP_SLOTS[2][1] + DROP_SLOTS[2][2])/2 - width/2
 	spr(4,pos_blue_x - 6, 0, 0, 3, 0, 0, 2, 2)
 
 	-- draw out of order faucet
-	pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
+	local pos_outoforder_x = (DROP_SLOTS[3][1] + DROP_SLOTS[3][2])/2 - width/2
 
-	if CURR_STATE == states.TUTORIAL_ONE then
+	if CUR_STATE == STATES.TUTORIAL_ONE then
 		spr(8, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	else
 		spr(6, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
@@ -1334,17 +1301,20 @@ end
 
 function draw_score()
 	print("Score", 0, 118, 4, false, 1, true)
-	print(total_score, 0, 125, 4, false, 1, true)
+	print(TOTAL_SCORE, 0, 125, 4, false, 1, true)
 end
 
 -- utils
+function ifthenelse (cond, t, f)
+    if cond then return t else return f end
+end
+
 function has_value (tab, val)
-    for index, value in ipairs(tab) do
+    for _i, value in ipairs(tab) do
         if value == val then
             return true
         end
     end
-
     return false
 end
 
@@ -1375,9 +1345,11 @@ end
 
 function init()
 	music(0)
-	CURR_STATE = states.MAIN_MENU
+	CUR_STATE = STATES.MAIN_MENU
 end
 init()
+
+-- DO NOT EDIT BELOW ASSETS MANUALLY
 
 -- <TILES>
 -- 002:0033333100313111003111120011312200311222001122cc0012222200122222
