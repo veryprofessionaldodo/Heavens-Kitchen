@@ -44,17 +44,6 @@ flask3 = {
 	cur_slot = 3,
 }
 
-orders = {
-	{
-		color = 2,
-		percentage = 0.5
-	},
-	{
-		color = 9,
-		percentage = 0.5
-	}
-}
-
 score = 0 -- total score of the player
 
 flasks = { flask1, flask2, flask3 } -- not ordered
@@ -97,8 +86,8 @@ MAX_NUMBER_OF_PARTICLES = 300
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = { 
 	{content = {{2, 1}}, pos = {168, 137}, target = {168, 8}}, 
-	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + 44}, target = {168, 52}},
-	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + 88}, target = {168, 96}},
+	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + ORDER_PADDING}, target = {168, 52}},
+	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + ORDER_PADDING * 2}, target = {168, 96}},
 	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137}, target = {168, 137}},
 	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137}, target = {168, 137}}
 }
@@ -133,7 +122,6 @@ function update()
 			update_state_machine(events.START_GAME)
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
-		-- generateOrders() #TODO
 		level_timer()
 		update_orders()
 		update_mouse()
@@ -152,11 +140,14 @@ function update_state_machine(event)
 		CURR_STATE = states.MAIN_MENU
 	elseif event == events.START_GAME then
 		CURR_STATE = states.LEVEL_ONE
+		setup_level()
 	elseif event == events.NEXT_LEVEL then
 		if CURR_STATE == states.LEVEL_ONE then
 			CURR_STATE = states.LEVEL_TWO
+			setup_level()
 		elseif CURR_STATE == states.LEVEL_TWO then
 			CURR_STATE = states.LEVEL_THREE
+			setup_level()
 		end		
 	end
 end
@@ -179,7 +170,6 @@ end
 
 function level_timer()
 end
-
 
 function update_flasks()
 	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
@@ -300,21 +290,50 @@ function handle_timeout()
 	timeout = levels_metadata[CURR_STATE].time * CLOCK_FREQ
 	if frame_count >= timeout then
 		frame_count = 0
-		next_level()
+		update_state_machine(events.NEXT_LEVEL)
 	end
 end
 
-function next_level()
-	update_state_machine(events.NEXT_LEVEL)
-
-	-- reset game world
+function setup_level()
+	-- empty flasks
 	for i = 1, #flasks do
 		flasks[i].fill_order = {}
 	end
+
+	-- generate orders for next level
+	if CURR_STATE == states.LEVEL_ONE then
+		orders = generate_orders(5, 10, {faucets[1], faucets[2]}, {0.25, 0.50, 0.75, 1})
+	elseif CURR_STATE == states.LEVEL_TWO then
+		orders = generate_orders(5, 10, faucets, {0.15, 0.25, 0.50, 0.75, 0.85, 1})
+	elseif CURR_STATE == states.LEVEL_THREE then
+		orders = generate_orders(5, 10, faucets, {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1})
+	end
+end
+
+function generate_orders(min_orders, max_orders, faucets, percentages)
+	-- orders
+	local orders = {}
+	for o = 1, math.random(min_orders, max_orders) do
+		pos = {168, 137 + (o - 1) * ORDER_PADDING }
+		target = { 168, vertical_targets[o] or 137 }
+		
+		-- content
+		total_p, content = 0.0, {}
+		while total_p ~= 1.0 do
+			p = percentages[math.random(1, #percentages)]
+			if total_p + p <= 1.0 then
+				color = faucets[math.random(1, #faucets)]
+				table.insert(content, {color, p})
+				total_p = total_p + p
+			end
+		end
+
+		table.insert(orders, { content = content, pos = pos, target = target })
+	end
+	return orders
 end
 
 function remove_order(index)
-		
 	for i = #orders, index + 1, -1 do
 		orders[i].target[2] = orders[i-1].target[2]
 	end
