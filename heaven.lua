@@ -192,7 +192,7 @@ function update_mouse()
 end
 
 function update_flasks()
-	faucet_sfx()
+	handle_faucet_sfx()
 	if key(FAUCET_KEYCODE_1) and #smoke_red_particles < 10 then
 		center_stream = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_red, 3)
@@ -207,36 +207,34 @@ function update_flasks()
 	end
 end
 
+function randomFloat(lower, greater)
+    return lower + math.random()  * (greater - lower);
+end
+
 function generate_stream_particles(center, particles, particle_color)
 	-- draw main stream
 	for i = 1, 25 do 
 		pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
-		pos_y = math.random(43,45)
-		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={randomFloat(-0.1,0.1), randomFloat(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = randomFloat(1,3), time_to_live=randomFloat(20,40)}
+		pos_y = math.random(39, 40)
+		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={random_float(-0.1,0.1), random_float(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = random_float(1,3), time_to_live=random_float(20,40)}
 		if #particles < NUMBER_OF_STREAM_PARTICLES then
 			table.insert(particles, particle)
 		end
 	end
 end
 
-function randomFloat(lower, greater)
+function random_float(lower, greater)
     return lower + math.random()  * (greater - lower);
 end
 
-function faucet_sfx()
-	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) then
+function handle_faucet_sfx()
+	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
 		if not ANY_FAUCET_DROPPING then
-			sfx(32, 25, -1, 0, 6)
-			ANY_FAUCET_DROPPING = true
-		end
-	elseif key(FAUCET_KEYCODE_3) and CURR_STATE ~= states.LEVEL_ONE then
-		if not ANY_FAUCET_DROPPING then
-			sfx(32, 25, -1, 0, 6) -- play regular sound
-			ANY_FAUCET_DROPPING = true
-		end
-	elseif key(FAUCET_KEYCODE_3) and CURR_STATE == states.LEVEL_ONE then
-		if not ANY_FAUCET_DROPPING then
-			sfx(35, 25, -1, 0, 6) -- play disabled sound (level one)
+			if key(FAUCET_KEYCODE_3) and CURR_STATE == states.LEVEL_ONE then
+				sfx(35, 25, -1, 0, 6)
+			else
+				sfx(32, 25, -1, 0, 6)
+			end
 			ANY_FAUCET_DROPPING = true
 		end
 	else
@@ -291,7 +289,7 @@ function update_smoke_particle(particle, center, width, height)
 	end
 
 	particle.time_to_live = particle.time_to_live - 1
-	particle.size = particle.size + randomFloat(-0.2, -0.1)
+	particle.size = particle.size + random_float(-0.2, -0.1)
 	
 	if particle.pos[1] < center - width/2 then 
 		particle.velocity[1] = particle.velocity[1] + randomFloat(0.1, 0.8)
@@ -304,11 +302,11 @@ function update_smoke_particle(particle, center, width, height)
 	
 
 	if height - particle.pos[2] < max_prox_x then 
-		particle.velocity[2] = particle.velocity[2] + randomFloat(-0.1, -0.01)
+		particle.velocity[2] = particle.velocity[2] + random_float(-0.1, -0.01)
 	elseif particle.pos[2] < 47 then
 		particle.velocity[2] = particle.velocity[2] / 1.1
 	else
-		particle.velocity[2] = particle.velocity[2] + randomFloat(-0.01, 0.01)
+		particle.velocity[2] = particle.velocity[2] + random_float(-0.01, 0.01)
 	end
 
 	--velocity_y = randomFloat(-1, 1)
@@ -447,6 +445,8 @@ function check_if_flask_full(flask)
 		total_score = total_score + score
 		flask.fill_order = {}
 
+		explosion_octave = math.random(26, 46)
+		sfx(37, explosion_octave, -1, 0, 10, 0)
 		generate_smoke_particles(flask)
 	end
 end
@@ -481,16 +481,16 @@ function generate_smoke(center, particles, smoke_col_1, smoke_col_2, smoke_col_3
 			pos_x = center - width/2 + i + particle_size / 2
 			pos_y = height/2 + j + particle_size / 2
 
-			velocity_x = randomFloat(-0.05,0.05)
+			velocity_x = random_float(-0.05,0.05)
 			-- if it is close to the bounds, make the velocity not as intense
 			if i < max_prox_x then
-				velocity_x = randomFloat(-0.05, -0.01)
+				velocity_x = random_float(-0.05, -0.01)
 			elseif i > width - max_prox_x then
-				velocity_x = randomFloat(0.01, 0.05)
+				velocity_x = random_float(0.01, 0.05)
 			end
 
-			velocity_y = randomFloat(-1, 1)
-			particle = {size = particle_size, pos={pos_x, pos_y}, velocity={velocity_x, velocity_y}, color=smoke_col_1, color_2= smoke_col_2, color_3=smoke_col_3, time_to_live=randomFloat(30,60)}
+			velocity_y = random_float(-1, 1)
+			particle = {size = particle_size, pos={pos_x, pos_y}, velocity={velocity_x, velocity_y}, color=smoke_col_1, color_2= smoke_col_2, color_3=smoke_col_3, time_to_live=random_float(30,60)}
 			table.insert(particles, particle)
 		end
 	end
@@ -1008,6 +1008,7 @@ init()
 -- 034:0700370057008600a600d600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600400000000000
 -- 035:0730577097b0d7f0f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700d80000000000
 -- 036:0100110021003100f100f100f100f10001c001c011c011c021c021c031c031c041c041c0f100f100f100f100f100f100f100f100f100f100f100f100510000000000
+-- 037:5b006b006b107b107b207b207b208b308b308b409b409b409b50ab60ab60ab70ab70bb80bb80bb90bba0cba0cbb0dbc0dbd0dbd0ebe0ebf0ebf0fbf0380000000000
 -- 050:090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900100000000000
 -- </SFX>
 
