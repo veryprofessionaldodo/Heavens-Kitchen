@@ -755,12 +755,22 @@ function draw()
 	cls(BACKGROUND_COLOR)
 	if (CURR_STATE == states.MAIN_MENU) then
 		draw_main_menu()
+	elseif (CURR_STATE == states.CUTSCENE_ZERO) then
+		draw_cutscene_zero()
+	elseif (CURR_STATE == states.HOW_TO_PLAY_ONE) then
+		draw_how_to_play_one()
+	elseif (CURR_STATE == states.HOW_TO_PLAY_TWO) then
+		draw_how_to_play_two()
 	elseif (CURR_STATE == states.CUTSCENE_ONE) then
-		draw_first_cutscene()
-	elseif (CURR_STATE == states.CUTSCENE_TWO) then
-		draw_second_cutscene()
-	elseif (CURR_STATE == states.CUTSCENE_THREE) then
-		draw_third_cutscene()
+		draw_cutscene_one()
+	elseif (CURR_STATE == states.RESULT_ONE) then
+		draw_result_one()
+	elseif (CURR_STATE == states.RESULT_TWO) then
+		draw_result_two()
+	elseif (CURR_STATE == states.RESULT_THREE) then
+		draw_result_three()
+	elseif (CURR_STATE == states.RESULT_FINAL) then
+		draw_result_final()
 	elseif has_value(playable_states, CURR_STATE) then
 		draw_game()
 	end
@@ -773,19 +783,36 @@ function draw_main_menu()
 	print('Press Z to start...', 30, 116, 7, false, 1, true)
 end
 
-function draw_first_cutscene()
-	print('Lorem ipsum dolor sit amet, consectetur', 0, 0, 10)
-	print(' adipiscing elit', 0, 10, 10)
+function draw_cutscene_zero()
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
 
-function draw_second_cutscene()
-	print('GOD', 0, 0, 2)
+function draw_how_to_play_one()
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
 
-function draw_third_cutscene()
-	print('GOOD JOB', 0, 0, 2)
+function draw_how_to_play_two()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_cutscene_one()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_result_one()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_result_two()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_result_three()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
+function draw_result_final()
+	-- use total_stars global to display diff stuff
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
 
