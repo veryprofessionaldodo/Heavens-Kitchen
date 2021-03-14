@@ -98,7 +98,8 @@ FILL_RATE = 0.4
 BACKGROUND_COLOR = 0
 
 STREAM_WIDTH = 4
-MAX_NUMBER_OF_PARTICLES = 600
+NUMBER_OF_STREAM_PARTICLES = 500
+NUMBER_OF_SMOKE_PARTICLES = 600
 PARTICLE_SPEED = 5
 BUBBLES_GRAVITY = 0.1
 
@@ -106,9 +107,6 @@ FRAME_COUNTER = 0
 RECT_HEIGHT = 100
 TIMER_Y = 10
 TIMER_HEIGHT = 100
-
-STREAM_WIDTH = 6
-MAX_NUMBER_OF_PARTICLES = 300
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = {}
@@ -137,6 +135,7 @@ function TIC()
 	-- 	line(x, 0, x, 135, 10)
 	-- end
 
+	rectb(0, 0, 240, 136, 5) -- screen box
 end
 
 -- updates
@@ -155,6 +154,7 @@ function update()
 		update_mouse()
 		update_flasks()
 		update_streams()
+		update_smokes()
 		handle_timeout()
 		-- toRemove = checkCompleteOrder() #TODO -> returns index of completed task
 		if keyp(1) and #orders ~= 0 then
@@ -208,47 +208,119 @@ function update_mouse()
 end
 
 function update_flasks()
+	handle_faucet_sfx()
+	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
+		center_stream = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
+		generate_stream_particles(center_stream, particles_red, 3)
+	end
+	if key(FAUCET_KEYCODE_2) and selected ~= 2 then	
+		center_stream = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
+		generate_stream_particles(center_stream, particles_blue, 10)
+	end
+	if key(FAUCET_KEYCODE_3) and selected ~= 3 and CURR_STATE ~= states.LEVEL_ONE then
+		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
+		generate_stream_particles(center_stream, particles_green, 6)
+	end
+end
+
+function generate_stream_particles(center, particles, particle_color)
+	-- draw main stream
+	for i = 1, 25 do 
+		pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
+		pos_y = math.random(39, 40)
+		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={random_float(-0.1,0.1), random_float(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = random_float(1,3), time_to_live=random_float(20,40)}
+		if #particles < NUMBER_OF_STREAM_PARTICLES then
+			table.insert(particles, particle)
+		end
+	end
+end
+
+function random_float(lower, greater)
+    return lower + math.random()  * (greater - lower);
+end
+
+function handle_faucet_sfx()
 	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
 		if not ANY_FAUCET_DROPPING then
-			sfx(32, 25, -1, 0, 6)
+			if key(FAUCET_KEYCODE_3) and CURR_STATE == states.LEVEL_ONE then
+				sfx(35, 25, -1, 0, 6)
+			else
+				sfx(32, 25, -1, 0, 6)
+			end
 			ANY_FAUCET_DROPPING = true
 		end
 	else
 		sfx(-1)
 		ANY_FAUCET_DROPPING = false
 	end
-
-	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
-		--add particles
-		center_stream = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
-		generate_particles(center_stream, particles_red, 3)
-	end
-	if key(FAUCET_KEYCODE_2) and selected ~= 2 then	
-		center_stream = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
-		generate_particles(center_stream, particles_blue, 10)
-	end
-	if key(FAUCET_KEYCODE_3) and selected ~= 3 then
-		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
-		generate_particles(center_stream, particles_green, 6)
-	end
 end
 
-function generate_particles(center, particles, particle_color)
-	-- draw main stream
-	for i = 1, 25 do 
-		pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
-		pos_y = math.random(43,45)
-		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={randomFloat(-0.1,0.1), randomFloat(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = randomFloat(1,3), time_to_live=randomFloat(20,40)}
-		if #particles < MAX_NUMBER_OF_PARTICLES then
-			table.insert(particles, particle)
+
+function random_float(lower, greater)
+    return lower + math.random()  * (greater - lower);
+end
+
+function update_smokes() 
+	center = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
+	update_smoke(smoke_red_particles, center)
+	
+	center = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
+	update_smoke(smoke_blue_particles, center)
+	
+	center = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
+	update_smoke(smoke_green_particles, center)
+end
+
+function update_smoke(particles, center) 
+	width = 30
+	height = 84
+	max_prox_x = 5
+	i = 1
+	for j = 1, #particles do 
+		update_smoke_particle(particles[j], center, width, height)
+	end
+	while i < #particles do 
+		if particles[i].time_to_live <= 0 then
+			table.remove(particles, i, center)
+		else 
+			i = i +1
 		end
 	end
 end
 
-function randomFloat(lower, greater)
-    return lower + math.random()  * (greater - lower);
-end
+function update_smoke_particle(particle, center, width, height) 
+	if particle.size < 0.5 then 
+		particle.color = particle.color_2
+	elseif particle.size < 0.2 then
+		particle.color = particle.color_3
+	elseif particle.size < 0.01 then 
+		particle.time_to_live = 0
+	end
 
+	particle.time_to_live = particle.time_to_live - 1
+	particle.size = particle.size + random_float(-0.2, -0.1)
+	
+	if particle.pos[1] < center - width/2 then 
+		particle.velocity[1] = random_float(0.1, 0.8)
+	elseif particle.pos[1] > center + width/2 then
+		particle.velocity[1] = random_float(-0.8, -0.1)
+	end
+
+	particle.velocity[1] = random_float(-0.1, 0.1)
+
+	if height - particle.pos[2] < max_prox_x then 
+		particle.velocity[2] = particle.velocity[2] + random_float(-0.1, -0.01)
+	elseif particle.pos[2] < 47 then
+		particle.velocity[2] = particle.velocity[2] / 1.1
+	else
+		particle.velocity[2] = particle.velocity[2] + random_float(-0.01, 0.01)
+	end
+
+	--velocity_y = randomFloat(-1, 1)
+	-- update properties
+	particle.pos[1] = particle.pos[1] + particle.velocity[1]
+	particle.pos[2] = particle.pos[2] + particle.velocity[2]
+end
 
 function update_streams() 
 	red_flask = flasks[get_flask_at(1)]
@@ -271,7 +343,7 @@ function update_stream(particles, flask)
 
 	i = 1
 	while i <= #particles do 
-		update_particle(particles[i], flask, height)
+		update_stream_particle(particles[i], flask, height)
 
 		if particles[i].time_to_live <= 0 then 
 			table.remove(particles, i)
@@ -281,18 +353,18 @@ function update_stream(particles, flask)
 	end
 end
 
-function update_particle(particle, flask, height) 
+function update_stream_particle(particle, flask, height) 
 	if particle.color ~= 12 then
-		particle.velocity[1] = particle.velocity[1] + randomFloat(-0.01,0.01)
-		particle.size = math.max(math.min(particle.size + randomFloat(-0.4,0.3), 5),1)
+		particle.velocity[1] = particle.velocity[1] + random_float(-0.01,0.01)
+		particle.size = math.max(math.min(particle.size + random_float(-0.4,0.3), 5),1)
 	else 
 		-- has turned to foam
-		particle.size = math.max(math.min(particle.size + randomFloat(-0.4,0.3), 2),0)
+		particle.size = math.max(math.min(particle.size + random_float(-0.4,0.3), 2),0)
 		particle.velocity[2] = particle.velocity[2] - BUBBLES_GRAVITY
 		if particle.velocity[1] > 0 then
-			particle.velocity[1] = particle.velocity[1] - randomFloat(0.1,0.2)
+			particle.velocity[1] = particle.velocity[1] - random_float(0.1,0.2)
 		else 
-			particle.velocity[1] = particle.velocity[1] + randomFloat(0.1,0.2)
+			particle.velocity[1] = particle.velocity[1] + random_float(0.1,0.2)
 		end
 	end
 	
@@ -305,11 +377,11 @@ function update_particle(particle, flask, height)
 	if particle.pos[2] > height and particle.color ~= 12 then
 		particle.pos[2] = particle.pos[2] - 0.5
 		particle.color = 12
-		particle.velocity[1] = randomFloat(-2,2)
-		particle.velocity[2] = randomFloat(PARTICLE_SPEED / 6 - 1, PARTICLE_SPEED / 6 + 1)
+		particle.velocity[1] = random_float(-2,2)
+		particle.velocity[2] = random_float(PARTICLE_SPEED / 6 - 1, PARTICLE_SPEED / 6 + 1)
 		fill_flask(flask)
 	elseif particle.pos[2] < height and particle.color == 12 then
-		particle.time_to_live = 0
+		particle.velocity[2] = -particle.velocity[2]/2 
 	end
 end
 
@@ -341,6 +413,55 @@ function check_if_flask_full(flask)
 		local score = calculate_score(flask.fill_order)
 		total_score = total_score + score
 		flask.fill_order = {}
+
+		explosion_octave = math.random(26, 46)
+		sfx(37, explosion_octave, -1, 0, 10, 0)
+		generate_smoke_particles(flask.cur_slot)
+	end
+end
+
+-- transition particle system, each particle contains the follwoing 
+-- components: position, velocity, color, size, color, color_2, color_3
+-- (used for transitions) and time_to_live
+-- used to check if stream can be activated or not
+smoke_red_particles = {}
+smoke_blue_particles = {}
+smoke_green_particles = {}
+
+function generate_smoke_particles(slot)
+	center_stream = (drop_slots[slot][1] + drop_slots[slot][2]) / 2 - 2
+
+	if slot == 1 then
+		generate_smoke(center_stream, smoke_red_particles, 12, 4, 3)
+	elseif slot == 2 then
+		generate_smoke(center_stream, smoke_blue_particles, 12, 11, 10)
+	elseif slot == 3 then
+		generate_smoke(center_stream, smoke_green_particles, 12, 5, 6)
+	end
+end
+
+function generate_smoke(center, particles, smoke_col_1, smoke_col_2, smoke_col_3)
+	width = 30
+	height = 84
+	max_prox_x = 5
+	particle_size = (width * height / NUMBER_OF_SMOKE_PARTICLES)
+	for i = 1, width do 
+		for j = 1, height do 
+			pos_x = center - width/2 + i + particle_size / 2
+			pos_y = height/2 + j + particle_size / 2
+
+			velocity_x = random_float(-0.05,0.05)
+			-- if it is close to the bounds, make the velocity not as intense
+			if i < max_prox_x then
+				velocity_x = random_float(-0.05, -0.01)
+			elseif i > width - max_prox_x then
+				velocity_x = random_float(0.01, 0.05)
+			end
+
+			velocity_y = random_float(-1, 1)
+			particle = {size = particle_size, pos={pos_x, pos_y}, velocity={velocity_x, velocity_y}, color=smoke_col_1, color_2= smoke_col_2, color_3=smoke_col_3, time_to_live=random_float(30,60)}
+			table.insert(particles, particle)
+		end
 	end
 end
 
@@ -532,7 +653,7 @@ function remove_order(index)
 
 	orders[index].target[1] = ORDER_OFF_SCREEN
 	table.insert(completed_orders, orders[index])
-	sfx(35, 65, 60, 1)
+	sfx(36, 65, 60, 1)
 	table.remove(orders, index)
 end
 
@@ -578,12 +699,31 @@ end
 
 function draw_game()
 	draw_flasks_fluid()
-	draw_particles()
-	draw_flasks_containers()
 	draw_faucets()
 	draw_orders()
 	draw_timer()
 	draw_score()
+	draw_particles()
+	draw_smokes()
+	draw_flasks_containers()
+	if selected ~= nil then	draw_selected_flask() end
+end
+
+function draw_smokes()
+	draw_smoke(smoke_red_particles)
+	draw_smoke(smoke_green_particles)
+	draw_smoke(smoke_blue_particles)
+end
+
+function draw_smoke(particles)
+	for i = 1, #particles do 
+		-- if is shrinking, draw a circle
+		if particles[i].color == particles[i].color_2 or particles[i].color == particles[i].color_3 then 
+			circ(particles[i].pos[1], particles[i].pos[2], particles[i].size, particles[i].color)
+		else
+			rect(particles[i].pos[1], particles[i].pos[2], particles[i].size, particles[i].size, particles[i].color)
+		end
+	end
 end
 
 -- particles are simple objects that have five components:
@@ -622,23 +762,11 @@ function draw_flasks_containers()
 	for i = 1, #flasks do
 		spr(10, flasks[i].center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 	end
-
-	-- selected flask is always on top
-	if selected ~= nil then
-		selected_flask = flasks[get_flask_at(selected)]
-		spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
-	end
 end
 
 function draw_flasks_fluid()
 	for i = 1, #flasks do
 		draw_flask_fluid(flasks[i])
-	end
-
-	-- selected flask is always on top
-	if selected ~= nil then
-		selected_flask = flasks[get_flask_at(selected)]
-		draw_flask_fluid(selected_flask)
 	end
 end
 
@@ -650,7 +778,13 @@ function draw_flask_fluid(flask)
 		height = math.ceil(flask.fill_order[i][3]) - math.ceil(flask.fill_order[i][2])
 		rect(x + 3,	y, FLASK_WIDTH - 6, height, color)
 	end
-	
+end
+
+function draw_selected_flask()
+	-- selected flask is always on top
+	selected_flask = flasks[get_flask_at(selected)]
+	draw_flask_fluid(selected_flask)
+	spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 end
 
 function draw_orders()
@@ -669,7 +803,7 @@ function draw_orders()
 end
 
 function create_order_ui(i, o)
-	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
+	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 3)
 		
 	for j=1, #o[i].content do
 
@@ -700,34 +834,23 @@ function create_order_ui(i, o)
 end
 
 function draw_faucets()
+	width = drop_slots[1][2] - drop_slots[1][1]
+
+	-- draw red faucet 
+	pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
+	spr(2,pos_red_x - 6, 0, 0, 3, 0, 0, 2, 2)
+
+	-- draw blue faucet
+	pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
+	spr(4,pos_blue_x - 6, 0, 0, 3, 0, 0, 2, 2)
+
+	-- draw out of order faucet
+	pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
+
 	if CURR_STATE == states.LEVEL_ONE then
-		width = drop_slots[1][2] - drop_slots[1][1]
-
-		-- draw red faucet 
-		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x - 6, 5, 0, 3, 0, 0, 2, 2)
-
-		-- draw blue faucet
-		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x - 6, 5, 0, 3, 0, 0, 2, 2)
-
-		-- draw out of order faucet
-		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(8,pos_outoforder_x - 6, 5, 0, 3, 0, 0, 2, 2)
-	else  
-		width = drop_slots[1][2] - drop_slots[1][1]
-
-		-- draw red faucet 
-		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x - 6, 5, 0, 3, 0, 0, 2, 2)
-
-		-- draw blue faucet
-		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x - 6, 5, 0, 3, 0, 0, 2, 2)
-
-		-- draw green faucet
-		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(6, pos_outoforder_x - 6, 5, 0, 3, 0, 0, 2, 2)
+		spr(8 ,pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
+	else
+		spr(6, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	end
 end
 
@@ -779,10 +902,10 @@ init()
 -- 009:ee44443022443430422443404424443014224340144243404442344014411330
 -- 010:0000000000c0000000c0000000c0c00000c0c00000c0000000c0c00000c00000
 -- 011:0000000000000c0000000c0000000c0000000d0000000d0000000c0000000d00
--- 012:0888888888cccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc
--- 013:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
--- 014:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
--- 015:88888880cccccc88ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8
+-- 012:0fffffffffccccccfcccccccfcccccccfcccccccfcccccccfcccccccfccccccc
+-- 013:ffffffffcccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-- 014:ffffffffcccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-- 015:fffffff0ccccccffcccccccfcccccccfcccccccfcccccccfcccccccfcccccccf
 -- 016:00e00e0000e00e0000e20e0000d22e000d2222e0d322222ed332333e0ddddee0
 -- 017:000000000e0000e00ee00ee000e90e0000e99e0000d89e0000d88e00000dd000
 -- 018:001122cc0011122200000022000000e2000000df0000000e0000000000000000
@@ -795,10 +918,10 @@ init()
 -- 025:44431330211113303333300033f00000ff000000f00000000000000000000000
 -- 026:00d0000000d0000000c0000000d0000000d0000000c0000000d0000000d00000
 -- 027:00000d0000000d0000000d0000000d0000000d00000c0d00000c0e00000c0d00
--- 028:8ccccccc8ccccccc8ccccccc8ccccccc88cccccc088888880000000000000000
--- 029:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
--- 030:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
--- 031:ccccccc8ccccccc8ccccccc8ccccccc8cccccc88888ccc800088c88000088800
+-- 028:fcccccccfcccccccfcccccccfcccccccffcccccc0fffffff0000000000000000
+-- 029:ccccccccccccccccccccccccccccccccccccccccffffffff0000000000000000
+-- 030:ccccccccccccccccccccccccccccccccccccccccffffffff0000000000000000
+-- 031:cccccccfcccccccfcccccccfcccccccfccccccfffffcccf000ffcff0000fff00
 -- 032:00e00e000e5000e0e555500ed555555ed655555ed665555ed666665e0dddddd0
 -- 042:00d0000000d0000000c0000000d0000000d0000000d0000000d0000000d00000
 -- 043:00000d0000000e0000000e0000000d0000000e0000000e0000000e0000000e00
@@ -853,8 +976,10 @@ init()
 -- 032:f810e830c840a860888068a048c028e008f0080008000800080008000800080008000800080008000800080008000800080008000800080008000800210000090900
 -- 033:060046009600c600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600700000000000
 -- 034:0700370057008600a600d600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600400000000000
--- 035:00001000200020002000300030004000400050005000500060006000700070008000900090009000a000b000b000c000c000d000d000e000e000f000500000000000
--- 050:090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900102000000000
+-- 035:0730577097b0d7f0f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700d80000000000
+-- 036:0100110021003100f100f100f100f10001c001c011c011c021c021c031c031c041c041c0f100f100f100f100f100f100f100f100f100f100f100f100510000000000
+-- 037:5b006b006b107b107b207b207b208b308b308b409b409b409b50ab60ab60ab70ab70bb80bb80bb90bba0cba0cbb0dbc0dbd0dbd0ebe0ebf0ebf0fbf0380000000000
+-- 050:090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900100000000000
 -- </SFX>
 
 -- <PATTERNS>
