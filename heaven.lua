@@ -54,8 +54,6 @@ drop_slots = { {6, 42}, {56, 92}, {106, 142} } -- ranges of the drop slots
 
 selected = nil -- selected flask to drag
 
-frame_count = 0 -- count of elapsed frames
-
 -- constants
 SCREEN_WIDTH = 240
 SCREEN_HEIGHT = 136
@@ -76,20 +74,26 @@ ORDER_START_POS = 8
 ORDER_PADDING = 44
 ORDER_DELTA = 15
 ORDER_OFF_SCREEN = 241
-FILL_RATE = 3
+FILL_RATE = 0.2
 
 BACKGROUND_COLOR = 0
 
-STREAM_WIDTH = 6
-MAX_NUMBER_OF_PARTICLES = 300
+STREAM_WIDTH = 4
+MAX_NUMBER_OF_PARTICLES = 600
+PARTICLE_SPEED = 5
+BUBBLES_GRAVITY = 0.1
+
+FRAME_COUNTER = 0
+RECT_LENGTH = 155
+TIMER_LENGTH = 155
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = { 
 	{content = {{2, 1}}, pos = {168, 137}, target = {168, 8}}, 
-	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + 44}, target = {168, 52}},
-	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + 88}, target = {168, 96}},
-	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137}, target = {168, 137}},
-	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137}, target = {168, 137}}
+	{content = {{2, 0.33}, {9, 0.33}, {5, 0.33}}, pos = {168, 137 + 44}, target = {168, 52}},
+	{content = {{2, 0.5}, {5, 0.5}}, pos = {168, 137 + 88}, target = {168, 96}},
+	{content = {{2, 0.5}, {5, 0.5}}, pos = {168, 137}, target = {168, 137}},
+	{content = {{9, 0.5}, {2, 0.5}}, pos = {168, 137}, target = {168, 137}},
 }
 
 completed_orders = {}
@@ -116,22 +120,21 @@ end
 
 -- updates
 function update()
-	frame_count = frame_count + 1
+	FRAME_COUNTER = FRAME_COUNTER + 1
 	if (CURR_STATE == states.MAIN_MENU) then
 		if keyp(Z_KEYCODE) then
 			update_state_machine(events.START_GAME)
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		-- generateOrders() #TODO
-		level_timer()
 		update_orders()
 		update_mouse()
 		update_flasks()
 		update_streams()
 		handle_timeout()
 		-- toRemove = checkCompleteOrder() #TODO -> returns index of completed task
-		if keyp(1) then
-			remove_order(1)
+		if keyp(1) and #orders ~= 0 then
+			remove_order(math.random(1, math.min(3, #orders)))
 		end
 	end
 end
@@ -166,25 +169,102 @@ function update_mouse()
 	end
 end
 
-function level_timer()
-end
-
-
 function update_flasks()
 	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
-		fill_flask(flasks[get_flask_at(1)])
+		--add particles
+		center_stream = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
+
+		generate_particles(center_stream, particles_red, 3)
 	end
 	if key(FAUCET_KEYCODE_2) and selected ~= 2 then
-		fill_flask(flasks[get_flask_at(2)])
+		center_stream = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
+
+		generate_particles(center_stream, particles_blue, 10)
 	end
 	if key(FAUCET_KEYCODE_3) and selected ~= 3 then
-		fill_flask(flasks[get_flask_at(3)])
+		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
+
+		generate_particles(center_stream, particles_green, 6)
 	end
 end
 
-function update_streams() 
-	for i = 1, #particles_red do 
+function generate_particles(center, particles, particle_color)
+	-- draw main stream
+	for i = 1, 25 do 
+		pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
+		pos_y = math.random(43,45)
+		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={randomFloat(-0.1,0.1), randomFloat(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = randomFloat(1,3), time_to_live=randomFloat(20,40)}
+		if #particles < MAX_NUMBER_OF_PARTICLES then
+			table.insert(particles, particle)
+		end
+	end
+end
 
+function randomFloat(lower, greater)
+    return lower + math.random()  * (greater - lower);
+end
+
+
+function update_streams() 
+	red_flask = flasks[get_flask_at(1)]
+	update_stream(particles_red, red_flask)
+	
+	blue_flask = flasks[get_flask_at(2)]
+	update_stream(particles_blue, blue_flask)
+	
+	green_flask = flasks[get_flask_at(3)]
+	update_stream(particles_green, green_flask)
+end
+
+function update_stream(particles, flask)
+	height = 131
+	order_length = #flask.fill_order
+
+	if order_length > 0 then
+		height = 131 - flask.fill_order[order_length][3]
+	end
+
+	i = 1
+	while i <= #particles do 
+		update_particle(particles[i], flask, height)
+
+		if particles[i].time_to_live <= 0 then 
+			table.remove(particles, i)
+		else 
+			i = i + 1
+		end
+	end
+end
+
+function update_particle(particle, flask, height) 
+	if particle.color ~= 12 then
+		particle.velocity[1] = particle.velocity[1] + randomFloat(-0.01,0.01)
+		particle.size = math.max(math.min(particle.size + randomFloat(-0.4,0.3), 5),1)
+	else 
+		-- has turned to foam
+		particle.size = math.max(math.min(particle.size + randomFloat(-0.4,0.3), 2),0)
+		particle.velocity[2] = particle.velocity[2] - BUBBLES_GRAVITY
+		if particle.velocity[1] > 0 then
+			particle.velocity[1] = particle.velocity[1] - randomFloat(0.1,0.2)
+		else 
+			particle.velocity[1] = particle.velocity[1] + randomFloat(0.1,0.2)
+		end
+	end
+	
+	-- update properties
+	particle.time_to_live = particle.time_to_live - 1
+	particle.pos[1] = particle.pos[1] + particle.velocity[1]
+	particle.pos[2] = particle.pos[2] + particle.velocity[2]
+
+	-- check if particle has reached stream
+	if particle.pos[2] > height and particle.color ~= 12 then
+		particle.pos[2] = particle.pos[2] - 0.5
+		particle.color = 12
+		particle.velocity[1] = randomFloat(-2,2)
+		particle.velocity[2] = randomFloat(PARTICLE_SPEED / 6 - 1, PARTICLE_SPEED / 6 + 1)
+		fill_flask(flask)
+	elseif particle.pos[2] < height and particle.color == 12 then
+		particle.time_to_live = 0
 	end
 end
 
@@ -302,8 +382,14 @@ end
 
 function handle_timeout()
 	timeout = levels_metadata[CURR_STATE].time * CLOCK_FREQ
-	if frame_count >= timeout then
-		frame_count = 0
+
+	TIMER_DECREMENT = RECT_LENGTH/levels_metadata[CURR_STATE].time
+	if((FRAME_COUNTER % CLOCK_FREQ) == 0) then
+		TIMER_LENGTH = TIMER_LENGTH - TIMER_DECREMENT
+	end
+
+	if FRAME_COUNTER >= timeout then
+		FRAME_COUNTER = 0
 		next_level()
 	end
 end
@@ -315,6 +401,8 @@ function next_level()
 	for i = 1, #flasks do
 		flasks[i].fill_order = {}
 	end
+
+	TIMER_LENGTH = RECT_LENGTH
 end
 
 function remove_order(index)
@@ -336,8 +424,6 @@ function draw()
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		draw_game()
 	end
-	--rectb(160, 0, 80, 136, 6)
-	--rectb(0, 0, 240, 136, 5)
 end
 
 function draw_main_menu()
@@ -348,87 +434,68 @@ function draw_main_menu()
 end
 
 function draw_game()
+	draw_flasks_fluid()
+	draw_particles()
+	draw_flasks_containers()
 	draw_faucets()
-	draw_flasks()
 	draw_orders()
 	draw_timer()
 	print(total_score, 64, 64, 4)
-	draw_streams()
 end
 
--- particles are simple objects that have four components:
--- position, velocity, color and time-to-live
+-- particles are simple objects that have five components:
+-- position, velocity, color time-to-live, and size
 particles_red = {}
 particles_green = {}
 particles_blue = {}
 
-function draw_streams()
-	if key(FAUCET_KEYCODE_1) then
-		draw_stream(1)
-	end
-	if key(FAUCET_KEYCODE_2) then
-		draw_stream(2)
-	end
-	if key(FAUCET_KEYCODE_3) then
-		draw_stream(3)
-	end
-
-	draw_particles()
-end
-
-function draw_stream(slot)
-	cur_color = faucets[slot]
-	center_stream = (drop_slots[slot][1] + drop_slots[slot][2]) / 2 - 7
-	targetFlask = flasks[get_flask_at(slot)]
-	length = #targetFlask.fill_order
-
-	-- draw main stream
-	for i = 1, STREAM_WIDTH do 
-		pos_x = center_stream + STREAM_WIDTH / 2 + i
-		if length > 0 then
-			line(pos_x, 47, pos_x, 131 - targetFlask.fill_order[length][3], cur_color+1)
-		end
-	end
-
-	-- draw foam
-	
-	-- draw bubbles
-end
-
 function draw_particles()
 	for i = 1, #particles_red do 
 		--particles_red.pos[1]
-		pix(particles_red.pos[1], particles_red.pos[2], particles_red.color)
+		rect(particles_red[i].pos[1], particles_red[i].pos[2], math.floor(particles_red[i].size), math.floor(particles_red[i].size), particles_red[i].color)
 	end
 
 	for i = 1, #particles_green do 
-		pix(particles_green.pos[1], particles_green.pos[2], particles_green.color)
+		rect(particles_green[i].pos[1], particles_green[i].pos[2], math.floor(particles_green[i].size), math.floor(particles_green[i].size), particles_green[i].color)
 	end
 
 	for i = 1, #particles_blue do 
-		pix(particles_blue.pos[1], particles_blue.pos[2], particles_blue.color)
+		rect(particles_blue[i].pos[1], particles_blue[i].pos[2], math.floor(particles_blue[i].size), math.floor(particles_blue[i].size), particles_blue[i].color)
 	end
 end
 
 function draw_timer()
-	rect(42, 5, 155, 7, 4)
+	rect(42, 5, 155, 7, 3)
+	rect(42, 5, TIMER_LENGTH, 7, 4)
 	rectb(42, 5, 155, 7, 4)
 	print("Time Left", 100, 6, 0, false, 1, false)
 end
 
-function draw_flasks()
+function draw_flasks_containers() 
 	for i = 1, #flasks do
-		draw_flask(flasks[i])
+		spr(10, flasks[i].center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 	end
 
 	-- selected flask is always on top
 	if selected ~= nil then
 		selected_flask = flasks[get_flask_at(selected)]
-		draw_flask(selected_flask)
+		spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 	end
 end
 
-function draw_flask(flask)
+function draw_flasks_fluid()
+	for i = 1, #flasks do
+		draw_flask_fluid(flasks[i])
+	end
+
+	-- selected flask is always on top
+	if selected ~= nil then
+		selected_flask = flasks[get_flask_at(selected)]
+		draw_flask_fluid(selected_flask)
+	end
+end
+
+function draw_flask_fluid(flask)
 	x = flask.center_x - FLASK_WIDTH / 2
 	for i = 1, #flask.fill_order do
 		color = flask.fill_order[i][1]
@@ -436,7 +503,7 @@ function draw_flask(flask)
 		height = math.ceil(flask.fill_order[i][3]) - math.ceil(flask.fill_order[i][2])
 		rect(x + 3,	y, FLASK_WIDTH - 6, height, color)
 	end
-	spr(10, flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
+	
 end
 
 function draw_orders()
@@ -445,17 +512,44 @@ function draw_orders()
 	-- Orders are 32px by 16px and scaled by 2
 
 	for i=1, math.min(#orders, 4) do
-		spr(12, orders[i].pos[1], orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
-		--Draw order elements
-		print(orders[i].content[1][2], orders[i].pos[1]+16, orders[i].pos[2] + 16)
+		create_order_ui(i, orders)
 	end
 
 	for i=1, #completed_orders do
-		spr(12, completed_orders[i].pos[1], completed_orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
-		--Draw order elements
-		print(completed_orders[i].content[1][2], completed_orders[i].pos[1]+16, completed_orders[i].pos[2] + 16)
+		create_order_ui(i, completed_orders)
 	end
 
+end
+
+function create_order_ui(i, o)
+	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
+		
+	for j=1, #o[i].content do
+
+		colorSpr = -1
+		if o[i].content[j][1] == 2 then
+			colorSpr = 16
+		elseif o[i].content[j][1] == 9 then
+			colorSpr = 17
+		elseif o[i].content[j][1] == 5 then
+			colorSpr = 32
+		end
+
+		if #o[i].content == 1 then
+			spr(colorSpr, o[i].pos[1] + 7, o[i].pos[2] + 5, 0, 2)
+			percentage = o[i].content[j][2] * 100
+			print(percentage .. "%", o[i].pos[1]+26, o[i].pos[2] + 9, 0, false, 2, true)
+
+		elseif #o[i].content == 2 then
+			spr(colorSpr, o[i].pos[1] + 15 + 25*(j-1), o[i].pos[2] + 5, 0)
+			percentage = math.floor(o[i].content[j][2] * 100)
+			print(percentage .. "%", o[i].pos[1]+15+25*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
+		elseif #o[i].content == 3 then
+			spr(colorSpr, o[i].pos[1] + 8 + 20*(j-1), o[i].pos[2] + 5, 0)
+			percentage = math.floor(o[i].content[j][2] * 100)
+			print(percentage .. "%", o[i].pos[1]+7+20*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
+		end
+	end
 end
 
 function draw_faucets()
@@ -537,6 +631,8 @@ init()
 -- 013:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 -- 014:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 -- 015:88888880cccccc88ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8
+-- 016:00e00e0000e00e0000e20e0000d22e000d2222e0d322222ed332333e0ddddee0
+-- 017:000000000e0000e00ee00ee000e90e0000e99e0000d89e0000d88e00000dd000
 -- 018:001122cc0011122200000022000000e2000000df0000000e0000000000000000
 -- 019:cc22ff00222fff00220000002f000000ff000000f00000000000000000000000
 -- 020:008999990089999c00099999000000ff000000ff0000000d0000000000000000
@@ -551,6 +647,7 @@ init()
 -- 029:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
 -- 030:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
 -- 031:ccccccc8ccccccc8ccccccc8ccccccc8cccccc88888ccc800088c88000088800
+-- 032:00e00e000e5000e0e555500ed555555ed655555ed665555ed666665e0dddddd0
 -- 042:00d0000000d0000000c0000000d0000000d0000000d0000000d0000000d00000
 -- 043:00000d0000000e0000000e0000000d0000000e0000000e0000000e0000000e00
 -- 058:00d0000000d00c0000d0000000dde000000ede000000eeee0000000000000000
