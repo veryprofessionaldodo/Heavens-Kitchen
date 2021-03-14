@@ -819,7 +819,7 @@ function setup_level()
 		}
 	else
 		orders = generate_orders(
-			30, 
+			40, 
 			levels_metadata[CURR_STATE].max_steps, 
 			levels_metadata[CURR_STATE].faucets, 
 			levels_metadata[CURR_STATE].percentages
