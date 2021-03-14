@@ -40,13 +40,6 @@ playable_states = {
 	states.LEVEL_THREE
 }
 
--- events = {
--- 	MAIN_MENU = 'main',
--- 	END_CUTSCENE = 'end_cutscene',
--- 	START_GAME = 'start',
--- 	NEXT = 'next',
--- }
-
 faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 
 -- table with information for each level like time (possible others in the future)
@@ -145,7 +138,6 @@ RECT_HEIGHT = 100
 TIMER_Y = 10
 TIMER_HEIGHT = 100
 
--- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = {}
 
 completed_orders = {}
@@ -158,6 +150,7 @@ ANY_FAUCET_DROPPING = false
 function TIC()
 	update()
 	draw()	
+
 	-- TODO: remove debug slot lines and center
 	-- print(CURR_STATE, 100, 100)
 	-- for i = 1, #drop_slots do
@@ -272,10 +265,6 @@ function update_flasks()
 		flasks[i].center_x = flasks[i].center_x + (final_center - flasks[i].center_x) / 10
 	end	
 	
-end
-
-function randomFloat(lower, greater)
-    return lower + math.random()  * (greater - lower);
 end
 
 function generate_stream_particles(center, particles, particle_color)
@@ -923,7 +912,6 @@ function draw_orders()
 	-- Orders are 8px from the edges
 	-- Orders are spaced 12px between each other
 	-- Orders are 32px by 16px and scaled by 2
-
 	for i=1, math.min(#orders, 4) do
 		create_order_ui(i, orders)
 	end
@@ -931,7 +919,6 @@ function draw_orders()
 	for i=1, #completed_orders do
 		create_order_ui(i, completed_orders)
 	end
-
 end
 
 function create_order_ui(i, o)
