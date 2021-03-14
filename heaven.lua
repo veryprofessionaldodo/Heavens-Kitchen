@@ -193,15 +193,15 @@ end
 
 function update_flasks()
 	faucet_sfx()
-	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
+	if key(FAUCET_KEYCODE_1) and #smoke_red_particles < 10 then
 		center_stream = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_red, 3)
 	end
-	if key(FAUCET_KEYCODE_2) and selected ~= 2 then	
+	if key(FAUCET_KEYCODE_2) and #smoke_blue_particles < 10 then	
 		center_stream = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_blue, 10)
 	end
-	if key(FAUCET_KEYCODE_3) and selected ~= 3 and CURR_STATE ~= states.LEVEL_ONE then
+	if key(FAUCET_KEYCODE_3) and #smoke_green_particles < 10 and CURR_STATE ~= states.LEVEL_ONE then
 		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_green, 6)
 	end
@@ -252,22 +252,25 @@ end
 
 function update_smokes() 
 	center = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
-	update_smoke(smoke_red_particles, center)
+	red_flask = flasks[get_flask_at(1)]
+	update_smoke(smoke_red_particles, center, red_flask)
 	
 	center = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
-	update_smoke(smoke_blue_particles, center)
+	blue_flask = flasks[get_flask_at(2)]
+	update_smoke(smoke_blue_particles, center, blue_flask)
 	
 	center = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
-	update_smoke(smoke_green_particles, center)
+	green_flask = flasks[get_flask_at(3)]
+	update_smoke(smoke_green_particles, center, green_flask)
 end
 
-function update_smoke(particles, center) 
+function update_smoke(particles, center, flask) 
 	width = 30
 	height = 84
-	max_prox_x = 5
+
 	i = 1
 	for j = 1, #particles do 
-		update_smoke_particle(particles[j], center, width, height)
+		update_smoke_particle(particles[j], flask.center_x, width, height)
 	end
 	while i < #particles do 
 		if particles[i].time_to_live <= 0 then
@@ -291,12 +294,14 @@ function update_smoke_particle(particle, center, width, height)
 	particle.size = particle.size + randomFloat(-0.2, -0.1)
 	
 	if particle.pos[1] < center - width/2 then 
-		particle.velocity[1] = randomFloat(0.1, 0.8)
+		particle.velocity[1] = particle.velocity[1] + randomFloat(0.1, 0.8)
 	elseif particle.pos[1] > center + width/2 then
-		particle.velocity[1] = randomFloat(-0.8, -0.1)
+		particle.velocity[1] = particle.velocity[1] + randomFloat(-0.8, -0.1)
+	else 
+		particle.velocity[1] = particle.velocity[1] + randomFloat(-0.1, 0.1)
 	end
 
-	particle.velocity[1] = randomFloat(-0.1, 0.1)
+	
 
 	if height - particle.pos[2] < max_prox_x then 
 		particle.velocity[2] = particle.velocity[2] + randomFloat(-0.1, -0.01)
@@ -310,20 +315,31 @@ function update_smoke_particle(particle, center, width, height)
 	-- update properties
 	particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	particle.pos[2] = particle.pos[2] + particle.velocity[2]
+
+	particle.pos[1] = math.min(math.max(particle.pos[1], center - width / 2), center + width / 2)
+
+	-- check if bounce is necessary
+	if particle.pos[1] == center + width / 2 then 
+		particle.velocity[1] = random_float(-2,-1)
+		particle.pos[1] = particle.pos[1] + particle.velocity[1]
+	elseif particle.pos[1] == center - width / 2 then 
+		particle.velocity[1] = random_float(1,2)
+		particle.pos[1] = particle.pos[1] + particle.velocity[1]
+	end
 end
 
 function update_streams() 
 	red_flask = flasks[get_flask_at(1)]
-	update_stream(particles_red, red_flask)
+	update_stream(particles_red, red_flask, smoke_red_particles)
 	
 	blue_flask = flasks[get_flask_at(2)]
-	update_stream(particles_blue, blue_flask)
+	update_stream(particles_blue, blue_flask, smoke_blue_particles)
 	
 	green_flask = flasks[get_flask_at(3)]
-	update_stream(particles_green, green_flask)
+	update_stream(particles_green, green_flask, smoke_green_particles)
 end
 
-function update_stream(particles, flask)
+function update_stream(particles, flask, smoke_particles)
 	height = 131
 	order_length = #flask.fill_order
 
@@ -335,6 +351,10 @@ function update_stream(particles, flask)
 	while i <= #particles do 
 		update_stream_particle(particles[i], flask, height)
 
+		if #smoke_particles > 10 then 
+			particles[i].time_to_live = particles[i].time_to_live / 10
+		end
+
 		if particles[i].time_to_live <= 0 then 
 			table.remove(particles, i)
 		else 
@@ -344,6 +364,8 @@ function update_stream(particles, flask)
 end
 
 function update_stream_particle(particle, flask, height) 
+	center = flask.center_x
+
 	if particle.color ~= 12 then
 		particle.velocity[1] = particle.velocity[1] + random_float(-0.01,0.01)
 		particle.size = math.max(math.min(particle.size + random_float(-0.4,0.3), 5),1)
@@ -363,15 +385,36 @@ function update_stream_particle(particle, flask, height)
 	particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	particle.pos[2] = particle.pos[2] + particle.velocity[2]
 
+	final_height = height
+
+	if particle.pos[1] < center - FLASK_WIDTH / 2 or particle.pos[1] > center + FLASK_WIDTH / 2 then
+		final_height = 1000
+	end
+
 	-- check if particle has reached stream
-	if particle.pos[2] > height and particle.color ~= 12 then
+	if particle.pos[2] > final_height and particle.color ~= 12 then
 		particle.pos[2] = particle.pos[2] - 0.5
 		particle.color = 12
 		particle.velocity[1] = random_float(-2,2)
 		particle.velocity[2] = random_float(PARTICLE_SPEED / 6 - 1, PARTICLE_SPEED / 6 + 1)
 		fill_flask(flask)
-	elseif particle.pos[2] < height and particle.color == 12 then
+	elseif particle.pos[2] < final_height and particle.color == 12 then
 		particle.velocity[2] = -particle.velocity[2]/2 
+	elseif particle.pos[2] > 160 then
+		particle.time_to_live = 0
+	end
+
+	if particle.color == 12 then
+		particle.pos[1] = math.min(math.max(particle.pos[1], center - width / 2), center + width / 2)
+	end
+
+	-- check if bounce is necessary
+	if particle.pos[1] == center + width / 2 and color == 12 then 
+		particle.velocity[1] = random_float(-2,-1)
+		particle.pos[1] = particle.pos[1] + particle.velocity[1]
+	elseif particle.pos[1] == center - width / 2 and color == 12 then 
+		particle.velocity[1] = random_float(1,2)
+		particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	end
 end
 
@@ -404,7 +447,7 @@ function check_if_flask_full(flask)
 		total_score = total_score + score
 		flask.fill_order = {}
 
-		generate_smoke_particles(flask.cur_slot)
+		generate_smoke_particles(flask)
 	end
 end
 
@@ -416,15 +459,15 @@ smoke_red_particles = {}
 smoke_blue_particles = {}
 smoke_green_particles = {}
 
-function generate_smoke_particles(slot)
-	center_stream = (drop_slots[slot][1] + drop_slots[slot][2]) / 2 - 2
-
+function generate_smoke_particles(flask)
+	slot = flask.cur_slot
+	
 	if slot == 1 then
-		generate_smoke(center_stream, smoke_red_particles, 12, 4, 3)
+		generate_smoke(flask.center_x, smoke_red_particles, 12, 4, 3)
 	elseif slot == 2 then	
-		generate_smoke(center_stream, smoke_blue_particles, 12, 11, 10)
+		generate_smoke(flask.center_x, smoke_blue_particles, 12, 11, 10)
 	elseif slot == 3 then
-		generate_smoke(center_stream, smoke_green_particles, 12, 5, 6)
+		generate_smoke(flask.center_x, smoke_green_particles, 12, 5, 6)
 	end
 end
 
@@ -683,7 +726,7 @@ function draw_smoke(particles)
 	for i = 1, #particles do 
 		-- if is shrinking, draw a circle
 		if particles[i].color == particles[i].color_2 or particles[i].color == particles[i].color_3 then 
-			circ(particles[i].pos[1], particles[i].pos[2], particles[i].size, particles[i].color)
+			circ(particles[i].pos[1], particles[i].pos[2], particles[i].size / 2, particles[i].color)
 		else
 			rect(particles[i].pos[1], particles[i].pos[2], particles[i].size, particles[i].size, particles[i].color)
 		end
@@ -748,6 +791,29 @@ function draw_selected_flask()
 	-- selected flask is always on top
 	selected_flask = flasks[get_flask_at(selected)]
 	draw_flask_fluid(selected_flask)
+
+	particles = nil
+	if selected_flask.cur_slot == 1 then
+		particles = particles_red
+	elseif selected_flask.cur_slot == 2 then
+		particles = particles_blue
+	elseif selected_flask.cur_slot == 3 then
+		particles = particles_green
+	end
+
+	for i = 1, #particles do 
+		--particles_red.pos[1]
+		rect(particles[i].pos[1], particles[i].pos[2], math.floor(particles[i].size), math.floor(particles[i].size), particles[i].color)
+	end
+
+	if selected_flask.cur_slot == 1 then
+		draw_smoke(smoke_red_particles)
+	elseif selected_flask.cur_slot == 2 then
+		draw_smoke(smoke_blue_particles)
+	elseif selected_flask.cur_slot == 3 then
+		draw_smoke(smoke_green_particles)
+	end
+
 	spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 end
 
