@@ -211,7 +211,7 @@ function generate_stream_particles(center, particles, particle_color)
 	-- draw main stream
 	for i = 1, 25 do 
 		pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
-		pos_y = math.random(43,45)
+		pos_y = math.random(39, 40)
 		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={random_float(-0.1,0.1), random_float(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = random_float(1,3), time_to_live=random_float(20,40)}
 		if #particles < NUMBER_OF_STREAM_PARTICLES then
 			table.insert(particles, particle)
