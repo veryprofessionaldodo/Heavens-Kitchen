@@ -48,27 +48,30 @@ faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 
 -- table with information for each level like time (possible others in the future)
 -- time in seconds
+-- max steps as max steps for recipes
+-- faucets as faucets allowed
+-- percentages
 levels_metadata = {
 	tutorial_one = { 
-		time = 1000
+		time = math.huge -- no timeout for tutorials
 	},
 	tutorial_two = { 
-		time = 1000
+		time = math.huge -- no timeout for tutorials
 	},
 	level_one = { 
-		time = 45,
+		time = 90,
 		max_steps = 2,
 		faucets = faucets,
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
-		time = 30,
+		time = 60,
 		max_steps = 3,
 		faucets = faucets,
-		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
+		percentages = {0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
-		time = 25,
+		time = 60,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
@@ -157,22 +160,6 @@ ANY_FAUCET_DROPPING = false
 function TIC()
 	update()
 	draw()	
-
-	-- TODO: remove debug slot lines and center
-	print(CURR_STATE, 100, 100)
-	-- for i = 1, #drop_slots do
-	--  	l = drop_slots[i][1]
-	--  	r = drop_slots[i][2]
-	-- 	line(l, 0, l, 135, 5)
-	-- 	line(r, 0, r, 135, 5)
-	-- end
-
-	-- for i = 1, #flasks do
-	-- 	x = flasks[i].center_x
-	-- 	line(x, 0, x, 135, 10)
-	-- end
-
-	-- rectb(0, 0, 240, 136, 5) -- screen box
 end
 
 -- updates
@@ -189,10 +176,6 @@ function update()
 		update_smokes()
 		handle_timeout()
 		if #orders == 0 then update_state_machine()	end
-		-- toRemove = checkCompleteOrder() #TODO -> returns index of completed task
-		if keyp(1) and #orders ~= 0 then
-			remove_order(math.random(1, math.min(3, #orders)))
-		end
 	end
 end
 
@@ -576,10 +559,10 @@ function check_if_flask_full(flask)
 	end
 end
 
-HAIR_THRESHOLD = 50
-PERSON_THRESHOLD = 40
+HAIR_THRESHOLD = 35
+PERSON_THRESHOLD = 30
 COW_THRESHOLD = 20
-FROG_THRESHOLD = 8
+FROG_THRESHOLD = 10
 TIME_UNTIL_CREATURE_DROP = 100
 
 -- contains the creatures, and each contain the following information:
@@ -686,26 +669,32 @@ function calculate_score(fill_order)
 		return 0
 	end
 	for i=1, math.min(3, #orders) do
+		local failed = false
+		local total_diff = 0
 		for j=1, #orders[i].content do
 			if #fill_order ~= #orders[i].content then
-				score = 0
+				failed = true
 			elseif orders[i].content[j][1] == fill_order[j][1] then
-				local diff = math.ceil(math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[j][3] - fill_order[j][2])))
-				if diff ~= 0 then
-					score = math.floor((40 / diff) * 1.5)
-					if best_score < score then
-						best_score = score
-						best_score_index = i
-					end
-				else
-					if best_score < score then
-						best_score = score
-						best_score_index = i
-					end
+				total_diff = total_diff + math.ceil(math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[j][3] - fill_order[j][2])))
+			else
+				failed = true
+			end
+		end
+		if not failed then
+			if total_diff ~= 0 then
+				local failed_percentage = total_diff / 84;
+				score = math.ceil(40 - (failed_percentage * 40))
+				if best_score < score then
+					best_score = score
+					best_score_index = i
 				end
 			else
-				score = 0
+				if best_score < 40 then
+					best_score = 40
+					best_score_index = i
+				end
 			end
+			failed = false
 		end
 	end
 	if best_score_index ~= nil then
@@ -810,7 +799,7 @@ function setup_level()
 		}
 	else
 		orders = generate_orders(
-			30, 
+			40, 
 			levels_metadata[CURR_STATE].max_steps, 
 			levels_metadata[CURR_STATE].faucets, 
 			levels_metadata[CURR_STATE].percentages
@@ -921,6 +910,7 @@ function draw()
 	elseif has_value(playable_states, CURR_STATE) then
 		draw_game()
 	end
+	print(total_score, 10, 10, 5)
 end
 
 function draw_main_menu()
