@@ -6,11 +6,13 @@
 states = {
 	MAIN_MENU = 'main_menu',
 	CUTSCENE_ZERO = 'cutscene_zero',
+	CUTSCENE_ONE = 'cutscene_one',
+	CUTSCENE_TWO = 'cutscene_two',
 	HOW_TO_PLAY_ONE = 'how_to_play_one',
 	TUTORIAL_ONE = 'tutorial_one',
 	HOW_TO_PLAY_TWO = 'how_to_play_two',
 	TUTORIAL_TWO = 'tutorial_two',
-	CUTSCENE_ONE = 'cutscene_one',
+	CUTSCENE_THREE = 'cutscene_three',
 	LEVEL_ONE = 'level_one',
 	RESULT_ONE = 'result_one',
 	LEVEL_TWO = 'level_two',
@@ -23,9 +25,11 @@ states = {
 skipable_states = {
 	states.MAIN_MENU,
 	states.CUTSCENE_ZERO,
+	states.CUTSCENE_ONE,
+	states.CUTSCENE_TWO,
 	states.HOW_TO_PLAY_ONE,
 	states.HOW_TO_PLAY_TWO,
-	states.CUTSCENE_ONE,
+	states.CUTSCENE_THREE,
 	states.RESULT_ONE,
 	states.RESULT_TWO,
 	states.RESULT_THREE,
@@ -154,7 +158,7 @@ function TIC()
 	draw()	
 
 	-- TODO: remove debug slot lines and center
-	-- print(CURR_STATE, 100, 100)
+	print(CURR_STATE, 100, 100)
 	-- for i = 1, #drop_slots do
 	--  	l = drop_slots[i][1]
 	--  	r = drop_slots[i][2]
@@ -197,6 +201,10 @@ function update_state_machine()
 	if CURR_STATE == states.MAIN_MENU then
 		CURR_STATE = states.CUTSCENE_ZERO
 	elseif CURR_STATE == states.CUTSCENE_ZERO then
+		CURR_STATE = states.CUTSCENE_ONE
+	elseif CURR_STATE == states.CUTSCENE_ONE then
+		CURR_STATE = states.CUTSCENE_TWO
+	elseif CURR_STATE == states.CUTSCENE_TWO then
 		CURR_STATE = states.HOW_TO_PLAY_ONE
 	elseif CURR_STATE == states.HOW_TO_PLAY_ONE then
 		CURR_STATE = states.TUTORIAL_ONE
@@ -205,8 +213,8 @@ function update_state_machine()
 	elseif CURR_STATE == states.HOW_TO_PLAY_TWO then
 		CURR_STATE = states.TUTORIAL_TWO
 	elseif CURR_STATE == states.TUTORIAL_TWO then
-		CURR_STATE = states.CUTSCENE_ONE
-	elseif CURR_STATE == states.CUTSCENE_ONE then
+		CURR_STATE = states.CUTSCENE_THREE
+	elseif CURR_STATE == states.CUTSCENE_THREE then
 		CURR_STATE = states.LEVEL_ONE
 	elseif CURR_STATE == states.LEVEL_ONE then
 		CURR_STATE = states.RESULT_ONE
@@ -785,12 +793,16 @@ function draw()
 		draw_main_menu()
 	elseif (CURR_STATE == states.CUTSCENE_ZERO) then
 		draw_cutscene_zero()
+	elseif (CURR_STATE == states.CUTSCENE_ONE) then
+		draw_cutscene_one()
+	elseif (CURR_STATE == states.CUTSCENE_TWO) then
+		draw_cutscene_two()
 	elseif (CURR_STATE == states.HOW_TO_PLAY_ONE) then
 		draw_how_to_play_one()
 	elseif (CURR_STATE == states.HOW_TO_PLAY_TWO) then
 		draw_how_to_play_two()
-	elseif (CURR_STATE == states.CUTSCENE_ONE) then
-		draw_cutscene_one()
+	elseif (CURR_STATE == states.CUTSCENE_THREE) then
+		draw_cutscene_three()
 	elseif (CURR_STATE == states.RESULT_ONE) then
 		draw_result_one()
 	elseif (CURR_STATE == states.RESULT_TWO) then
@@ -819,6 +831,10 @@ function draw_how_to_play_one()
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
 
+function draw_cutscene_two()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+end
+
 function draw_how_to_play_two()
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
@@ -835,6 +851,10 @@ end
 function draw_result_two()
 	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 	draw_stars()
+end
+
+function draw_cutscene_three()
+	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
 end
 
 function draw_result_three()
