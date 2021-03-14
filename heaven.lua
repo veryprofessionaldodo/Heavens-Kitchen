@@ -18,28 +18,45 @@ events = {
 	WON_GAME = 'won'
 }
 
+faucets = { 2, 9, 5 } -- red, yellow, blue faucets
+
 -- table with information for each level like time (possible others in the future)
 -- time in seconds
 levels_metadata = {
-	["level_one"] = { ["time"] = 50 },
-	["level_two"] = { ["time"] = 50 },
-	["level_three"] = { ["time"] = 50 }
+	level_one = { 
+		time = 15,
+		max_steps = 2,
+		faucets = {faucets[1], faucets[2]},
+		percentages = {0.25, 0.50, 0.75, 1}
+	},
+	level_two = { 
+		time = 15 ,
+		max_steps = 3,
+		faucets = faucets,
+		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
+	},
+	level_three = { 
+		time = 15 ,
+		max_steps = 3,
+		faucets = faucets,
+		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
+	}
 }
 
 flask1 = {
-	center_x = 24, -- center x
+	center_x = 42, -- center x
 	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
 	cur_slot = 1, -- current slot the flask is placed in
 }
 
 flask2 = {
-	center_x = 74,
+	center_x = 92,
 	fill_order = {},
 	cur_slot = 2,
 }
 
 flask3 = {
-	center_x = 124,
+	center_x = 142,
 	fill_order = {}, 
 	cur_slot = 3,
 }
@@ -48,9 +65,7 @@ total_score = 0 -- total score of the player
 
 flasks = { flask1, flask2, flask3 } -- not ordered
 
-faucets = { 2, 9, 5 } -- red, yellow, blue faucets
-
-drop_slots = { {6, 42}, {56, 92}, {106, 142} } -- ranges of the drop slots
+drop_slots = { {24, 60}, {74, 110}, {124, 160} } -- ranges of the drop slots
 
 selected = nil -- selected flask to drag
 
@@ -84,8 +99,12 @@ PARTICLE_SPEED = 5
 BUBBLES_GRAVITY = 0.1
 
 FRAME_COUNTER = 0
-RECT_LENGTH = 155
-TIMER_LENGTH = 155
+RECT_HEIGHT = 100
+TIMER_Y = 10
+TIMER_HEIGHT = 100
+
+STREAM_WIDTH = 6
+MAX_NUMBER_OF_PARTICLES = 300
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = {}
@@ -102,9 +121,9 @@ function TIC()
 	draw()
 
 	-- TODO: remove debug slot lines and center
-	-- for i = 1, #drop_slots do
-	-- 	l = drop_slots[i][1]
-	-- 	r = drop_slots[i][2]
+	--  for i = 1, #drop_slots do
+	--  	l = drop_slots[i][1]
+	--  	r = drop_slots[i][2]
 	-- 	line(l, 0, l, 135, 5)
 	-- 	line(r, 0, r, 135, 5)
 	-- end
@@ -393,9 +412,10 @@ end
 function handle_timeout()
 	timeout = levels_metadata[CURR_STATE].time * CLOCK_FREQ
 
-	TIMER_DECREMENT = RECT_LENGTH / levels_metadata[CURR_STATE].time
+	timer_incr = RECT_HEIGHT/levels_metadata[CURR_STATE].time
 	if((FRAME_COUNTER % CLOCK_FREQ) == 0) then
-		TIMER_LENGTH = TIMER_LENGTH - TIMER_DECREMENT
+		TIMER_Y = TIMER_Y + timer_incr
+		TIMER_HEIGHT = TIMER_HEIGHT - timer_incr
 	end
 
 	if FRAME_COUNTER >= timeout then
@@ -407,6 +427,8 @@ end
 function setup_level()
 	--music(2)
 	TIMER_LENGTH = RECT_LENGTH
+	TIMER_HEIGHT = RECT_HEIGHT
+	TIMER_Y = 10
 
 	-- empty flasks
 	for i = 1, #flasks do
@@ -414,13 +436,12 @@ function setup_level()
 	end
 
 	-- generate orders for next level
-	if CURR_STATE == states.LEVEL_ONE then
-		orders = generate_orders(20, 2, {faucets[1], faucets[2]}, {0.25, 0.50, 0.75, 1})
-	elseif CURR_STATE == states.LEVEL_TWO then
-		orders = generate_orders(20, 3, faucets, {0.15, 0.25, 0.50, 0.75, 0.85, 1})
-	elseif CURR_STATE == states.LEVEL_THREE then
-		orders = generate_orders(20, 3, faucets, {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1})
-	end
+	orders = generate_orders(
+		30, 
+		levels_metadata[CURR_STATE].max_steps, 
+		levels_metadata[CURR_STATE].faucets, 
+		levels_metadata[CURR_STATE].percentages
+	)
 end
 
 function generate_orders(norders, max_steps, faucets, percentages)
@@ -438,9 +459,14 @@ function generate_orders(norders, max_steps, faucets, percentages)
 		-- if first p1 is less than 1, generate another one
 		-- generate also another color, different from the last
 		if ps[1] < 1.0 and max_steps > 1 then
-			p2 = percentages[math.random(1, #percentages)]
-			while p2 + ps[1] > 1.0 do
+			p2 = nil
+			if max_steps == 2 then
+				p2 = 1.0 - ps[1]
+			else
 				p2 = percentages[math.random(1, #percentages)]
+				while p2 + ps[1] > 1.0 do
+					p2 = percentages[math.random(1, #percentages)]
+				end
 			end
 			table.insert(ps, p2)
 			
@@ -454,7 +480,8 @@ function generate_orders(norders, max_steps, faucets, percentages)
 		-- if first p1 + p2 is still less than 1, generate another one
 		-- generate also another color, different from the last
 		if ps[1] < 1.0 and ps[1] + ps[2] < 1.0 and max_steps > 2 then
-			table.insert(ps, 1 - math.ceil(ps[1] + ps[2]))
+			p3 = 1.0 - (ps[1] + ps[2])
+			table.insert(ps, p3)
 			
 			color = faucets[math.random(1, #faucets)]
 			while color == colors[2] do
@@ -463,10 +490,18 @@ function generate_orders(norders, max_steps, faucets, percentages)
 			table.insert(colors, color)
 		end
 
+		sanity_check = 0.0
+		for i = 1, #ps do
+			sanity_check = sanity_check + ps[i]
+		end
+		if sanity_check < 1.0 then
+			ps[#ps] = ps[#ps] + (1.0 - sanity_check)
+		end
+
 		content = {}
 		for i = 1, #ps do
 			table.insert(content, { colors[i], ps[i] })
-		end
+		end		
 
 		table.insert(orders, { content = content, pos = pos, target = target })
 	end
@@ -508,7 +543,7 @@ function draw_game()
 	draw_faucets()
 	draw_orders()
 	draw_timer()
-	print(total_score, 64, 64, 4)
+	draw_score()
 end
 
 -- particles are simple objects that have five components:
@@ -533,10 +568,14 @@ function draw_particles()
 end
 
 function draw_timer()
-	rect(42, 5, 155, 7, 3)
-	rect(42, 5, TIMER_LENGTH, 7, 4)
-	rectb(42, 5, 155, 7, 4)
-	print("Time Left", 100, 6, 0, false, 1, false)
+	rect(7, 10, 6, 100, 3)
+	rect(7, TIMER_Y, 6, math.floor(TIMER_HEIGHT+0.5), 4)
+	rectb(7, 10, 7, 100, 4)
+	str = "TIME"
+	for i = 1, #str do
+		local c = str:sub(i,i)
+		print(c, 8, 37 + i*7)
+	end
 end
 
 function draw_flasks_containers() 
@@ -610,11 +649,11 @@ function create_order_ui(i, o)
 
 		elseif #o[i].content == 2 then
 			spr(colorSpr, o[i].pos[1] + 15 + 25*(j-1), o[i].pos[2] + 5, 0)
-			percentage = math.floor(o[i].content[j][2] * 100)
+			percentage = math.floor(0.5 + o[i].content[j][2] * 100)
 			print(percentage .. "%", o[i].pos[1]+15+25*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
 		elseif #o[i].content == 3 then
 			spr(colorSpr, o[i].pos[1] + 8 + 20*(j-1), o[i].pos[2] + 5, 0)
-			percentage = math.floor(o[i].content[j][2] * 100)
+			percentage = math.floor(0.5 + o[i].content[j][2] * 100)
 			print(percentage .. "%", o[i].pos[1]+7+20*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
 		end
 	end
@@ -650,6 +689,11 @@ function draw_faucets()
 		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
 		spr(6, pos_outoforder_x - 6, 5, 0, 3, 0, 0, 2, 2)
 	end
+end
+
+function draw_score()
+	print("Score", 0, 118, 4, false, 1, true)
+	print(total_score, 0, 125, 4, false, 1, true)
 end
 
 -- utils
