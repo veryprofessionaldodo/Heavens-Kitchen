@@ -21,9 +21,9 @@ events = {
 -- table with information for each level like time (possible others in the future)
 -- time in seconds
 levels_metadata = {
-	["level_one"] = { ["time"] = 15 },
-	["level_two"] = { ["time"] = 15 },
-	["level_three"] = { ["time"] = 15 }
+	["level_one"] = { ["time"] = 50 },
+	["level_two"] = { ["time"] = 50 },
+	["level_three"] = { ["time"] = 50 }
 }
 
 flask1 = {
@@ -88,13 +88,7 @@ RECT_LENGTH = 155
 TIMER_LENGTH = 155
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
-orders = { 
-	{content = {{2, 1}}, pos = {168, 137}, target = {168, 8}}, 
-	{content = {{2, 0.33}, {9, 0.33}, {5, 0.33}}, pos = {168, 137 + 44}, target = {168, 52}},
-	{content = {{2, 0.5}, {5, 0.5}}, pos = {168, 137 + 88}, target = {168, 96}},
-	{content = {{2, 0.5}, {5, 0.5}}, pos = {168, 137}, target = {168, 137}},
-	{content = {{9, 0.5}, {2, 0.5}}, pos = {168, 137}, target = {168, 137}},
-}
+orders = {}
 
 completed_orders = {}
 vertical_targets = { 8, 52, 96, 137 }
@@ -116,6 +110,7 @@ function TIC()
 	-- 	x = flasks[i].center_x
 	-- 	line(x, 0, x, 135, 10)
 	-- end
+
 end
 
 -- updates
@@ -126,7 +121,6 @@ function update()
 			update_state_machine(events.START_GAME)
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
-		-- generateOrders() #TODO
 		update_orders()
 		update_mouse()
 		update_flasks()
@@ -144,11 +138,14 @@ function update_state_machine(event)
 		CURR_STATE = states.MAIN_MENU
 	elseif event == events.START_GAME then
 		CURR_STATE = states.LEVEL_ONE
+		setup_level()
 	elseif event == events.NEXT_LEVEL then
 		if CURR_STATE == states.LEVEL_ONE then
 			CURR_STATE = states.LEVEL_TWO
+			setup_level()
 		elseif CURR_STATE == states.LEVEL_TWO then
 			CURR_STATE = states.LEVEL_THREE
+			setup_level()
 		end		
 	end
 end
@@ -310,7 +307,7 @@ function calculate_score(fill_order)
 			if #fill_order ~= #orders[i].content then
 				score = 0
 			elseif orders[i].content[j][1] == fill_order[j][1] then
-				local diff = math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[j][3] - fill_order[j][2]))
+				local diff = math.ceil(math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[j][3] - fill_order[j][2])))
 				if diff ~= 0 then
 					score = math.floor(40 / diff)
 					if best_score < score then
@@ -383,30 +380,86 @@ end
 function handle_timeout()
 	timeout = levels_metadata[CURR_STATE].time * CLOCK_FREQ
 
-	TIMER_DECREMENT = RECT_LENGTH/levels_metadata[CURR_STATE].time
+	TIMER_DECREMENT = RECT_LENGTH / levels_metadata[CURR_STATE].time
 	if((FRAME_COUNTER % CLOCK_FREQ) == 0) then
 		TIMER_LENGTH = TIMER_LENGTH - TIMER_DECREMENT
 	end
 
 	if FRAME_COUNTER >= timeout then
 		FRAME_COUNTER = 0
-		next_level()
+		update_state_machine(events.NEXT_LEVEL)
 	end
 end
 
-function next_level()
-	update_state_machine(events.NEXT_LEVEL)
+function setup_level()
+	TIMER_LENGTH = RECT_LENGTH
 
-	-- reset game world
+	-- empty flasks
 	for i = 1, #flasks do
 		flasks[i].fill_order = {}
 	end
 
-	TIMER_LENGTH = RECT_LENGTH
+	-- generate orders for next level
+	if CURR_STATE == states.LEVEL_ONE then
+		orders = generate_orders(20, 2, {faucets[1], faucets[2]}, {0.25, 0.50, 0.75, 1})
+	elseif CURR_STATE == states.LEVEL_TWO then
+		orders = generate_orders(20, 3, faucets, {0.15, 0.25, 0.50, 0.75, 0.85, 1})
+	elseif CURR_STATE == states.LEVEL_THREE then
+		orders = generate_orders(20, 3, faucets, {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1})
+	end
+end
+
+function generate_orders(norders, max_steps, faucets, percentages)
+	-- orders
+	local orders = {}
+	for o = 1, norders do
+		pos = {168, 137 + (o - 1) * ORDER_PADDING }
+		target = { 168, vertical_targets[o] or 137 }
+		
+		-- what a mess lol 
+		-- generate first pair (color, p)
+		ps = { percentages[math.random(1, #percentages)] }
+		colors = { faucets[math.random(1, #faucets)] }
+
+		-- if first p1 is less than 1, generate another one
+		-- generate also another color, different from the last
+		if ps[1] < 1.0 and max_steps > 1 then
+			p2 = percentages[math.random(1, #percentages)]
+			while p2 + ps[1] > 1.0 do
+				p2 = percentages[math.random(1, #percentages)]
+			end
+			table.insert(ps, p2)
+			
+			color = faucets[math.random(1, #faucets)]
+			while color == colors[1] do
+				color = faucets[math.random(1, #faucets)]
+			end
+			table.insert(colors, color)
+		end
+
+		-- if first p1 + p2 is still less than 1, generate another one
+		-- generate also another color, different from the last
+		if ps[1] < 1.0 and ps[1] + ps[2] < 1.0 and max_steps > 2 then
+			table.insert(ps, 1 - math.ceil(ps[1] + ps[2]))
+			
+			color = faucets[math.random(1, #faucets)]
+			while color == colors[2] do
+				color = faucets[math.random(1, #faucets)]
+			end
+			table.insert(colors, color)
+		end
+
+		content = {}
+		for i = 1, #ps do
+			table.insert(content, { colors[i], ps[i] })
+		end
+
+		table.insert(orders, { content = content, pos = pos, target = target })
+	end
+	return orders
 end
 
 function remove_order(index)
-		
 	for i = #orders, index + 1, -1 do
 		orders[i].target[2] = orders[i-1].target[2]
 	end
