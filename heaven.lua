@@ -212,14 +212,14 @@ function generate_stream_particles(center, particles, particle_color)
 	for i = 1, 25 do 
 		pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
 		pos_y = math.random(43,45)
-		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={randomFloat(-0.1,0.1), randomFloat(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = randomFloat(1,3), time_to_live=randomFloat(20,40)}
+		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={random_float(-0.1,0.1), random_float(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = random_float(1,3), time_to_live=random_float(20,40)}
 		if #particles < NUMBER_OF_STREAM_PARTICLES then
 			table.insert(particles, particle)
 		end
 	end
 end
 
-function randomFloat(lower, greater)
+function random_float(lower, greater)
     return lower + math.random()  * (greater - lower);
 end
 
@@ -282,22 +282,22 @@ function update_smoke_particle(particle, center, width, height)
 	end
 
 	particle.time_to_live = particle.time_to_live - 1
-	particle.size = particle.size + randomFloat(-0.2, -0.1)
+	particle.size = particle.size + random_float(-0.2, -0.1)
 	
 	if particle.pos[1] < center - width/2 then 
-		particle.velocity[1] = randomFloat(0.1, 0.8)
+		particle.velocity[1] = random_float(0.1, 0.8)
 	elseif particle.pos[1] > center + width/2 then
-		particle.velocity[1] = randomFloat(-0.8, -0.1)
+		particle.velocity[1] = random_float(-0.8, -0.1)
 	end
 
-	particle.velocity[1] = randomFloat(-0.1, 0.1)
+	particle.velocity[1] = random_float(-0.1, 0.1)
 
 	if height - particle.pos[2] < max_prox_x then 
-		particle.velocity[2] = particle.velocity[2] + randomFloat(-0.1, -0.01)
+		particle.velocity[2] = particle.velocity[2] + random_float(-0.1, -0.01)
 	elseif particle.pos[2] < 47 then
 		particle.velocity[2] = particle.velocity[2] / 1.1
 	else
-		particle.velocity[2] = particle.velocity[2] + randomFloat(-0.01, 0.01)
+		particle.velocity[2] = particle.velocity[2] + random_float(-0.01, 0.01)
 	end
 
 	--velocity_y = randomFloat(-1, 1)
@@ -432,16 +432,16 @@ function generate_smoke(center, particles, smoke_col_1, smoke_col_2, smoke_col_3
 			pos_x = center - width/2 + i + particle_size / 2
 			pos_y = height/2 + j + particle_size / 2
 
-			velocity_x = randomFloat(-0.05,0.05)
+			velocity_x = random_float(-0.05,0.05)
 			-- if it is close to the bounds, make the velocity not as intense
 			if i < max_prox_x then
-				velocity_x = randomFloat(-0.05, -0.01)
+				velocity_x = random_float(-0.05, -0.01)
 			elseif i > width - max_prox_x then
-				velocity_x = randomFloat(0.01, 0.05)
+				velocity_x = random_float(0.01, 0.05)
 			end
 
-			velocity_y = randomFloat(-1, 1)
-			particle = {size = particle_size, pos={pos_x, pos_y}, velocity={velocity_x, velocity_y}, color=smoke_col_1, color_2= smoke_col_2, color_3=smoke_col_3, time_to_live=randomFloat(30,60)}
+			velocity_y = random_float(-1, 1)
+			particle = {size = particle_size, pos={pos_x, pos_y}, velocity={velocity_x, velocity_y}, color=smoke_col_1, color_2= smoke_col_2, color_3=smoke_col_3, time_to_live=random_float(30,60)}
 			table.insert(particles, particle)
 		end
 	end
