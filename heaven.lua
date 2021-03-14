@@ -130,7 +130,7 @@ function TIC()
 	-- 	line(x, 0, x, 135, 10)
 	-- end
 
-	-- rectb(0, 0, 240, 136, 5) -- screen box
+	rectb(0, 0, 240, 136, 5) -- screen box
 end
 
 -- updates
@@ -653,33 +653,22 @@ function create_order_ui(i, o)
 end
 
 function draw_faucets()
+	width = drop_slots[1][2] - drop_slots[1][1]
+
+	-- draw red faucet 
+	pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
+	spr(2,pos_red_x - 6, 0, 0, 3, 0, 0, 2, 2)
+
+	-- draw blue faucet
+	pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
+	spr(4,pos_blue_x - 6, 0, 0, 3, 0, 0, 2, 2)
+
+	-- draw out of order faucet
+	pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
+
 	if CURR_STATE == states.LEVEL_ONE then
-		width = drop_slots[1][2] - drop_slots[1][1]
-
-		-- draw red faucet 
-		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x - 6, 0, 0, 3, 0, 0, 2, 2)
-
-		-- draw blue faucet
-		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x - 6, 0, 0, 3, 0, 0, 2, 2)
-
-		-- draw out of order faucet
-		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(8,pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
-	else  
-		width = drop_slots[1][2] - drop_slots[1][1]
-
-		-- draw red faucet 
-		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x - 6, 0, 0, 3, 0, 0, 2, 2)
-
-		-- draw blue faucet
-		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x - 6, 0, 0, 3, 0, 0, 2, 2)
-
-		-- draw green faucet
-		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
+		spr(8 ,pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
+	else
 		spr(6, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	end
 end
