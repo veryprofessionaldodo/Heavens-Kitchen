@@ -46,16 +46,10 @@ faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 -- time in seconds
 levels_metadata = {
 	tutorial_one = { 
-		time = 1000,
-		max_steps = 1,
-		faucets = {faucets[1], faucets[2]},
-		percentages = {0.25, 0.50, 0.75, 1}
+		time = 1000
 	},
 	tutorial_two = { 
-		time = 1000,
-		max_steps = 2,
-		faucets = {faucets[1], faucets[2]},
-		percentages = {0.25, 0.50, 0.75, 1}
+		time = 1000
 	},
 	level_one = { 
 		time = 15,
@@ -348,11 +342,11 @@ function update_smoke_particle(particle, center, width, height)
 	particle.size = particle.size + random_float(-0.2, -0.1)
 	
 	if particle.pos[1] < center - width/2 then 
-		particle.velocity[1] = particle.velocity[1] + randomFloat(0.1, 0.8)
+		particle.velocity[1] = particle.velocity[1] + random_float(0.1, 0.8)
 	elseif particle.pos[1] > center + width/2 then
-		particle.velocity[1] = particle.velocity[1] + randomFloat(-0.8, -0.1)
+		particle.velocity[1] = particle.velocity[1] + random_float(-0.8, -0.1)
 	else 
-		particle.velocity[1] = particle.velocity[1] + randomFloat(-0.1, 0.1)
+		particle.velocity[1] = particle.velocity[1] + random_float(-0.1, 0.1)
 	end
 
 	
@@ -365,7 +359,7 @@ function update_smoke_particle(particle, center, width, height)
 		particle.velocity[2] = particle.velocity[2] + random_float(-0.01, 0.01)
 	end
 
-	--velocity_y = randomFloat(-1, 1)
+	--velocity_y = random_float(-1, 1)
 	-- update properties
 	particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	particle.pos[2] = particle.pos[2] + particle.velocity[2]
