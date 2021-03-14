@@ -201,7 +201,6 @@ function update_flasks()
 	end
 
 	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
-		--add particles
 		center_stream = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
 		generate_particles(center_stream, particles_red, 3)
 	end
@@ -209,7 +208,7 @@ function update_flasks()
 		center_stream = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
 		generate_particles(center_stream, particles_blue, 10)
 	end
-	if key(FAUCET_KEYCODE_3) and selected ~= 3 then
+	if key(FAUCET_KEYCODE_3) and selected ~= 3 and CURR_STATE ~= states.LEVEL_ONE then
 		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
 		generate_particles(center_stream, particles_green, 6)
 	end
