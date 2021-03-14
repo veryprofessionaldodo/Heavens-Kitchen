@@ -21,9 +21,9 @@ events = {
 -- table with information for each level like time (possible others in the future)
 -- time in seconds
 levels_metadata = {
-	["level_one"] = { ["time"] = 15 },
-	["level_two"] = { ["time"] = 15 },
-	["level_three"] = { ["time"] = 15 }
+	["level_one"] = { ["time"] = 5 },
+	["level_two"] = { ["time"] = 5 },
+	["level_three"] = { ["time"] = 5 }
 }
 
 flask1 = {
@@ -44,7 +44,7 @@ flask3 = {
 	cur_slot = 3,
 }
 
-score = 0 -- total score of the player
+total_score = 0 -- total score of the player
 
 flasks = { flask1, flask2, flask3 } -- not ordered
 
@@ -53,8 +53,6 @@ faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 drop_slots = { {6, 42}, {56, 92}, {106, 142} } -- ranges of the drop slots
 
 selected = nil -- selected flask to drag
-
-frame_count = 0 -- count of elapsed frames
 
 -- constants
 SCREEN_WIDTH = 240
@@ -80,17 +78,14 @@ FILL_RATE = 3
 
 BACKGROUND_COLOR = 0
 
+FRAME_COUNTER = 0
+RECT_LENGTH = 155
+TIMER_LENGTH = 155
 STREAM_WIDTH = 6
 MAX_NUMBER_OF_PARTICLES = 300
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
-orders = { 
-	{content = {{2, 1}}, pos = {168, 137}, target = {168, 8}}, 
-	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + ORDER_PADDING}, target = {168, 52}},
-	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137 + ORDER_PADDING * 2}, target = {168, 96}},
-	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137}, target = {168, 137}},
-	{content = {{2, 0.5}, {4, 0.5}}, pos = {168, 137}, target = {168, 137}}
-}
+orders = {}
 
 completed_orders = {}
 vertical_targets = { 8, 52, 96, 137 }
@@ -112,25 +107,25 @@ function TIC()
 	-- 	x = flasks[i].center_x
 	-- 	line(x, 0, x, 135, 10)
 	-- end
+
 end
 
 -- updates
 function update()
-	frame_count = frame_count + 1
+	FRAME_COUNTER = FRAME_COUNTER + 1
 	if (CURR_STATE == states.MAIN_MENU) then
 		if keyp(Z_KEYCODE) then
 			update_state_machine(events.START_GAME)
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
-		level_timer()
 		update_orders()
 		update_mouse()
 		update_flasks()
 		update_streams()
 		handle_timeout()
 		-- toRemove = checkCompleteOrder() #TODO -> returns index of completed task
-		if keyp(1) then
-			remove_order(1)
+		if keyp(1) and #orders ~= 0 then
+			remove_order(math.random(1, math.min(3, #orders)))
 		end
 	end
 end
@@ -166,9 +161,6 @@ function update_mouse()
 		flask = flasks[get_flask_at(slot)]
 		flask.center_x = mx
 	end
-end
-
-function level_timer()
 end
 
 function update_flasks()
@@ -215,29 +207,36 @@ function check_if_flask_full(flask)
 	end
 	if sum >= FLASK_HEIGHT then
 		local score = calculate_score(flask.fill_order)
+		total_score = total_score + score
 		flask.fill_order = {}
 	end
-	print(score, 0, 0, 6)
 end
 
 function calculate_score(fill_order)
 	total = 85
-	if #orders ~= #fill_order then
+	if fill_order == nil then
 		return 0
 	end
 	for i=1, #orders do
-		if orders[i].color == fill_order[i][1] then
-			local diff = math.abs((orders[i].percentage * FLASK_HEIGHT) - (fill_order[i][3] - fill_order[i][2]))
-			if diff ~= 0 then
-				score = math.floor(40 / diff)
-			else
-				score = 40
+		for j=1, #orders[i].content do
+			if #fill_order ~= #orders[i].content then
+				return 0
 			end
-		else
-			score = 0
+			if orders[i].content[j][1] == fill_order[j][1] then
+				local diff = math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[i][3] - fill_order[i][2]))
+				if diff ~= 0 then
+					score = math.floor(40 / diff)
+					return score
+				else
+					score = 40
+					return score
+				end
+			else
+				score = 0
+				return score
+			end
 		end
 	end
-	return score
 end
 
 function update_orders()
@@ -288,13 +287,21 @@ end
 
 function handle_timeout()
 	timeout = levels_metadata[CURR_STATE].time * CLOCK_FREQ
-	if frame_count >= timeout then
-		frame_count = 0
+
+	TIMER_DECREMENT = RECT_LENGTH / levels_metadata[CURR_STATE].time
+	if((FRAME_COUNTER % CLOCK_FREQ) == 0) then
+		TIMER_LENGTH = TIMER_LENGTH - TIMER_DECREMENT
+	end
+
+	if FRAME_COUNTER >= timeout then
+		FRAME_COUNTER = 0
 		update_state_machine(events.NEXT_LEVEL)
 	end
 end
 
 function setup_level()
+	TIMER_LENGTH = RECT_LENGTH
+
 	-- empty flasks
 	for i = 1, #flasks do
 		flasks[i].fill_order = {}
@@ -302,30 +309,51 @@ function setup_level()
 
 	-- generate orders for next level
 	if CURR_STATE == states.LEVEL_ONE then
-		orders = generate_orders(5, 10, {faucets[1], faucets[2]}, {0.25, 0.50, 0.75, 1})
+		orders = generate_orders(5, 10, 2, {faucets[1], faucets[2]}, {0.25, 0.50, 0.75, 1})
 	elseif CURR_STATE == states.LEVEL_TWO then
-		orders = generate_orders(5, 10, faucets, {0.15, 0.25, 0.50, 0.75, 0.85, 1})
+		orders = generate_orders(5, 10, 3, faucets, {0.15, 0.25, 0.50, 0.75, 0.85, 1})
 	elseif CURR_STATE == states.LEVEL_THREE then
-		orders = generate_orders(5, 10, faucets, {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1})
+		orders = generate_orders(5, 10, 3, faucets, {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1})
 	end
 end
 
-function generate_orders(min_orders, max_orders, faucets, percentages)
+function generate_orders(min_orders, max_orders, max_steps, faucets, percentages)
 	-- orders
 	local orders = {}
 	for o = 1, math.random(min_orders, max_orders) do
 		pos = {168, 137 + (o - 1) * ORDER_PADDING }
 		target = { 168, vertical_targets[o] or 137 }
 		
-		-- content
-		total_p, content = 0.0, {}
-		while total_p ~= 1.0 do
-			p = percentages[math.random(1, #percentages)]
-			if total_p + p <= 1.0 then
+		-- what a mess lol 
+		-- generate first pair (color, p)
+		ps = { percentages[math.random(1, #percentages)] }
+		colors = { faucets[math.random(1, #faucets)] }
+
+		-- if first p1 is less than 1, generate another one
+		-- generate also another color, different from the last
+		if ps[1] < 1.0 and max_steps > 1 then
+			table.insert(ps, percentages[math.random(1, #percentages)])
+			color = faucets[math.random(1, #faucets)]
+			while color == colors[1] do
 				color = faucets[math.random(1, #faucets)]
-				table.insert(content, {color, p})
-				total_p = total_p + p
 			end
+			table.insert(colors, color)
+		end
+
+		-- if first p1 + p2 is still less than 1, generate another one
+		-- generate also another color, different from the last
+		if ps[1] < 1.0 and ps[1] + ps[2] < 1.0 and max_steps > 2 then
+			table.insert(ps, 1 - (ps[1] + ps[2]))
+			color = faucets[math.random(1, #faucets)]
+			while color == colors[2] do
+				color = faucets[math.random(1, #faucets)]
+			end
+			table.insert(colors, color)
+		end
+
+		content = {}
+		for i = 1, #ps do
+			table.insert(content, { colors[i], ps[i] })
 		end
 
 		table.insert(orders, { content = content, pos = pos, target = target })
@@ -351,8 +379,6 @@ function draw()
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
 		draw_game()
 	end
-	rectb(160, 0, 80, 136, 6)
-	rectb(0, 0, 240, 136, 5)
 end
 
 function draw_main_menu()
@@ -367,6 +393,7 @@ function draw_game()
 	draw_flasks()
 	draw_orders()
 	draw_timer()
+	print(total_score, 64, 64, 4)
 	draw_streams()
 end
 
@@ -425,7 +452,8 @@ function draw_particles()
 end
 
 function draw_timer()
-	rect(42, 5, 155, 7, 4)
+	rect(42, 5, 155, 7, 3)
+	rect(42, 5, TIMER_LENGTH, 7, 4)
 	rectb(42, 5, 155, 7, 4)
 	print("Time Left", 100, 6, 0, false, 1, false)
 end
@@ -459,17 +487,44 @@ function draw_orders()
 	-- Orders are 32px by 16px and scaled by 2
 
 	for i=1, math.min(#orders, 4) do
-		spr(12, orders[i].pos[1], orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
-		--Draw order elements
-		print(orders[i].content[1][2], orders[i].pos[1]+16, orders[i].pos[2] + 16)
+		create_order_ui(i, orders)
 	end
 
 	for i=1, #completed_orders do
-		spr(12, completed_orders[i].pos[1], completed_orders[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
-		--Draw order elements
-		print(completed_orders[i].content[1][2], completed_orders[i].pos[1]+16, completed_orders[i].pos[2] + 16)
+		create_order_ui(i, completed_orders)
 	end
 
+end
+
+function create_order_ui(i, o)
+	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
+		
+	for j=1, #o[i].content do
+
+		colorSpr = -1
+		if o[i].content[j][1] == 2 then
+			colorSpr = 16
+		elseif o[i].content[j][1] == 9 then
+			colorSpr = 17
+		elseif o[i].content[j][1] == 5 then
+			colorSpr = 32
+		end
+
+		if #o[i].content == 1 then
+			spr(colorSpr, o[i].pos[1] + 7, o[i].pos[2] + 5, 0, 2)
+			percentage = o[i].content[j][2] * 100
+			print(percentage .. "%", o[i].pos[1]+26, o[i].pos[2] + 9, 0, false, 2, true)
+
+		elseif #o[i].content == 2 then
+			spr(colorSpr, o[i].pos[1] + 15 + 25*(j-1), o[i].pos[2] + 5, 0)
+			percentage = math.floor(o[i].content[j][2] * 100)
+			print(percentage .. "%", o[i].pos[1]+15+25*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
+		elseif #o[i].content == 3 then
+			spr(colorSpr, o[i].pos[1] + 8 + 20*(j-1), o[i].pos[2] + 5, 0)
+			percentage = math.floor(o[i].content[j][2] * 100)
+			print(percentage .. "%", o[i].pos[1]+7+20*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
+		end
+	end
 end
 
 function draw_faucets()
@@ -551,6 +606,8 @@ init()
 -- 013:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 -- 014:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 -- 015:88888880cccccc88ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8
+-- 016:00e00e0000e00e0000e20e0000d22e000d2222e0d322222ed332333e0ddddee0
+-- 017:000000000e0000e00ee00ee000e90e0000e99e0000d89e0000d88e00000dd000
 -- 018:001122cc0011122200000022000000e2000000df0000000e0000000000000000
 -- 019:cc22ff00222fff00220000002f000000ff000000f00000000000000000000000
 -- 020:008999990089999c00099999000000ff000000ff0000000d0000000000000000
@@ -565,6 +622,7 @@ init()
 -- 029:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
 -- 030:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
 -- 031:ccccccc8ccccccc8ccccccc8ccccccc8cccccc88888ccc800088c88000088800
+-- 032:00e00e000e5000e0e555500ed555555ed655555ed665555ed666665e0dddddd0
 -- 042:00d0000000d0000000c0000000d0000000d0000000d0000000d0000000d00000
 -- 043:00000d0000000e0000000e0000000d0000000e0000000e0000000e0000000e00
 -- 058:00d0000000d00c0000d0000000dde000000ede000000eeee0000000000000000
