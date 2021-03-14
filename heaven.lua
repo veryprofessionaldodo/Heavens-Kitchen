@@ -913,10 +913,13 @@ function draw()
 end
 
 function draw_main_menu()
-	print('HEAVENS KITCHEN', 30, 20, 7, false, 2, false)
-	print('From the minds of BOB, MOUZI 2', 30, 42, 15, false, 1, true)
-	print('and SPACEBAR', 30, 50, 15, false, 1, true)
-	print('Press Z to start...', 30, 116, 7, false, 1, true)
+	print('HEAVEN\'S', 20, 20, 7, false, 3, false)
+	print('KITCHEN', 20, 38, 7, false, 3, false)
+	print('From the minds of BOB, MOUZI 2', 20, 60, 15, false, 1, true)
+	print('and SPACEBAR', 20, 68, 15, false, 1, true)
+	print('Press Z to start...', 20, 116, 7, false, 1, true)
+
+	draw_god()
 end
 
 function draw_continue_message()
