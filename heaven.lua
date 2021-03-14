@@ -205,6 +205,14 @@ function update_flasks()
 		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
 		generate_stream_particles(center_stream, particles_green, 6)
 	end
+
+	-- handle transition of flasks
+	for i = 1, #flasks do
+		cur_slot = flasks[i].cur_slot
+		final_center = (drop_slots[cur_slot][1] + drop_slots[cur_slot][2]) / 2
+		flasks[i].center_x = flasks[i].center_x + (final_center - flasks[i].center_x) / 10
+	end	
+	
 end
 
 function randomFloat(lower, greater)
@@ -561,9 +569,9 @@ function mouse_up(flask)
 	closest = get_closest_slot(flask.center_x)
 	closest_flask = flasks[get_flask_at(closest)]
 	closest_flask.cur_slot = flask.cur_slot
-	closest_flask.center_x = (drop_slots[closest_flask.cur_slot][2] + drop_slots[closest_flask.cur_slot][1]) / 2
+	--closest_flask.center_x = (drop_slots[closest_flask.cur_slot][2] + drop_slots[closest_flask.cur_slot][1]) / 2
 	flask.cur_slot = closest
-	flask.center_x = (drop_slots[flask.cur_slot][2] + drop_slots[flask.cur_slot][1]) / 2
+	--flask.center_x = (drop_slots[flask.cur_slot][2] + drop_slots[flask.cur_slot][1]) / 2
 end
 
 function get_closest_slot(x)
