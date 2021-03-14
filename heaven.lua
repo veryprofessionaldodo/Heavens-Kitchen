@@ -614,7 +614,7 @@ function draw_orders()
 end
 
 function create_order_ui(i, o)
-	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 2) -- Top order
+	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 3)
 		
 	for j=1, #o[i].content do
 
@@ -724,10 +724,10 @@ init()
 -- 009:ee44443022443430422443404424443014224340144243404442344014411330
 -- 010:0000000000c0000000c0000000c0c00000c0c00000c0000000c0c00000c00000
 -- 011:0000000000000c0000000c0000000c0000000d0000000d0000000c0000000d00
--- 012:0888888888cccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc
--- 013:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
--- 014:88888888cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
--- 015:88888880cccccc88ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8ccccccc8
+-- 012:0fffffffffccccccfcccccccfcccccccfcccccccfcccccccfcccccccfccccccc
+-- 013:ffffffffcccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-- 014:ffffffffcccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+-- 015:fffffff0ccccccffcccccccfcccccccfcccccccfcccccccfcccccccfcccccccf
 -- 016:00e00e0000e00e0000e20e0000d22e000d2222e0d322222ed332333e0ddddee0
 -- 017:000000000e0000e00ee00ee000e90e0000e99e0000d89e0000d88e00000dd000
 -- 018:001122cc0011122200000022000000e2000000df0000000e0000000000000000
@@ -740,10 +740,10 @@ init()
 -- 025:44431330211113303333300033f00000ff000000f00000000000000000000000
 -- 026:00d0000000d0000000c0000000d0000000d0000000c0000000d0000000d00000
 -- 027:00000d0000000d0000000d0000000d0000000d00000c0d00000c0e00000c0d00
--- 028:8ccccccc8ccccccc8ccccccc8ccccccc88cccccc088888880000000000000000
--- 029:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
--- 030:cccccccccccccccccccccccccccccccccccccccc888888880000000000000000
--- 031:ccccccc8ccccccc8ccccccc8ccccccc8cccccc88888ccc800088c88000088800
+-- 028:fcccccccfcccccccfcccccccfcccccccffcccccc0fffffff0000000000000000
+-- 029:ccccccccccccccccccccccccccccccccccccccccffffffff0000000000000000
+-- 030:ccccccccccccccccccccccccccccccccccccccccffffffff0000000000000000
+-- 031:cccccccfcccccccfcccccccfcccccccfccccccfffffcccf000ffcff0000fff00
 -- 032:00e00e000e5000e0e555500ed555555ed655555ed665555ed666665e0dddddd0
 -- 042:00d0000000d0000000c0000000d0000000d0000000d0000000d0000000d00000
 -- 043:00000d0000000e0000000e0000000d0000000e0000000e0000000e0000000e00
