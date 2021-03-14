@@ -217,24 +217,35 @@ function update_state_machine()
 	elseif CURR_STATE == states.TUTORIAL_TWO then
 		CURR_STATE = states.CUTSCENE_THREE
 	elseif CURR_STATE == states.CUTSCENE_THREE then
+		music(2)
 		CURR_STATE = states.LEVEL_ONE
 	elseif CURR_STATE == states.LEVEL_ONE then
+		music(1)
 		CURR_STATE = states.RESULT_ONE
 		calculate_stars()
 	elseif CURR_STATE == states.RESULT_ONE then
+		music(2)
 		CURR_STATE = states.LEVEL_TWO
 	elseif CURR_STATE == states.LEVEL_TWO then
+		music(1)
 		CURR_STATE = states.RESULT_TWO
 		calculate_stars()
 	elseif CURR_STATE == states.RESULT_TWO then
+		music(2)
 		CURR_STATE = states.LEVEL_THREE
 	elseif CURR_STATE == states.LEVEL_THREE then
+		music(1)
 		CURR_STATE = states.RESULT_THREE
 		calculate_stars()
 	elseif CURR_STATE == states.RESULT_THREE then
+		if current_stars == 0 or current_stars == 1 then
+			music(3)
+		else
+			music(4)
+		end
 		CURR_STATE = states.RESULT_FINAL
 	elseif CURR_STATE == states.RESULT_FINAL then
-		CURR_STATE = states.MAIN_MENU
+		init()
 	end
 
 	if has_value(playable_states, CURR_STATE) then setup_level() end
@@ -290,12 +301,13 @@ function update_flasks()
 	end
 
 	-- handle transition of flasks
-	for i = 1, #flasks do
-		cur_slot = flasks[i].cur_slot
-		final_center = (drop_slots[cur_slot][1] + drop_slots[cur_slot][2]) / 2
-		flasks[i].center_x = flasks[i].center_x + (final_center - flasks[i].center_x) / FLASK_TRANSITION_TIME
-	end	
-	
+	if selected == nil then
+		for i = 1, #flasks do
+			cur_slot = flasks[i].cur_slot
+			final_center = (drop_slots[cur_slot][1] + drop_slots[cur_slot][2]) / 2
+			flasks[i].center_x = flasks[i].center_x + (final_center - flasks[i].center_x) / FLASK_TRANSITION_TIME
+		end	
+	end
 end
 
 function update_creatures() 
@@ -759,7 +771,6 @@ function handle_timeout()
 end
 
 function setup_level()
-	--music(2)
 	TIMER_HEIGHT = RECT_HEIGHT
 	TIMER_Y = 10
 	FRAME_COUNTER = 0
@@ -919,56 +930,191 @@ function draw_main_menu()
 	print('Press Z to start...', 30, 116, 7, false, 1, true)
 end
 
+function draw_continue_message()
+	print('PRESS Z TO CONTINUE', 160, 116, 7, false, 1, true)
+end
+
+function print_cutscene_message(message, x, y)
+	print(message, x, y, 12, false, 1, true)
+end
+
+function draw_god()
+	spr(257, 160, 15, 0, 3, 0, 0, 3, 4)
+end
+
 function draw_cutscene_zero()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
-end
+	-- draw picture
 
-function draw_how_to_play_one()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
-end
+	print_cutscene_message('Congratulations!', 30, 80)
+	print_cutscene_message('You have been selected as a contestant', 30, 88)
+	print_cutscene_message('chef in Heaven\'s Kitchen!', 30, 96)
 
-function draw_cutscene_two()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
-end
-
-function draw_how_to_play_two()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	draw_continue_message()
 end
 
 function draw_cutscene_one()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	print_cutscene_message('I\'ve entrusted you with repopulating my', 30, 80)
+	print_cutscene_message('new planet with beautiful creatures.', 30, 88)
+	print_cutscene_message('My goal is to test your skills', 30, 96)
+	print_cutscene_message('in *true* molecular cuisine.', 30, 104)
+
+	draw_continue_message()
 end
 
-function draw_result_one()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
-	draw_stars()
-end
+function draw_cutscene_two()
+	print_cutscene_message('Operate the H.E.C.K. (Heavenly Enhanced', 30, 80)
+	print_cutscene_message('Creature Kreator) machine to create life.', 30, 88)
+	print_cutscene_message('I have faith in you, my child.', 30, 96)
 
-function draw_result_two()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
-	draw_stars()
+	draw_continue_message()
 end
 
 function draw_cutscene_three()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	print_cutscene_message('Fantastic job!', 20, 46)
+	print_cutscene_message('You now know the basics of how to operate', 20, 54)
+	print_cutscene_message('the H.E.C.K. machine.', 20, 62)
+
+	print_cutscene_message('You are ready to face a bigger challenge', 20, 78)
+	print_cutscene_message('and work for Heaven\'s Kitchen.', 20, 86)
+
+	draw_god()
+	draw_continue_message()
+end
+
+function draw_how_to_play_one()
+	print_cutscene_message('Open each faucet with your \'1\', \'2\'', 20, 30)
+	print_cutscene_message('and \'3\' keys and fill out the flasks.', 20, 38)
+
+	print_cutscene_message('You\'ll see my requests on the right side', 20, 54)
+	print_cutscene_message('with the ideal composition of each flask.', 20, 62)
+
+	print_cutscene_message('The green faucet is inoperational for now,', 20, 78)
+	print_cutscene_message('I\'ll get my best angels on the job to', 20, 86)
+	print_cutscene_message('fix it as fast as possible.', 20, 94)
+
+	draw_god()
+	draw_continue_message()
+end
+
+function draw_how_to_play_two()
+	print_cutscene_message('The green faucet should be working now!', 20, 30)
+	print_cutscene_message('I\'ll teach you a few sophisticated recipes', 20, 38)
+	print_cutscene_message('that now involve multiple reagents.', 20, 46)
+	print_cutscene_message('Ensure you add the reagents in the', 20, 54)
+	print_cutscene_message('specified order!', 20, 62)
+
+	print_cutscene_message('You can drag and drop a flask into another', 20, 78)
+	print_cutscene_message('to make them switch places and add multiple', 20, 86)
+	print_cutscene_message('layers to your mixture. Godspeed!', 20, 94)
+
+	draw_god()
+	draw_continue_message()
+end
+
+function draw_result_one()
+	if current_stars == 0 or current_stars == 1 then
+		print_cutscene_message('You surprise me... by how bad you are.', 20, 46)
+		print_cutscene_message('I\'m praying for you to do', 20, 54)
+		print_cutscene_message('better next time. For your sake.', 20, 62)
+	end
+
+	if current_stars == 2 then
+		print_cutscene_message('I have seen worse performances...', 20, 46)
+	end
+
+	if current_stars == 3 then
+		print_cutscene_message('Beautifully done, my child!', 20, 46)
+		print_cutscene_message('I see great things in you. I hope', 20, 54)
+		print_cutscene_message('you keep up the great work.', 20, 62)
+	end
+	
+	draw_god()
+	draw_stars()
+	draw_continue_message()
+end
+
+function draw_result_two()
+	if current_stars == 0 or current_stars == 1 then
+		print_cutscene_message('WHAT THE FORK ARE YOU DOING?', 20, 46)
+		print_cutscene_message('You are entirely destroying my plan!', 20, 54)
+		print_cutscene_message('DO. BETTER. Or else.', 20, 62)
+	end
+
+	if current_stars == 2 then
+		print_cutscene_message('*sigh*', 20, 46)
+		print_cutscene_message('Alright. This is fine.', 20, 54)
+		print_cutscene_message('You can still fix this... I believe.', 20, 62)
+	end
+
+	if current_stars == 3 then
+		print_cutscene_message('I am amazed!', 20, 46)
+		print_cutscene_message('You are truly made in my image.', 20, 54)
+	end
+	
+	draw_god()
+	draw_stars()
+	draw_continue_message()
 end
 
 function draw_result_three()
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	if current_stars == 0 or current_stars == 1 then
+		print_cutscene_message('WHY DID YOU MAKE THEM HAVE TWELVE EYES?', 20, 46)
+	end
+
+	if current_stars == 2 then
+		print_cutscene_message('Would you look at that!', 20, 46)
+		print_cutscene_message('Some of those creatures might actually', 20, 54)
+		print_cutscene_message('not drool themselves!', 20, 62)
+	end
+
+	if current_stars == 3 then
+		print_cutscene_message('It\'s like you were born for this!', 20, 46)
+		print_cutscene_message('Wait... *checks notes*', 20, 54)
+		print_cutscene_message('You were.', 20, 62)
+	end
+	
+	draw_god()
 	draw_stars()
+	draw_continue_message()
 end
 
 function draw_result_final()
-	-- use total_stars global to display diff stuff
-	print('PRESS Z TO SKIP', 30, 116, 7, false, 1, true)
+	if current_stars == 3 then
+		print_cutscene_message('Where once there was a desert wasteland now lives', 20, 80)
+		print_cutscene_message('a thriving civilization, the product of your immaculate', 20, 88)
+		print_cutscene_message('cooking. Your perfect mixing makes God shed a single', 20, 96)
+		print_cutscene_message('tear, splashing on Earth and curing over half of', 20, 104)
+		print_cutscene_message('all known diseases.', 30, 112)
+	end
+
+	if current_stars == 2 then
+		print_cutscene_message('You\'ve successfully planted the first life forms', 20, 80)
+		print_cutscene_message('that will steadily evolve throughout the years.', 20, 88)
+		print_cutscene_message('The planet\'s future is bright, and your job here', 20, 96)
+		print_cutscene_message('is done.', 30, 104)
+	end
+
+	if current_stars == 1 then
+		print_cutscene_message('God drops to Its knees, stunned at the horror you\'ve', 20, 80)
+		print_cutscene_message('created. Mutated creatures fill the land, preying on', 20, 88)
+		print_cutscene_message('each other. You\'re promptly fired from the kitchen.', 20, 96)
+	end
+
+	if current_stars == 0 then
+		print_cutscene_message('You find yourself sweating profoundly and, oddly enough,', 20, 80)
+		print_cutscene_message('4 million kilometers underground. It finally dawns on', 20, 88)
+		print_cutscene_message('you God found you asleep on the job.', 20, 96)
+	end
+
+	draw_continue_message()
 end
 
 function draw_stars()
 	for i=1, 3 do
 		if i <= current_stars then 
-			spr(36, 90 + 8 * i, 60, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela cheia
+			spr(36, 0 + 22 * i, 80, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela cheia
 		else
-			spr(34, 90 + 8 * i, 60, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela vazia
+			spr(34, 0 + 22 * i, 80, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela vazia
 		end
 	end 
 end
@@ -977,8 +1123,12 @@ function draw_game()
 	draw_flasks_fluid()
 	draw_faucets()
 	draw_orders()
-	draw_timer()
-	draw_score()
+
+	if CURR_STATE ~= states.TUTORIAL_ONE and CURR_STATE ~= states.TUTORIAL_TWO then
+		draw_timer()
+		draw_score()
+	end
+
 	draw_particles()
 	draw_creatures()
 	draw_smokes()
@@ -1199,8 +1349,8 @@ function min_i(tbl)
 end
 
 function init()
+	music(0)
 	CURR_STATE = states.MAIN_MENU
-	draw_main_menu()
 end
 init()
 
