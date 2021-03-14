@@ -770,6 +770,18 @@ function setup_level()
 		flasks[i].fill_order = {}
 	end
 
+	-- remove creature
+	creatures = {}
+
+	-- remover particles 
+	particles_red = {}
+	particles_blue = {}
+	particles_green = {}
+
+	smoke_red_particles = {}
+	smoke_blue_particles = {}
+	smoke_green_particles = {}
+
 	-- generate orders for next level
 	if CURR_STATE == states.TUTORIAL_ONE then
 		orders = {
