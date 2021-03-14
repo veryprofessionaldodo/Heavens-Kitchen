@@ -68,7 +68,7 @@ levels_metadata = {
 		time = 60,
 		max_steps = 3,
 		faucets = faucets,
-		percentages = {0.25, 0.50, 0.75, 0.85, 1}
+		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
 		time = 60,
@@ -799,7 +799,7 @@ function setup_level()
 		}
 	else
 		orders = generate_orders(
-			40, 
+			40,
 			levels_metadata[CURR_STATE].max_steps, 
 			levels_metadata[CURR_STATE].faucets, 
 			levels_metadata[CURR_STATE].percentages
