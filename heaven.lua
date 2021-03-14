@@ -164,6 +164,9 @@ function update()
 end
 
 function update_state_machine(event)
+	-- Clear all running sound effects on state switch
+	sfx(-1)
+
 	if event == events.MAIN_MENU then
 		--music(0)
 		CURR_STATE = states.MAIN_MENU
