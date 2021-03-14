@@ -103,9 +103,6 @@ RECT_HEIGHT = 100
 TIMER_Y = 10
 TIMER_HEIGHT = 100
 
-STREAM_WIDTH = 6
-MAX_NUMBER_OF_PARTICLES = 300
-
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = {}
 
@@ -133,6 +130,7 @@ function TIC()
 	-- 	line(x, 0, x, 135, 10)
 	-- end
 
+	-- rectb(0, 0, 240, 136, 5) -- screen box
 end
 
 -- updates
@@ -221,7 +219,7 @@ function generate_particles(center, particles, particle_color)
 	-- draw main stream
 	for i = 1, 25 do 
 		pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
-		pos_y = math.random(43,45)
+		pos_y = math.random(38, 40)
 		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={randomFloat(-0.1,0.1), randomFloat(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = randomFloat(1,3), time_to_live=randomFloat(20,40)}
 		if #particles < MAX_NUMBER_OF_PARTICLES then
 			table.insert(particles, particle)
@@ -538,12 +536,13 @@ end
 
 function draw_game()
 	draw_flasks_fluid()
-	draw_particles()
-	draw_flasks_containers()
 	draw_faucets()
 	draw_orders()
 	draw_timer()
 	draw_score()
+	draw_particles()
+	draw_flasks_containers()
+	if selected ~= nil then	draw_selected_flask() end
 end
 
 -- particles are simple objects that have five components:
@@ -582,23 +581,11 @@ function draw_flasks_containers()
 	for i = 1, #flasks do
 		spr(10, flasks[i].center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 	end
-
-	-- selected flask is always on top
-	if selected ~= nil then
-		selected_flask = flasks[get_flask_at(selected)]
-		spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
-	end
 end
 
 function draw_flasks_fluid()
 	for i = 1, #flasks do
 		draw_flask_fluid(flasks[i])
-	end
-
-	-- selected flask is always on top
-	if selected ~= nil then
-		selected_flask = flasks[get_flask_at(selected)]
-		draw_flask_fluid(selected_flask)
 	end
 end
 
@@ -610,7 +597,13 @@ function draw_flask_fluid(flask)
 		height = math.ceil(flask.fill_order[i][3]) - math.ceil(flask.fill_order[i][2])
 		rect(x + 3,	y, FLASK_WIDTH - 6, height, color)
 	end
-	
+end
+
+function draw_selected_flask()
+	-- selected flask is always on top
+	selected_flask = flasks[get_flask_at(selected)]
+	draw_flask_fluid(selected_flask)
+	spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 end
 
 function draw_orders()
@@ -665,29 +658,29 @@ function draw_faucets()
 
 		-- draw red faucet 
 		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x - 6, 5, 0, 3, 0, 0, 2, 2)
+		spr(2,pos_red_x - 6, 0, 0, 3, 0, 0, 2, 2)
 
 		-- draw blue faucet
 		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x - 6, 5, 0, 3, 0, 0, 2, 2)
+		spr(4,pos_blue_x - 6, 0, 0, 3, 0, 0, 2, 2)
 
 		-- draw out of order faucet
 		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(8,pos_outoforder_x - 6, 5, 0, 3, 0, 0, 2, 2)
+		spr(8,pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	else  
 		width = drop_slots[1][2] - drop_slots[1][1]
 
 		-- draw red faucet 
 		pos_red_x = (drop_slots[1][1] + drop_slots[1][2])/2 - width/2
-		spr(2,pos_red_x - 6, 5, 0, 3, 0, 0, 2, 2)
+		spr(2,pos_red_x - 6, 0, 0, 3, 0, 0, 2, 2)
 
 		-- draw blue faucet
 		pos_blue_x = (drop_slots[2][1] + drop_slots[2][2])/2 - width/2
-		spr(4,pos_blue_x - 6, 5, 0, 3, 0, 0, 2, 2)
+		spr(4,pos_blue_x - 6, 0, 0, 3, 0, 0, 2, 2)
 
 		-- draw green faucet
 		pos_outoforder_x = (drop_slots[3][1] + drop_slots[3][2])/2 - width/2
-		spr(6, pos_outoforder_x - 6, 5, 0, 3, 0, 0, 2, 2)
+		spr(6, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
 	end
 end
 
