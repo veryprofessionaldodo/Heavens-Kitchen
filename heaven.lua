@@ -68,7 +68,7 @@ levels_metadata = {
 		time = 60,
 		max_steps = 3,
 		faucets = faucets,
-		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
+		percentages = {0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
 		time = 60,
