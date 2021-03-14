@@ -159,7 +159,7 @@ ANY_FAUCET_DROPPING = false
 -- called at 60Hz by TIC-80
 function TIC()
 	update()
-	draw()	
+	draw()
 end
 
 -- updates
@@ -910,7 +910,6 @@ function draw()
 	elseif has_value(playable_states, CURR_STATE) then
 		draw_game()
 	end
-	print(total_score, 10, 10, 5)
 end
 
 function draw_main_menu()
@@ -921,40 +920,52 @@ function draw_main_menu()
 end
 
 function draw_continue_message()
-	print('PRESS Z TO CONTINUE', 160, 116, 7, false, 1, true)
+	print('Press Z to continue...', 20, 126, 7, false, 1, true)
 end
 
 function print_cutscene_message(message, x, y)
 	print(message, x, y, 12, false, 1, true)
 end
 
+
+HALO_ANIM_COUNTER = 0
+HALO_HEIGHT = 3
+HALO_SPEED = 0.3
 function draw_god()
-	spr(257, 160, 15, 0, 3, 0, 0, 3, 4)
+	HALO_ANIM_COUNTER = HALO_ANIM_COUNTER + 0.1 * HALO_SPEED
+	pos_y = -15 + math.sin(HALO_ANIM_COUNTER) * HALO_HEIGHT
+
+	spr(186, 160, 50, 0, 2, 0, 0, 6, 5)
+
+	-- draw halo
+	spr(106, 158, pos_y, 0, 2, 0, 0, 6, 5)
 end
 
 function draw_cutscene_zero()
-	-- draw picture
+	spr(260, 93, 10, 0, 2, 0, 0, 4, 4)
 
-	print_cutscene_message('Congratulations!', 30, 80)
-	print_cutscene_message('You have been selected as a contestant', 30, 88)
-	print_cutscene_message('chef in Heaven\'s Kitchen!', 30, 96)
+	print_cutscene_message('Congratulations!', 93, 84)
+	print_cutscene_message('You have been selected as a contestant', 53, 92)
+	print_cutscene_message('chef in Heaven\'s Kitchen!', 76, 100)
 
 	draw_continue_message()
 end
 
 function draw_cutscene_one()
-	print_cutscene_message('I\'ve entrusted you with repopulating my', 30, 80)
-	print_cutscene_message('new planet with beautiful creatures.', 30, 88)
-	print_cutscene_message('My goal is to test your skills', 30, 96)
-	print_cutscene_message('in *true* molecular cuisine.', 30, 104)
+	print_cutscene_message('I\'ve entrusted you with repopulating my', 53, 80)
+	print_cutscene_message('new planet with beautiful creatures.', 57, 88)
+	print_cutscene_message('My goal is to test your skills', 70, 96)
+	print_cutscene_message('in *true* molecular cuisine.', 73, 104)
 
 	draw_continue_message()
 end
 
 function draw_cutscene_two()
-	print_cutscene_message('Operate the H.E.C.K. (Heavenly Enhanced', 30, 80)
-	print_cutscene_message('Creature Kreator) machine to create life.', 30, 88)
-	print_cutscene_message('I have faith in you, my child.', 30, 96)
+	spr(264, 93, 10, 0, 1, 0, 0, 8, 8)
+
+	print_cutscene_message('Operate the H.E.C.K. (Heavenly Enhanced', 55, 84)
+	print_cutscene_message('Creature Kreator) machine to create life.', 50, 92)
+	print_cutscene_message('I have faith in you, my child.', 76, 100)
 
 	draw_continue_message()
 end
@@ -1069,31 +1080,41 @@ function draw_result_three()
 end
 
 function draw_result_final()
-	if current_stars == 3 then
-		print_cutscene_message('Where once there was a desert wasteland now lives', 20, 80)
-		print_cutscene_message('a thriving civilization, the product of your immaculate', 20, 88)
-		print_cutscene_message('cooking. Your perfect mixing makes God shed a single', 20, 96)
-		print_cutscene_message('tear, splashing on Earth and curing over half of', 20, 104)
-		print_cutscene_message('all known diseases.', 30, 112)
-	end
+	if total_stars >= 7 then
+		spr(392, 130, 0, 40, 2, 0, 0, 8, 8)
+		print_cutscene_message('Where once there was a desert', 10, 28)
+		print_cutscene_message('wasteland now lives a thriving', 10, 36)
+		print_cutscene_message('civilization, the product of', 10, 44)
+		print_cutscene_message('your immaculate cooking. Your', 10, 52)
+		print_cutscene_message('perfect mixing makes God shed', 10, 60)
+		print_cutscene_message('a singletear, splashing on Earth', 10, 68)
+		print_cutscene_message('and curing over half of all', 10, 76)
+		print_cutscene_message('all known diseases.', 10, 84)
 
-	if current_stars == 2 then
-		print_cutscene_message('You\'ve successfully planted the first life forms', 20, 80)
-		print_cutscene_message('that will steadily evolve throughout the years.', 20, 88)
-		print_cutscene_message('The planet\'s future is bright, and your job here', 20, 96)
-		print_cutscene_message('is done.', 30, 104)
-	end
+	elseif total_stars >= 4 and total_stars <= 6 then
+		spr(392, 130, 0, 40, 2, 0, 0, 8, 8)
+		print_cutscene_message('You\'ve successfully planted', 10, 36)
+		print_cutscene_message('the first life forms that will', 10, 44)
+		print_cutscene_message('steadily evolve throughout the', 10, 52)
+		print_cutscene_message('years. the planet\'s future is', 10, 60)
+		print_cutscene_message('bright, and your job here', 10, 68)
+		print_cutscene_message('is done.', 10, 76)
 
-	if current_stars == 1 then
-		print_cutscene_message('God drops to Its knees, stunned at the horror you\'ve', 20, 80)
-		print_cutscene_message('created. Mutated creatures fill the land, preying on', 20, 88)
-		print_cutscene_message('each other. You\'re promptly fired from the kitchen.', 20, 96)
-	end
+	elseif total_stars >= 1 and total_stars <= 3 then
+		spr(384, 130, 0, 40, 2, 0, 0, 8, 8)
+		print_cutscene_message('God drops to Its knees, stunned', 10, 36)
+		print_cutscene_message('at the horror you\'ve created.', 10, 44)
+		print_cutscene_message('Mutated creatures fill the land,', 10, 52)
+		print_cutscene_message('preying on each other. You\'re', 10, 60)
+		print_cutscene_message('promptly fired from the kitchen.', 10, 68)
 
-	if current_stars == 0 then
-		print_cutscene_message('You find yourself sweating profoundly and, oddly enough,', 20, 80)
-		print_cutscene_message('4 million kilometers underground. It finally dawns on', 20, 88)
-		print_cutscene_message('you God found you asleep on the job.', 20, 96)
+	elseif total_stars == 0 then
+		spr(384, 130, 0, 40, 2, 0, 0, 8, 8)
+		print_cutscene_message('You find yourself sweating profoundly', 10, 36)
+		print_cutscene_message('and, oddly enough, 4 million', 10, 44)
+		print_cutscene_message('kilometers underground. It finally', 10, 52)
+		print_cutscene_message('dawns on you God found you asleep', 10, 60)
+		print_cutscene_message('on the job.', 10, 68)
 	end
 
 	draw_continue_message()
@@ -1428,6 +1449,10 @@ init()
 -- 103:2200000022000000220000002200000022000000220000003200000032000000
 -- 104:0000344300000444000003440000033200000433000004440000043400000423
 -- 105:3220000033200000320000002200000022000000420000003200000032000000
+-- 107:0000000000000000000000000000000000000000000000000000000c0000000c
+-- 108:0000000000000000000000cc0000cccc00cccccccccccccccccccccccccccccc
+-- 109:0000000000000000ccccccc0cccccccccccccccccccccccdcccccddcccccccdc
+-- 110:0000000000000000ddd00000ddcd0000ccdddc00dcccddd0ccccddddccccddcd
 -- 112:00d0000000d00c0000d0000000dde000000ede000000eeee0000000000000000
 -- 113:000c0e00000c0e0000c00e000000de0000dee000eeee00000000000000000000
 -- 114:0004320000042000004300000431000000000000000000000000000000000000
@@ -1438,6 +1463,11 @@ init()
 -- 119:3220000003200000003200000043000000000000000000000000000000000000
 -- 120:0000042000000420000003200000422000000000000000000000000000000000
 -- 121:3200000032000000032000000322000000000000000000000000000000000000
+-- 123:0000000c000000cc000000cc000000cc0000000c000000000000000000000000
+-- 124:dccccdccdcddddcddddddedddcdddeeeccccdeeeccccddcdcccccdcccccccdcc
+-- 125:cccdcccccccdccddddddddcdeeddddddeeeeedcdddeeeeedddddeeedccceeedd
+-- 126:ccddddddcccdddcddcdccddddcddcdddddcddddddddcdddddddcdddeddddddde
+-- 127:d0000000dd000000dd000000dd000000dd000000ed000000ee000000ee000000
 -- 128:0000000000000000000ff0000f00fff0f0f00ff0ff0ffff0f0fff0f0f0ffff00
 -- 129:f000000000000f00000000000000f0f0000f000f0fff00ff0ffff00f0ffff0ff
 -- 130:000000000f00f0000ff0000000000000f000fff0f000fffff000fff0ff00ffff
@@ -1446,6 +1476,11 @@ init()
 -- 133:0f0000000000f0000ff000000f0000f0fff00000fff00000fff0fff0fffffff0
 -- 134:00000000f00000000000f0ff00f0f00ff0f0f0ff00fff0ff00fff0ff0ffff00f
 -- 135:000f0000000f00000000000ff000f00ff000000ff00ffffff00fffffff0fffff
+-- 139:000000000000000c0000000c0000000c000000cc0000000c000000cc000000cc
+-- 140:cccccddccccccdccccccddcccccccccccddccccccdcddccdcccdcccdcccdcccd
+-- 141:cddcdedeccddcdeecdcddcddccdcddddcdcdddddddddddddcdddddddddccdddd
+-- 142:eeeeddeeeedddeeeeedeeee0ddcede00ddcdd000dddd0000cdd00000dd000000
+-- 143:ee000000e0000000000000000000000000000000000000000000000000000000
 -- 144:f00ffff0f00fff0ffffffff0f0fffff0fffffff0f00ffff0f00ffff0f0ffffff
 -- 145:0ffff0ff0ffff00f0ffff0000fffffff0fff00f00ffff0ff0ffff00000fff00f
 -- 146:ff00fff0f000ffffff00ffffff000ffffff0fff0ff000ffff0f0ffffffff0fff
@@ -1454,6 +1489,11 @@ init()
 -- 149:fff0fff0ff00fff0ff00fff0ff00fff0fff0fffffff0fff0ff00fff0fff0fff0
 -- 150:00fff0ff0ffff0ff0ffff00f0ffff00ff0fff00f00fff0fffffff0ff00ff000f
 -- 151:ff0ff0ffff0fffffff0ffffff000ffffff0fffffff00ff0fff00fffff0000f0f
+-- 154:0000000000000000000000000000000000000000000000000000000000000004
+-- 155:000000cc000000cc000000cc000044cc000440cc044000cc440000cc4000000c
+-- 156:ccccccddcccccccdcccdcccdccccccddccccccddcccdccddccccccddccccdcdd
+-- 157:ddccdddddcccdcdcccccdddccdcddddcccccddddccccddddcccdccddcccdccdc
+-- 158:dd000000dd000000dd000000dd000000cd400000dd444000dd044440dd004444
 -- 160:fffff0f0f00ffffff00fff0ff0fffff0f000fff0000f000000000f0000000000
 -- 161:0ffff00f00fff00f000ff00f000ff00f0000000f0000000000f0000000000000
 -- 162:0f00fffffff00ffffff000fffff0000fff00000f00f00f00f000000000000000
@@ -1462,6 +1502,11 @@ init()
 -- 165:ff00fff0ff00fff0ff00ff00f0000ff0f0000fff0000000f0000000000000000
 -- 166:00fff0ff0ffff0ff00ff000f00fff0ff0ffff0f0000f00000000000000000000
 -- 167:f000ff0fff00ffffff00fffff000ffffff000ff0f000f0f00000000000000000
+-- 170:0000004400000004000000040000000000000000000000000000000000000000
+-- 171:4400000c44000000444000004444400000044440004444440000044400000000
+-- 172:ccccdcddccccdcddccccccdd000cdddd00000000440000004444444400444444
+-- 173:cccdcdddcccdccddccdddddddddddd0000000000000000044444444444444040
+-- 174:dd000444d0000444000044440004444000444440444444004400000000000000
 -- 176:00000000000000000000000000000f0000000f000000f0f00f000f0000f00ff0
 -- 177:000000000000000000000f0000000000000f00000fff0f0fffff000ff0ff000f
 -- 178:0000000f00000000f0000000f00ff0f0f000ff0ff0000f00fffff000f00fffff
@@ -1470,6 +1515,10 @@ init()
 -- 181:00000f000000f0f00000f0000000e00000000000f00f0000f0f0000fff0ff00f
 -- 182:0000000000000f0ff0000000f000f000f0000000f0000f00000000ef000ff00f
 -- 183:00000000f000f0000000000f0000000f00f00fff0ff0000e00000f0fff00000f
+-- 187:000000000000000000000000000000000000000d0000000d00000ddd00000ddc
+-- 188:00000000000ddddd00dccccdddccccdddccdddccccdddccdccddccddcdddcccc
+-- 189:00000000dc000000cc00d000ccdcdce0dddcdeeddccdddddccdcdedecdccddee
+-- 190:00000000000000000000000000000000d0000000ee000000eee00000eee00000
 -- 192:00f0fff00ff0fefe0ffffe00e0fffef00fffffffeffffff00ffffef0fffffefe
 -- 193:effff00feffff00feffff0ff0ffff0fffffff0fffefff0f0eeeff0f00ffff0f0
 -- 194:ffffff0fffffffffff0fff0fffffffefffff0f00ff000f0fff0fff0ff0fffffe
@@ -1478,6 +1527,10 @@ init()
 -- 197:0f0f0000f00e0000f0fff00ff0fe000ff0ff0000f0ff000f0f0f00ffffffe000
 -- 198:00fff00ff00ff0fffffff0fff0f0ff0fffffff00fff0fffff0fff0f0f0ffff0f
 -- 199:ff0e0f0ffff000ffff0f00fef00000ff0f0f00ff0ff00f0f0fff0000feffffff
+-- 203:00000dcc00000ccd0000ccdd0000ccdd000dcddc00cdddcc00ccddcc00ddddce
+-- 204:ddcddc3cdccdccccccd33444ccdc4444ce344444ee444444e3444444fff4444f
+-- 205:ccddddee4ceedeee4cecfeee4ddedeed4ddeddee44ddedee444deeddfffddeed
+-- 206:eee00000eeee0000eeee0000ddee0000edee0000edeee000eeeee000deeedd00
 -- 208:effffff0fffffff0fffffefeeffffeeffffffeeefffffeeffffffeefffefffff
 -- 209:effff000fffff0f0fffff00ffffff000fffff000ffeff000fff0000fe0ff00ef
 -- 210:0ff0ff0e0ffffffefffffee0fffffee0f0fffee0efffe00def0f00eee000ffe0
@@ -1486,6 +1539,11 @@ init()
 -- 213:f0ffff0ffeeeff0fe0feef00fe0ee0000000eff0fe0eeff0fefffffffefffff0
 -- 214:f00fff0f0ff0fff00fff0fffffff0f0ff0ffe0f0000efeff00ffeeff0000fef0
 -- 215:fffffffffefffffffeffffffe0ffffffeeff0feeeef00eeeeee000eefeee00fe
+-- 219:00cddcce0dccdce30ccdcce30cddcee30ddcee340dcdee33ddcdce33dcceee33
+-- 220:ffff44ff9f9f4433afa3443333334433344444334444443344444433444ccc33
+-- 221:f333deee9f93ddeeafa43dde444443de444443ed3444433d3344433e33c433de
+-- 222:deeded00dedeee00edeeeee0eeedeee0deeeeee0eeeedeeedeeeeeeedeeeeeee
+-- 223:00000000000000000000000000000000000000000000000000000000e0000000
 -- 224:ffffffe0ffffffe00000000000000000000ff0000f000000000000000000f0f0
 -- 225:000000000e00000000000000000000000f0000000ff00000ff00000000000000
 -- 226:00fff0eeeff0000000000000000000000000000000000000000ff00000000f00
@@ -1494,6 +1552,12 @@ init()
 -- 229:0e000000fee0ee00000000000000000000000000000000000f000000ff000000
 -- 230:00000eef0000000f00000000000000000000000000000000f00000000000000f
 -- 231:fefefffe00e0ffee0000000000000000000000000000000000000000fffff000
+-- 234:0000000c0000000c0000000d000000ec00000cce00000ccc0000ccdc0000dccd
+-- 235:cccceee3cceceeeddceceeecdcccdeeedcccceeedcddceeecdddccdecddddddc
+-- 236:4cccddddccddddddcdcc4333cdc44444dddd4444dcddddddedddddeeedddeedd
+-- 237:d33333dedd3ccdde333dddde333dddde4333ccded3ddccdeeddddedeeedddddd
+-- 238:ddeeeeededeeedeeedeedeeedddeeeeeeedeeeeededeeeeeeddeedeeeeddedee
+-- 239:e0000000eee00000eee00000eeee0000eeede000eeeee000eeeede00eeeedee0
 -- 240:00000000000000000000000000000000000000000000000f000f0000ff0f00ff
 -- 241:0000000000000000000000000000000f000ff000f00000f000f0f000ff000000
 -- 242:0000000000000f0f0f0f00000000000000000f00f000000000000000000f0000
@@ -1502,6 +1566,12 @@ init()
 -- 245:f000f0ff000ff0ff000000ff000fff0f0ff00000000000000000000000000000
 -- 246:00000fff0f0ff0f0000ff00f0ff0000000000f0000000ff00000000f00000000
 -- 247:0f00000000000000000000000000000000000000f00000000000000000000000
+-- 250:000ddccc0ddcccdd0dcdcddd00cdeddc00ccdddd0cccdddd0dcddddccddcdddd
+-- 251:dddcdddddcdddddddddddddddcddddddcdcdddddddddddddddcddddddccddddd
+-- 252:dddddcdeddedddddeddddcddcddddddddcddddddddddddddddddcdddddcdddee
+-- 253:dededdddddddddcdddddddeedeeddeecddddddedddeedcdddddedceeedddeedc
+-- 254:eeddeedddeddeededdceeeeeddcdeeeeeddeeeeedcedeedeedeeeeeedeeeeeed
+-- 255:eeedede0ddeeede0eeeeeee0eeedeee0eeeeeeedeeedeeeedeedeeedeeeee0ed
 -- </TILES>
 
 -- <SPRITES>
