@@ -134,6 +134,7 @@ NUMBER_OF_SMOKE_PARTICLES = 600
 PARTICLE_SPEED = 5
 BUBBLES_GRAVITY = 0.1
 
+FLASK_TRANSITION_TIME = 3
 FRAME_COUNTER = 0
 RECT_HEIGHT = 100
 TIMER_Y = 10
@@ -182,6 +183,7 @@ function update()
 	elseif has_value(playable_states, CURR_STATE) then
 		update_orders()
 		update_mouse()
+		update_creatures()
 		update_flasks()
 		update_streams()
 		update_smokes()
@@ -291,9 +293,35 @@ function update_flasks()
 	for i = 1, #flasks do
 		cur_slot = flasks[i].cur_slot
 		final_center = (drop_slots[cur_slot][1] + drop_slots[cur_slot][2]) / 2
-		flasks[i].center_x = flasks[i].center_x + (final_center - flasks[i].center_x) / 10
+		flasks[i].center_x = flasks[i].center_x + (final_center - flasks[i].center_x) / FLASK_TRANSITION_TIME
 	end	
 	
+end
+
+function update_creatures() 
+	i = 1
+
+	while i < #creatures + 1 do
+		creatures[i].time_to_drop = creatures[i].time_to_drop - 1
+
+		if creatures[i].time_to_drop <= 0 then 
+			creatures[i].velocity_y = creatures[i].velocity_y + 0.5
+		else 
+			creatures[i].pos[1] = creatures[i].flask.center_x
+		end
+
+		creatures[i].pos[2] = creatures[i].pos[2] + creatures[i].velocity_y
+
+		if creatures[i].pos[2] > 200 then
+			table.remove(creatures, i)
+		else 
+			i = i + 1
+		end
+	end
+end
+
+function randomFloat(lower, greater)
+    return lower + math.random()  * (greater - lower);
 end
 
 function generate_stream_particles(center, particles, particle_color)
@@ -432,8 +460,6 @@ function update_stream(particles, flask, smoke_particles)
 
 	i = 1
 	while i <= #particles do 
-		update_stream_particle(particles[i], flask, height)
-
 		if #smoke_particles > 10 then 
 			particles[i].time_to_live = particles[i].time_to_live / 10
 		end
@@ -441,6 +467,7 @@ function update_stream(particles, flask, smoke_particles)
 		if particles[i].time_to_live <= 0 then 
 			table.remove(particles, i)
 		else 
+			update_stream_particle(particles[i], flask, height)
 			i = i + 1
 		end
 	end
@@ -533,7 +560,66 @@ function check_if_flask_full(flask)
 		explosion_octave = math.random(26, 46)
 		sfx(37, explosion_octave, -1, 0, 10, 0)
 		generate_smoke_particles(flask)
+		add_creature(flask, score)
 	end
+end
+
+HAIR_THRESHOLD = 50
+PERSON_THRESHOLD = 40
+COW_THRESHOLD = 20
+FROG_THRESHOLD = 8
+TIME_UNTIL_CREATURE_DROP = 100
+
+-- contains the creatures, and each contain the following information:
+-- flask, position, y_velocity, starting sprite, width, height
+creatures = {}
+
+function add_creature(flask, score)
+		
+	pos_x = flask.center_x
+	pos_y = 85
+	place_width = 2 
+	place_height = 2
+	sprite = 66
+	
+	if score > HAIR_THRESHOLD then
+		random = random_float(0,1)
+		if random < 0.5 then 
+			sprite = 68
+		else 
+			sprite = 72
+		end
+
+		place_width = 2
+		place_height = 4
+		pos_y = 60
+	elseif score > PERSON_THRESHOLD then
+		random = random_float(0,1)
+		if random < 0.5 then 
+			sprite = 66
+		else 
+			sprite = 70
+		end
+
+		place_width = 2
+		place_height = 4
+		pos_y = 60
+	elseif score > COW_THRESHOLD then
+		place_width = 2 
+		place_height = 2
+		sprite = 78
+	elseif score > FROG_THRESHOLD then
+		place_width = 2 
+		place_height = 2
+		sprite = 76
+	else
+		place_width = 2 
+		place_height = 2
+		sprite = 74
+	end
+
+	creature = {flask=flask, pos={pos_x, pos_y}, spr = sprite, time_to_drop = TIME_UNTIL_CREATURE_DROP, velocity_y = 0, width=place_width, height=place_height}
+	table.insert(creatures, creature)
 end
 
 -- transition particle system, each particle contains the follwoing 
@@ -646,9 +732,7 @@ function mouse_up(flask)
 	closest = get_closest_slot(flask.center_x)
 	closest_flask = flasks[get_flask_at(closest)]
 	closest_flask.cur_slot = flask.cur_slot
-	--closest_flask.center_x = (drop_slots[closest_flask.cur_slot][2] + drop_slots[closest_flask.cur_slot][1]) / 2
 	flask.cur_slot = closest
-	--flask.center_x = (drop_slots[flask.cur_slot][2] + drop_slots[flask.cur_slot][1]) / 2
 end
 
 function get_closest_slot(x)
@@ -884,9 +968,16 @@ function draw_game()
 	draw_timer()
 	draw_score()
 	draw_particles()
+	draw_creatures()
 	draw_smokes()
 	draw_flasks_containers()
 	if selected ~= nil then	draw_selected_flask() end
+end
+
+function draw_creatures() 
+	for i = 1, #creatures do 
+		spr(creatures[i].spr, creatures[i].pos[1] - FLASK_WIDTH / 2 + 2, creatures[i].pos[2], 0, 2, 0, 0, creatures[i].width, creatures[i].height)
+	end
 end
 
 function draw_smokes()
@@ -1145,6 +1236,60 @@ init()
 -- 053:4444300044443000444443004444430033444330033331300003331300000311
 -- 058:00d0000000d00c0000d0000000dde000000ede000000eeee0000000000000000
 -- 059:000c0e00000c0e0000c00e000000de0000dee000eeee00000000000000000000
+-- 064:0000000000c0000000c0000000c0c00000c0c00000c0000000c0c00000c00000
+-- 065:0000000000000c0000000c0000000c0000000d0000000d0000000c0000000d00
+-- 066:00000000000001110000111100001111000014430000044300000fff00000f3f
+-- 067:00000000100000001000000011000000110000003f0000003200000032000000
+-- 068:000000000000aa9a0000a9a9000099990000a443000004440000044400000443
+-- 069:00000000900000009000000091000000990000003f0000003200000032000000
+-- 070:0000000000000332000032220000322200002444000024440000244400002224
+-- 071:0000000020000000200000002100000022000000220000002220000032200000
+-- 072:0000000500000566000055660000566600005444000054440000544400005664
+-- 073:5600000066000000690000009900000096000000660000006620000036200000
+-- 074:00000000000f000000ff00040000001300000212000024f1000023ff00ff3342
+-- 075:000000f04331000033210000322211002221110f111110001121100032111100
+-- 078:0000000000000000000000000000000000000000000000000000cccdffcfffdc
+-- 079:000000000000000000000000000000000000000000000000ccdcc000ddfccb00
+-- 080:00d0000000d0000000c0000000d0000000d0000000c0000000d0000000d00000
+-- 081:00000d0000000d0000000d0000000d0000000d00000c0d00000c0e00000c0d00
+-- 082:0000443300044333000422230004222300043224000442240000434400004344
+-- 083:3322000044320000443200004322000043220000322200003220000022200000
+-- 084:0000443300044333000422230004222300043224000442240000434400004344
+-- 085:3322000044320000443200004322000043220000322200003220000022200000
+-- 086:0000422300044323000422440004444400044333000443340000434400004344
+-- 087:3243000044430000443000003300000033000000320000003200000022000000
+-- 088:0000455200044662000422440004444400044322000443220000432200004442
+-- 089:2242000024420000422000002200000022000000220000002220000032200000
+-- 090:000ff33200123333032222110343311113333221022323220022222200000001
+-- 091:2222211022221111121111111111111111211111211111102211110000010000
+-- 092:00000000000000c500005556000356360005666600c66c570056005700000000
+-- 093:00000000500000006700000067600000677f0000f77f0000ffff000000000000
+-- 094:0fcffccc02c2cdce0cccdded00cf0cf100ef0de000ef0de000000de000000000
+-- 095:dfff0cb0dcdddde0ddddfde01111fe002f20de00ef00de000000de0000000000
+-- 096:00d0000000d0000000c0000000d0000000d0000000d0000000d0000000d00000
+-- 097:00000d0000000e0000000e0000000d0000000e0000000e0000000e0000000e00
+-- 098:0000344f00000442000004420000044200000333000003240000432400004203
+-- 099:2220000022000000220000002200000022000000220000003200000032000000
+-- 100:0000344f00000442000004420000044200000333000003240000432400004203
+-- 101:2220000022000000220000002200000022000000220000003200000032000000
+-- 102:0000344300000442000003320000033200000333000003240000432400004203
+-- 103:2200000022000000220000002200000022000000220000003200000032000000
+-- 104:0000344300000444000003440000033200000433000004440000043400000423
+-- 105:3220000033200000320000002200000022000000420000003200000032000000
+-- 112:00d0000000d00c0000d0000000dde000000ede000000eeee0000000000000000
+-- 113:000c0e00000c0e0000c00e000000de0000dee000eeee00000000000000000000
+-- 114:0004320000042000004300000431000000000000000000000000000000000000
+-- 115:3220000003200000003200000043000000000000000000000000000000000000
+-- 116:0004320000042000004300000431000000000000000000000000000000000000
+-- 117:3220000003200000003200000043000000000000000000000000000000000000
+-- 118:0004320000042000004300000431000000000000000000000000000000000000
+-- 119:3220000003200000003200000043000000000000000000000000000000000000
+-- 120:0000042000000420000003200000422000000000000000000000000000000000
+-- 121:3200000032000000032000000322000000000000000000000000000000000000
+-- 130:00000000000000c4000000440440044104444444044444140444441400444441
+-- 131:0440000044430000444300004433000044830000444300004443300011433200
+-- 146:0044444400444444000444330004433400043200000430000003200000002000
+-- 147:4443233344333330443200003430000033300000033300000033000000030000
 -- </TILES>
 
 -- <SPRITES>
