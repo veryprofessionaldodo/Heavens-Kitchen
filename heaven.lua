@@ -28,19 +28,19 @@ faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 -- time in seconds
 levels_metadata = {
 	level_one = { 
-		time = 3,
+		time = 10,
 		max_steps = 2,
 		faucets = {faucets[1], faucets[2]},
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
-		time = 3 ,
+		time = 10,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
-		time = 3 ,
+		time = 10,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
@@ -445,6 +445,7 @@ function setup_level()
 	TIMER_LENGTH = RECT_LENGTH
 	TIMER_HEIGHT = RECT_HEIGHT
 	TIMER_Y = 10
+	FRAME_COUNTER = 0
 
 	-- empty flasks
 	for i = 1, #flasks do
