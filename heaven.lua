@@ -221,10 +221,10 @@ function update_state_machine()
 		CURR_STATE = states.RESULT_THREE
 		calculate_stars()
 	elseif CURR_STATE == states.RESULT_THREE then
-		if current_stars == 0 or current_stars == 1 then
-			music(3)
-		else
+		if total_stars >= 4 then
 			music(4)
+		else
+			music(3)
 		end
 		CURR_STATE = states.RESULT_FINAL
 	elseif CURR_STATE == states.RESULT_FINAL then
