@@ -218,7 +218,7 @@ function faucet_sfx()
 		end
 	elseif key(FAUCET_KEYCODE_3) and CURR_STATE == states.LEVEL_ONE then
 		if not ANY_FAUCET_DROPPING then
-			sfx(35, 25, -1, 0, 6) -- play disabled sound
+			sfx(35, 25, -1, 0, 6) -- play disabled sound (level one)
 			ANY_FAUCET_DROPPING = true
 		end
 	else
@@ -525,7 +525,7 @@ function remove_order(index)
 
 	orders[index].target[1] = ORDER_OFF_SCREEN
 	table.insert(completed_orders, orders[index])
-	sfx(35, 65, 60, 1)
+	sfx(36, 65, 60, 1)
 	table.remove(orders, index)
 end
 
