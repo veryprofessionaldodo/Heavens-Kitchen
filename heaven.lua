@@ -159,7 +159,7 @@ function TIC()
 	draw()	
 
 	-- TODO: remove debug slot lines and center
-	print(CURR_STATE, 100, 100)
+	--print(CURR_STATE, 100, 100)
 	-- for i = 1, #drop_slots do
 	--  	l = drop_slots[i][1]
 	--  	r = drop_slots[i][2]
@@ -931,7 +931,7 @@ function draw_main_menu()
 end
 
 function draw_continue_message()
-	print('PRESS Z TO CONTINUE', 160, 116, 7, false, 1, true)
+	print('Press Z to continue...', 160, 126, 7, false, 1, true)
 end
 
 function print_cutscene_message(message, x, y)
@@ -943,28 +943,30 @@ function draw_god()
 end
 
 function draw_cutscene_zero()
-	-- draw picture
+	spr(260, 93, 10, 0, 2, 0, 0, 4, 4)
 
-	print_cutscene_message('Congratulations!', 30, 80)
-	print_cutscene_message('You have been selected as a contestant', 30, 88)
-	print_cutscene_message('chef in Heaven\'s Kitchen!', 30, 96)
+	print_cutscene_message('Congratulations!', 93, 84)
+	print_cutscene_message('You have been selected as a contestant', 53, 92)
+	print_cutscene_message('chef in Heaven\'s Kitchen!', 76, 100)
 
 	draw_continue_message()
 end
 
 function draw_cutscene_one()
-	print_cutscene_message('I\'ve entrusted you with repopulating my', 30, 80)
-	print_cutscene_message('new planet with beautiful creatures.', 30, 88)
-	print_cutscene_message('My goal is to test your skills', 30, 96)
-	print_cutscene_message('in *true* molecular cuisine.', 30, 104)
+	print_cutscene_message('I\'ve entrusted you with repopulating my', 53, 80)
+	print_cutscene_message('new planet with beautiful creatures.', 57, 88)
+	print_cutscene_message('My goal is to test your skills', 70, 96)
+	print_cutscene_message('in *true* molecular cuisine.', 73, 104)
 
 	draw_continue_message()
 end
 
 function draw_cutscene_two()
-	print_cutscene_message('Operate the H.E.C.K. (Heavenly Enhanced', 30, 80)
-	print_cutscene_message('Creature Kreator) machine to create life.', 30, 88)
-	print_cutscene_message('I have faith in you, my child.', 30, 96)
+	spr(264, 93, 10, 0, 1, 0, 0, 8, 8)
+
+	print_cutscene_message('Operate the H.E.C.K. (Heavenly Enhanced', 55, 84)
+	print_cutscene_message('Creature Kreator) machine to create life.', 50, 92)
+	print_cutscene_message('I have faith in you, my child.', 76, 100)
 
 	draw_continue_message()
 end
@@ -1079,31 +1081,41 @@ function draw_result_three()
 end
 
 function draw_result_final()
-	if current_stars == 3 then
-		print_cutscene_message('Where once there was a desert wasteland now lives', 20, 80)
-		print_cutscene_message('a thriving civilization, the product of your immaculate', 20, 88)
-		print_cutscene_message('cooking. Your perfect mixing makes God shed a single', 20, 96)
-		print_cutscene_message('tear, splashing on Earth and curing over half of', 20, 104)
-		print_cutscene_message('all known diseases.', 30, 112)
-	end
+	if total_stars >= 7 then
+		spr(392, 130, 0, 40, 2, 0, 0, 8, 8)
+		print_cutscene_message('Where once there was a desert', 10, 28)
+		print_cutscene_message('wasteland now lives a thriving', 10, 36)
+		print_cutscene_message('civilization, the product of', 10, 44)
+		print_cutscene_message('your immaculate cooking. Your', 10, 52)
+		print_cutscene_message('perfect mixing makes God shed', 10, 60)
+		print_cutscene_message('a singletear, splashing on Earth', 10, 68)
+		print_cutscene_message('and curing over half of all', 10, 76)
+		print_cutscene_message('all known diseases.', 10, 84)
 
-	if current_stars == 2 then
-		print_cutscene_message('You\'ve successfully planted the first life forms', 20, 80)
-		print_cutscene_message('that will steadily evolve throughout the years.', 20, 88)
-		print_cutscene_message('The planet\'s future is bright, and your job here', 20, 96)
-		print_cutscene_message('is done.', 30, 104)
-	end
+	elseif total_stars >= 4 and total_stars <= 6 then
+		spr(392, 130, 0, 40, 2, 0, 0, 8, 8)
+		print_cutscene_message('You\'ve successfully planted', 10, 36)
+		print_cutscene_message('the first life forms that will', 10, 44)
+		print_cutscene_message('steadily evolve throughout the', 10, 52)
+		print_cutscene_message('years. the planet\'s future is', 10, 60)
+		print_cutscene_message('bright, and your job here', 10, 68)
+		print_cutscene_message('is done.', 10, 76)
 
-	if current_stars == 1 then
-		print_cutscene_message('God drops to Its knees, stunned at the horror you\'ve', 20, 80)
-		print_cutscene_message('created. Mutated creatures fill the land, preying on', 20, 88)
-		print_cutscene_message('each other. You\'re promptly fired from the kitchen.', 20, 96)
-	end
+	elseif total_stars >= 1 and total_stars <= 3 then
+		spr(384, 130, 0, 40, 2, 0, 0, 8, 8)
+		print_cutscene_message('God drops to Its knees, stunned', 10, 36)
+		print_cutscene_message('at the horror you\'ve created.', 10, 44)
+		print_cutscene_message('Mutated creatures fill the land,', 10, 52)
+		print_cutscene_message('preying on each other. You\'re', 10, 60)
+		print_cutscene_message('promptly fired from the kitchen.', 10, 68)
 
-	if current_stars == 0 then
-		print_cutscene_message('You find yourself sweating profoundly and, oddly enough,', 20, 80)
-		print_cutscene_message('4 million kilometers underground. It finally dawns on', 20, 88)
-		print_cutscene_message('you God found you asleep on the job.', 20, 96)
+	elseif total_stars == 0 then
+		spr(384, 130, 0, 40, 2, 0, 0, 8, 8)
+		print_cutscene_message('You find yourself sweating profoundly', 10, 36)
+		print_cutscene_message('and, oddly enough, 4 million', 10, 44)
+		print_cutscene_message('kilometers underground. It finally', 10, 52)
+		print_cutscene_message('dawns on you God found you asleep', 10, 60)
+		print_cutscene_message('on the job.', 10, 68)
 	end
 
 	draw_continue_message()
