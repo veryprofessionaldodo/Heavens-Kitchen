@@ -48,6 +48,9 @@ faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 
 -- table with information for each level like time (possible others in the future)
 -- time in seconds
+-- max steps as max steps for recipes
+-- faucets as faucets allowed
+-- percentages
 levels_metadata = {
 	tutorial_one = { 
 		time = math.huge -- no timeout for tutorials
@@ -56,19 +59,19 @@ levels_metadata = {
 		time = math.huge -- no timeout for tutorials
 	},
 	level_one = { 
-		time = 45,
+		time = 90,
 		max_steps = 2,
 		faucets = faucets,
 		percentages = {0.25, 0.50, 0.75, 1}
 	},
 	level_two = { 
-		time = 30,
+		time = 60,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
 	},
 	level_three = { 
-		time = 25,
+		time = 60,
 		max_steps = 3,
 		faucets = faucets,
 		percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
@@ -717,7 +720,6 @@ function calculate_score(fill_order)
 	if best_score_index ~= nil then
 		remove_order(best_score_index)
 	end
-	trace(best_score)
 	return best_score
 end
 
@@ -928,6 +930,7 @@ function draw()
 	elseif has_value(playable_states, CURR_STATE) then
 		draw_game()
 	end
+	print(total_score, 10, 10, 5)
 end
 
 function draw_main_menu()
