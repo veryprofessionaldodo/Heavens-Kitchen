@@ -198,6 +198,7 @@ function update()
 end
 
 function update_state_machine()
+	sfx(-1)
 	-- just advances linearly
 	-- could be done with indexes in the future
 	if CURR_STATE == states.MAIN_MENU then
