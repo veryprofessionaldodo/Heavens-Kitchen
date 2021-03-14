@@ -290,12 +290,13 @@ function update_flasks()
 	end
 
 	-- handle transition of flasks
-	for i = 1, #flasks do
-		cur_slot = flasks[i].cur_slot
-		final_center = (drop_slots[cur_slot][1] + drop_slots[cur_slot][2]) / 2
-		flasks[i].center_x = flasks[i].center_x + (final_center - flasks[i].center_x) / FLASK_TRANSITION_TIME
-	end	
-	
+	if selected == nil then
+		for i = 1, #flasks do
+			cur_slot = flasks[i].cur_slot
+			final_center = (drop_slots[cur_slot][1] + drop_slots[cur_slot][2]) / 2
+			flasks[i].center_x = flasks[i].center_x + (final_center - flasks[i].center_x) / FLASK_TRANSITION_TIME
+		end	
+	end
 end
 
 function update_creatures() 
