@@ -151,6 +151,7 @@ function update()
 			update_state_machine(events.END_CUTSCENE)
 		end
 	elseif (CURR_STATE == states.LEVEL_ONE or CURR_STATE == states.LEVEL_TWO or CURR_STATE == states.LEVEL_THREE) then
+		update_creatures()
 		update_orders()
 		update_mouse()
 		update_flasks()
@@ -165,6 +166,9 @@ function update()
 end
 
 function update_state_machine(event)
+	-- Clear all running sound effects on state switch
+	sfx(-1)
+
 	if event == events.MAIN_MENU then
 		--music(0)
 		CURR_STATE = states.MAIN_MENU
@@ -230,6 +234,28 @@ function update_flasks()
 		flasks[i].center_x = flasks[i].center_x + (final_center - flasks[i].center_x) / FLASK_TRANSITION_TIME
 	end	
 	
+end
+
+function update_creatures() 
+	i = 1
+
+	while i < #creatures + 1 do
+		creatures[i].time_to_drop = creatures[i].time_to_drop - 1
+
+		if creatures[i].time_to_drop <= 0 then 
+			creatures[i].velocity_y = creatures[i].velocity_y + 0.5
+		else 
+			creatures[i].pos[1] = creatures[i].flask.center_x
+		end
+
+		creatures[i].pos[2] = creatures[i].pos[2] + creatures[i].velocity_y
+
+		if creatures[i].pos[2] > 200 then
+			table.remove(creatures, i)
+		else 
+			i = i + 1
+		end
+	end
 end
 
 function randomFloat(lower, greater)
@@ -372,8 +398,6 @@ function update_stream(particles, flask, smoke_particles)
 
 	i = 1
 	while i <= #particles do 
-		update_stream_particle(particles[i], flask, height)
-
 		if #smoke_particles > 10 then 
 			particles[i].time_to_live = particles[i].time_to_live / 10
 		end
@@ -381,6 +405,7 @@ function update_stream(particles, flask, smoke_particles)
 		if particles[i].time_to_live <= 0 then 
 			table.remove(particles, i)
 		else 
+			update_stream_particle(particles[i], flask, height)
 			i = i + 1
 		end
 	end
@@ -473,7 +498,66 @@ function check_if_flask_full(flask)
 		explosion_octave = math.random(26, 46)
 		sfx(37, explosion_octave, -1, 0, 10, 0)
 		generate_smoke_particles(flask)
+		add_creature(flask, score)
 	end
+end
+
+HAIR_THRESHOLD = 50
+PERSON_THRESHOLD = 40
+COW_THRESHOLD = 20
+FROG_THRESHOLD = 8
+TIME_UNTIL_CREATURE_DROP = 100
+
+-- contains the creatures, and each contain the following information:
+-- flask, position, y_velocity, starting sprite, width, height
+creatures = {}
+
+function add_creature(flask, score)
+		
+	pos_x = flask.center_x
+	pos_y = 85
+	place_width = 2 
+	place_height = 2
+	sprite = 66
+	
+	if score > HAIR_THRESHOLD then
+		random = random_float(0,1)
+		if random < 0.5 then 
+			sprite = 68
+		else 
+			sprite = 72
+		end
+
+		place_width = 2
+		place_height = 4
+		pos_y = 60
+	elseif score > PERSON_THRESHOLD then
+		random = random_float(0,1)
+		if random < 0.5 then 
+			sprite = 66
+		else 
+			sprite = 70
+		end
+
+		place_width = 2
+		place_height = 4
+		pos_y = 60
+	elseif score > COW_THRESHOLD then
+		place_width = 2 
+		place_height = 2
+		sprite = 78
+	elseif score > FROG_THRESHOLD then
+		place_width = 2 
+		place_height = 2
+		sprite = 76
+	else
+		place_width = 2 
+		place_height = 2
+		sprite = 74
+	end
+
+	creature = {flask=flask, pos={pos_x, pos_y}, spr = sprite, time_to_drop = TIME_UNTIL_CREATURE_DROP, velocity_y = 0, width=place_width, height=place_height}
+	table.insert(creatures, creature)
 end
 
 -- transition particle system, each particle contains the follwoing 
@@ -758,9 +842,16 @@ function draw_game()
 	draw_timer()
 	draw_score()
 	draw_particles()
+	draw_creatures()
 	draw_smokes()
 	draw_flasks_containers()
 	if selected ~= nil then	draw_selected_flask() end
+end
+
+function draw_creatures() 
+	for i = 1, #creatures do 
+		spr(creatures[i].spr, creatures[i].pos[1] - FLASK_WIDTH / 2 + 2, creatures[i].pos[2], 0, 2, 0, 0, creatures[i].width, creatures[i].height)
+	end
 end
 
 function draw_smokes()
@@ -1000,7 +1091,6 @@ init()
 -- 030:ccccccccccccccccccccccccccccccccccccccccffffffff0000000000000000
 -- 031:cccccccfcccccccfcccccccfcccccccfccccccfffffcccf000ffcff0000fff00
 -- 032:00e00e000e5000e0e5c5500edc55555ed655555ed665555ed666665e0dddddd0
--- 034:0000000000000004000000440000004000000440044444000440440000400000
 -- 042:00d0000000d0000000c0000000d0000000d0000000d0000000d0000000d00000
 -- 043:00000d0000000e0000000e0000000d0000000e0000000e0000000e0000000e00
 -- 058:00d0000000d00c0000d0000000dde000000ede000000eeee0000000000000000
@@ -1009,8 +1099,8 @@ init()
 -- 065:0000000000000c0000000c0000000c0000000d0000000d0000000c0000000d00
 -- 066:00000000000001110000111100001111000014430000044300000fff00000f3f
 -- 067:00000000100000001000000011000000110000003f0000003200000032000000
--- 068:00000000000001110000111100001111000014430000044300000fff00000f3f
--- 069:00000000100000001000000011000000110000003f0000003200000032000000
+-- 068:000000000000aa9a0000a9a9000099990000a443000004440000044400000443
+-- 069:00000000900000009000000091000000990000003f0000003200000032000000
 -- 070:0000000000000332000032220000322200002444000024440000244400002224
 -- 071:0000000020000000200000002100000022000000220000002220000032200000
 -- 072:0000000500000566000055660000566600005444000054440000544400005664
