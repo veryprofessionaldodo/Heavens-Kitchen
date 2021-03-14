@@ -89,7 +89,7 @@ ORDER_START_POS = 8
 ORDER_PADDING = 44
 ORDER_DELTA = 15
 ORDER_OFF_SCREEN = 241
-FILL_RATE = 0.2
+FILL_RATE = 0.4
 
 BACKGROUND_COLOR = 0
 
@@ -334,14 +334,14 @@ function calculate_score(fill_order)
 	if fill_order == nil then
 		return 0
 	end
-	for i=1, #orders do
+	for i=1, 3 do
 		for j=1, #orders[i].content do
 			if #fill_order ~= #orders[i].content then
 				score = 0
 			elseif orders[i].content[j][1] == fill_order[j][1] then
 				local diff = math.ceil(math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[j][3] - fill_order[j][2])))
 				if diff ~= 0 then
-					score = math.floor(40 / diff)
+					score = math.floor((40 / diff) * 1.5)
 					if best_score < score then
 						best_score = score
 						best_score_index = i
