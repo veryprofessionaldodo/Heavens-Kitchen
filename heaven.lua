@@ -300,31 +300,38 @@ function check_if_flask_full(flask)
 end
 
 function calculate_score(fill_order)
-	total = 85
+	local best_score = 0
+	local best_score_index = nil
 	if fill_order == nil then
 		return 0
 	end
 	for i=1, #orders do
 		for j=1, #orders[i].content do
 			if #fill_order ~= #orders[i].content then
-				return 0
-			end
-			if orders[i].content[j][1] == fill_order[j][1] then
-				local diff = math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[i][3] - fill_order[i][2]))
-				trace(diff)
+				score = 0
+			elseif orders[i].content[j][1] == fill_order[j][1] then
+				local diff = math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[j][3] - fill_order[j][2]))
 				if diff ~= 0 then
 					score = math.floor(40 / diff)
-					return score
+					if best_score < score then
+						best_score = score
+						best_score_index = i
+					end
 				else
-					score = 40
-					return score
+					if best_score < score then
+						best_score = score
+						best_score_index = i
+					end
 				end
 			else
 				score = 0
-				return score
 			end
 		end
 	end
+	if best_score_index ~= nil then
+		remove_order(best_score_index)
+	end
+	return best_score
 end
 
 function update_orders()
