@@ -93,6 +93,9 @@ orders = {}
 completed_orders = {}
 vertical_targets = { 8, 52, 96, 137 }
 
+-- miguel code for sfx
+ANY_FAUCET_DROPPING = false
+
 -- called at 60Hz by TIC-80
 function TIC()
 	update()
@@ -135,6 +138,7 @@ end
 
 function update_state_machine(event)
 	if event == events.MAIN_MENU then
+		--music(0)
 		CURR_STATE = states.MAIN_MENU
 	elseif event == events.START_GAME then
 		CURR_STATE = states.LEVEL_ONE
@@ -154,10 +158,12 @@ function update_mouse()
 	mx, my, md = mouse()
 	if not md then
 		if selected ~= nil then
+			sfx(34, 25, -1, 1, 8)
 			mouse_up(flasks[get_flask_at(selected)])
 		end
 		selected = nil
 	elseif selected == nil then
+		sfx(33, 80, -1, 3, 8)
 		slot = get_slot(mx)
 		selected = slot
 	elseif selected ~= nil then
@@ -167,20 +173,27 @@ function update_mouse()
 end
 
 function update_flasks()
+	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
+		if not ANY_FAUCET_DROPPING then
+			sfx(32, 25, -1, 0, 6)
+			ANY_FAUCET_DROPPING = true
+		end
+	else
+		sfx(-1)
+		ANY_FAUCET_DROPPING = false
+	end
+
 	if key(FAUCET_KEYCODE_1) and selected ~= 1 then
 		--add particles
 		center_stream = (drop_slots[1][1] + drop_slots[1][2]) / 2 - 2
-
 		generate_particles(center_stream, particles_red, 3)
 	end
-	if key(FAUCET_KEYCODE_2) and selected ~= 2 then
+	if key(FAUCET_KEYCODE_2) and selected ~= 2 then	
 		center_stream = (drop_slots[2][1] + drop_slots[2][2]) / 2 - 2
-
 		generate_particles(center_stream, particles_blue, 10)
 	end
 	if key(FAUCET_KEYCODE_3) and selected ~= 3 then
 		center_stream = (drop_slots[3][1] + drop_slots[3][2]) / 2 - 2
-
 		generate_particles(center_stream, particles_green, 6)
 	end
 end
@@ -392,6 +405,7 @@ function handle_timeout()
 end
 
 function setup_level()
+	--music(2)
 	TIMER_LENGTH = RECT_LENGTH
 
 	-- empty flasks
@@ -466,6 +480,7 @@ function remove_order(index)
 
 	orders[index].target[1] = ORDER_OFF_SCREEN
 	table.insert(completed_orders, orders[index])
+	sfx(35, 65, 60, 1)
 	table.remove(orders, index)
 end
 
@@ -751,7 +766,10 @@ init()
 -- 015:040004000400040004000400040004000400040004000400040004000400040004000400040004000400040004000400040004000400040004000400500000000000
 -- 016:07002700370047006700770087009700a700b700c700d700e700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700f700500000000000
 -- 019:050005000500050005000500050005000500050005000500050005000500050005000500050005000500050005000500050005000500050005000500404000000000
--- 032:f810e830c840a860888068a048c028e008f0080008000800080008000800080008000800080008000800080008000800080008000800080008000800209000090900
+-- 032:f810e830c840a860888068a048c028e008f0080008000800080008000800080008000800080008000800080008000800080008000800080008000800210000090900
+-- 033:060046009600c600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600700000000000
+-- 034:0700370057008600a600d600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600f600400000000000
+-- 035:00001000200020002000300030004000400050005000500060006000700070008000900090009000a000b000b000c000c000d000d000e000e000f000500000000000
 -- 050:090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900090009000900102000000000
 -- </SFX>
 
