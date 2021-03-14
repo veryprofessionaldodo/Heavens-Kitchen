@@ -217,24 +217,35 @@ function update_state_machine()
 	elseif CURR_STATE == states.TUTORIAL_TWO then
 		CURR_STATE = states.CUTSCENE_THREE
 	elseif CURR_STATE == states.CUTSCENE_THREE then
+		music(2)
 		CURR_STATE = states.LEVEL_ONE
 	elseif CURR_STATE == states.LEVEL_ONE then
+		music(1)
 		CURR_STATE = states.RESULT_ONE
 		calculate_stars()
 	elseif CURR_STATE == states.RESULT_ONE then
+		music(2)
 		CURR_STATE = states.LEVEL_TWO
 	elseif CURR_STATE == states.LEVEL_TWO then
+		music(1)
 		CURR_STATE = states.RESULT_TWO
 		calculate_stars()
 	elseif CURR_STATE == states.RESULT_TWO then
+		music(2)
 		CURR_STATE = states.LEVEL_THREE
 	elseif CURR_STATE == states.LEVEL_THREE then
+		music(1)
 		CURR_STATE = states.RESULT_THREE
 		calculate_stars()
 	elseif CURR_STATE == states.RESULT_THREE then
+		if current_stars == 0 or current_stars == 1 then
+			music(3)
+		else
+			music(4)
+		end
 		CURR_STATE = states.RESULT_FINAL
 	elseif CURR_STATE == states.RESULT_FINAL then
-		CURR_STATE = states.MAIN_MENU
+		init()
 	end
 
 	if has_value(playable_states, CURR_STATE) then setup_level() end
@@ -760,7 +771,6 @@ function handle_timeout()
 end
 
 function setup_level()
-	--music(2)
 	TIMER_HEIGHT = RECT_HEIGHT
 	TIMER_Y = 10
 	FRAME_COUNTER = 0
@@ -1335,8 +1345,8 @@ function min_i(tbl)
 end
 
 function init()
+	music(0)
 	CURR_STATE = states.MAIN_MENU
-	draw_main_menu()
 end
 init()
 
