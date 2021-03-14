@@ -384,7 +384,8 @@ function update_smokes()
 end
 
 function update_smoke(particles, center, flask) 
-	local width, height = 30, 84
+	width = 30
+	local height = 84
 
 	local i = 1
 	for j = 1, #particles do 
@@ -625,7 +626,7 @@ function generate_smoke_particles(flask)
 end
 
 function generate_smoke(center, particles, smoke_col_1, smoke_col_2, smoke_col_3)
-	local width = 30
+	width = 30
 	local height = 84
 	max_prox_x = 5
 	local particle_size = (width * height / NUMBER_OF_SMOKE_PARTICLES)
