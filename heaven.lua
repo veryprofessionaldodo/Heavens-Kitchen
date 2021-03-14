@@ -27,19 +27,19 @@ levels_metadata = {
 }
 
 flask1 = {
-	center_x = 24, -- center x
+	center_x = 45, -- center x
 	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
 	cur_slot = 1, -- current slot the flask is placed in
 }
 
 flask2 = {
-	center_x = 74,
+	center_x = 95,
 	fill_order = {},
 	cur_slot = 2,
 }
 
 flask3 = {
-	center_x = 124,
+	center_x = 145,
 	fill_order = {}, 
 	cur_slot = 3,
 }
@@ -50,7 +50,7 @@ flasks = { flask1, flask2, flask3 } -- not ordered
 
 faucets = { 2, 9, 5 } -- red, yellow, blue faucets
 
-drop_slots = { {6, 42}, {56, 92}, {106, 142} } -- ranges of the drop slots
+drop_slots = { {27, 63}, {77, 113}, {127, 163} } -- ranges of the drop slots
 
 selected = nil -- selected flask to drag
 
@@ -79,18 +79,20 @@ FILL_RATE = 3
 BACKGROUND_COLOR = 0
 
 FRAME_COUNTER = 0
-RECT_LENGTH = 155
-TIMER_LENGTH = 155
+RECT_HEIGHT = 100
+TIMER_Y = 5
+TIMER_HEIGHT = 100
+
 STREAM_WIDTH = 6
 MAX_NUMBER_OF_PARTICLES = 300
 
 -- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 orders = { 
-	{content = {{2, 1}}, pos = {168, 137}, target = {168, 8}}, 
-	{content = {{2, 0.33}, {9, 0.33}, {5, 0.33}}, pos = {168, 137 + 44}, target = {168, 52}},
-	{content = {{2, 0.5}, {5, 0.5}}, pos = {168, 137 + 88}, target = {168, 96}},
-	{content = {{2, 0.5}, {5, 0.5}}, pos = {168, 137}, target = {168, 137}},
-	{content = {{9, 0.5}, {2, 0.5}}, pos = {168, 137}, target = {168, 137}},
+	{content = {{2, 1}}, pos = {175, 137}, target = {175, 8}}, 
+	{content = {{2, 0.33}, {9, 0.33}, {5, 0.33}}, pos = {175, 137 + 44}, target = {175, 52}},
+	{content = {{2, 0.5}, {5, 0.5}}, pos = {175, 137 + 88}, target = {175, 96}},
+	{content = {{2, 0.5}, {5, 0.5}}, pos = {175, 137}, target = {175, 137}},
+	{content = {{9, 0.5}, {2, 0.5}}, pos = {175, 137}, target = {175, 137}},
 }
 
 completed_orders = {}
@@ -227,7 +229,6 @@ function calculate_score(fill_order)
 			end
 			if orders[i].content[j][1] == fill_order[j][1] then
 				local diff = math.abs((orders[i].content[j][2] * FLASK_HEIGHT) - (fill_order[i][3] - fill_order[i][2]))
-				trace(diff)
 				if diff ~= 0 then
 					score = math.floor(40 / diff)
 					return score
@@ -292,9 +293,10 @@ end
 function handle_timeout()
 	timeout = levels_metadata[CURR_STATE].time * CLOCK_FREQ
 
-	TIMER_DECREMENT = RECT_LENGTH/levels_metadata[CURR_STATE].time
+	timer_incr = RECT_HEIGHT/levels_metadata[CURR_STATE].time
 	if((FRAME_COUNTER % CLOCK_FREQ) == 0) then
-		TIMER_LENGTH = TIMER_LENGTH - TIMER_DECREMENT
+		TIMER_Y = TIMER_Y + timer_incr
+		TIMER_HEIGHT = TIMER_HEIGHT - timer_incr
 	end
 
 	if FRAME_COUNTER >= timeout then
@@ -311,7 +313,8 @@ function next_level()
 		flasks[i].fill_order = {}
 	end
 
-	TIMER_LENGTH = RECT_LENGTH
+	TIMER_HEIGHT = RECT_HEIGHT
+	TIMER_Y = 5
 end
 
 function remove_order(index)
@@ -406,10 +409,14 @@ function draw_particles()
 end
 
 function draw_timer()
-	rect(42, 5, 155, 7, 3)
-	rect(42, 5, TIMER_LENGTH, 7, 4)
-	rectb(42, 5, 155, 7, 4)
-	print("Time Left", 100, 6, 0, false, 1, false)
+	rect(5, 5, 6, 100, 3)
+	rect(5, TIMER_Y, 6, math.floor(TIMER_HEIGHT+0.5), 4)
+	rectb(5, 5, 7, 100, 4)
+	str = "TIME"
+	for i = 1, #str do
+		local c = str:sub(i,i)
+		print(c, 6, 37 + i*7)
+	end
 end
 
 function draw_flasks()
