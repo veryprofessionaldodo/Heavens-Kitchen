@@ -1101,9 +1101,9 @@ end
 function draw_stars()
 	for i=1, 3 do
 		if i <= current_stars then 
-			spr(36, 90 + 8 * i, 60, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela cheia
+			spr(36, 0 + 22 * i, 80, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela cheia
 		else
-			spr(34, 90 + 8 * i, 60, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela vazia
+			spr(34, 0 + 22 * i, 80, 0, 1, 0, 0, 2, 2) -- numero da sprite de estrela vazia
 		end
 	end 
 end
