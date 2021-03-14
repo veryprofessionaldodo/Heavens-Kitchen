@@ -220,14 +220,14 @@ function generate_particles(center, particles, particle_color)
 	for i = 1, 25 do 
 		pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
 		pos_y = math.random(38, 40)
-		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={randomFloat(-0.1,0.1), randomFloat(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = randomFloat(1,3), time_to_live=randomFloat(20,40)}
+		particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={random_float(-0.1,0.1), random_float(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = random_float(1,3), time_to_live=random_float(20,40)}
 		if #particles < MAX_NUMBER_OF_PARTICLES then
 			table.insert(particles, particle)
 		end
 	end
 end
 
-function randomFloat(lower, greater)
+function random_float(lower, greater)
     return lower + math.random()  * (greater - lower);
 end
 
@@ -265,16 +265,16 @@ end
 
 function update_particle(particle, flask, height) 
 	if particle.color ~= 12 then
-		particle.velocity[1] = particle.velocity[1] + randomFloat(-0.01,0.01)
-		particle.size = math.max(math.min(particle.size + randomFloat(-0.4,0.3), 5),1)
+		particle.velocity[1] = particle.velocity[1] + random_float(-0.01,0.01)
+		particle.size = math.max(math.min(particle.size + random_float(-0.4,0.3), 5),1)
 	else 
 		-- has turned to foam
-		particle.size = math.max(math.min(particle.size + randomFloat(-0.4,0.3), 2),0)
+		particle.size = math.max(math.min(particle.size + random_float(-0.4,0.3), 2),0)
 		particle.velocity[2] = particle.velocity[2] - BUBBLES_GRAVITY
 		if particle.velocity[1] > 0 then
-			particle.velocity[1] = particle.velocity[1] - randomFloat(0.1,0.2)
+			particle.velocity[1] = particle.velocity[1] - random_float(0.1,0.2)
 		else 
-			particle.velocity[1] = particle.velocity[1] + randomFloat(0.1,0.2)
+			particle.velocity[1] = particle.velocity[1] + random_float(0.1,0.2)
 		end
 	end
 	
@@ -287,8 +287,8 @@ function update_particle(particle, flask, height)
 	if particle.pos[2] > height and particle.color ~= 12 then
 		particle.pos[2] = particle.pos[2] - 0.5
 		particle.color = 12
-		particle.velocity[1] = randomFloat(-2,2)
-		particle.velocity[2] = randomFloat(PARTICLE_SPEED / 6 - 1, PARTICLE_SPEED / 6 + 1)
+		particle.velocity[1] = random_float(-2,2)
+		particle.velocity[2] = random_float(PARTICLE_SPEED / 6 - 1, PARTICLE_SPEED / 6 + 1)
 		fill_flask(flask)
 	elseif particle.pos[2] < height and particle.color == 12 then
 		particle.time_to_live = 0
