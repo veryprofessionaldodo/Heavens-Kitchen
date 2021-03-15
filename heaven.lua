@@ -141,7 +141,6 @@ LEVEL_ONE_SCORE = 1050
 LEVEL_TWO_SCORE = 510
 LEVEL_THREE_SCORE = 570
 
--- Single Order -> {{<color>, <percentage>}, <activity_flag>}
 ORDERS = {}
 
 COMPLETED_ORDERS = {}
@@ -472,7 +471,7 @@ function update_stream(particles, flask, smoke_particles)
 end
 
 function update_stream_particle(particle, flask, height) 
-	center = flask.center_x
+	local center = flask.center_x
 
 	if particle.color ~= 12 then
 		particle.velocity[1] = particle.velocity[1] + random_float(-0.01,0.01)
@@ -527,7 +526,7 @@ function update_stream_particle(particle, flask, height)
 end
 
 function fill_flask(flask)
-	cur_color = FAUCETS[flask.cur_slot]
+	local cur_color = FAUCETS[flask.cur_slot]
 
 	if #flask.fill_order == 0 then
 		table.insert(flask.fill_order, {cur_color, 0, 0})
@@ -538,7 +537,7 @@ function fill_flask(flask)
 		flask.fill_order[#flask.fill_order][3] = flask.fill_order[#flask.fill_order][3] + 0.1 * FILL_RATE;
 	else
 		-- different color as the previous, create new entry
-		y = flask.fill_order[#flask.fill_order][3]
+		local y = flask.fill_order[#flask.fill_order][3]
 		table.insert(flask.fill_order, {cur_color, y, y + 0.1 * FILL_RATE})
 	end
 
@@ -568,9 +567,9 @@ function add_creature(flask, score)
 	local place_width = 2 
 	local place_height = 2
 	local sprite = 66
+	local random = random_float(0, 1)
 	
 	if score > HAIR_THRESHOLD then
-		random = random_float(0,1)
 		if random < 0.5 then 
 			sprite = 68
 		else 
@@ -581,7 +580,6 @@ function add_creature(flask, score)
 		place_height = 4
 		pos_y = 60
 	elseif score > PERSON_THRESHOLD then
-		random = random_float(0,1)
 		if random < 0.5 then 
 			sprite = 66
 		else 
@@ -1249,27 +1247,27 @@ end
 function create_order_ui(i, o)
 	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 3)
 	for j=1, #o[i].content do
-		colorSpr = -1
+		local color_spr = -1
 		if o[i].content[j][1] == 2 then
-			colorSpr = 16
+			color_spr = 16
 		elseif o[i].content[j][1] == 9 then
-			colorSpr = 17
+			color_spr = 17
 		elseif o[i].content[j][1] == 5 then
-			colorSpr = 32
+			color_spr = 32
 		end
 
 		if #o[i].content == 1 then
-			spr(colorSpr, o[i].pos[1] + 7, o[i].pos[2] + 5, 0, 2)
-			percentage = o[i].content[j][2] * 100
+			spr(color_spr, o[i].pos[1] + 7, o[i].pos[2] + 5, 0, 2)
+			local percentage = o[i].content[j][2] * 100
 			print(percentage .. "%", o[i].pos[1]+26, o[i].pos[2] + 9, 0, false, 2, true)
 
 		elseif #o[i].content == 2 then
-			spr(colorSpr, o[i].pos[1] + 15 + 25*(j-1), o[i].pos[2] + 5, 0)
-			percentage = math.floor(0.5 + o[i].content[j][2] * 100)
+			spr(color_spr, o[i].pos[1] + 15 + 25*(j-1), o[i].pos[2] + 5, 0)
+			local percentage = math.floor(0.5 + o[i].content[j][2] * 100)
 			print(percentage .. "%", o[i].pos[1]+15+25*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
 		elseif #o[i].content == 3 then
-			spr(colorSpr, o[i].pos[1] + 8 + 20*(j-1), o[i].pos[2] + 5, 0)
-			percentage = math.floor(0.5 + o[i].content[j][2] * 100)
+			spr(color_spr, o[i].pos[1] + 8 + 20*(j-1), o[i].pos[2] + 5, 0)
+			local percentage = math.floor(0.5 + o[i].content[j][2] * 100)
 			print(percentage .. "%", o[i].pos[1]+7+20*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
 		end
 	end
