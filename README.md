@@ -5,7 +5,8 @@
   <img src="https://i.imgur.com/ORQ6u7v.gif" width="370" title="hover text"> 
 </p>
 
-Our 1st place entry for IEEE University of Porto Student Branch 2021 Retro Jam was **'Heaven's Kitchen'**, a game made in 48 hours for the **[TIC-80 fantasy console](https://tic80.com/)** by a team of five software engineers. See all jam entries on its [itch.io page](https://itch.io/jam/retrojam2021/entries).
+Our 1st place entry for IEEE University of Porto Student Branch 2021 Retro Jam was **'Heaven's Kitchen'**, a game made in 48 hours for the **[TIC-80 fantasy console](https://tic80.com/)** by a team of five software engineers. The jam's theme was **REACTION**.  
+See all jam entries on its [itch.io page](https://itch.io/jam/retrojam2021/entries).
 
 Our submission won **Best Game** 🥇, **Best Art** 🎨, **Best Gameplay** 🕹 and **Best Respect for the Theme** ✏.
 
