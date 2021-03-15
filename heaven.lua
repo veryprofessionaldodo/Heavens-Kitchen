@@ -185,6 +185,10 @@ function TIC()
 	draw()
 end
 
+function init()
+	music(0)
+	CUR_STATE = STATES.MAIN_MENU
+end
 -- updates
 function update()
 	FRAME_COUNTER = FRAME_COUNTER + 1
@@ -342,10 +346,6 @@ function generate_stream_particles(center, particles, particle_color)
 			table.insert(particles, particle)
 		end
 	end
-end
-
-function random_float(lower, greater)
-    return lower + math.random()  * (greater - lower);
 end
 
 function handle_faucet_sfx()
@@ -858,7 +858,9 @@ end
 -- draws
 function draw()
 	cls(BACKGROUND_COLOR)
-	if (CUR_STATE == STATES.MAIN_MENU) then
+	if has_value(PLAYABLE_STATES, CUR_STATE) then
+		draw_game()
+	elseif (CUR_STATE == STATES.MAIN_MENU) then
 		draw_main_menu()
 	elseif (CUR_STATE == STATES.CUTSCENE_ZERO) then
 		draw_cutscene_zero()
@@ -880,9 +882,198 @@ function draw()
 		draw_result_three()
 	elseif (CUR_STATE == STATES.RESULT_FINAL) then
 		draw_result_final()
-	elseif has_value(PLAYABLE_STATES, CUR_STATE) then
-		draw_game()
 	end
+end
+
+function draw_game()
+	draw_background()
+	draw_flasks_fluid()
+	draw_faucets()
+	draw_orders()
+	draw_particles()
+	draw_creatures()
+	draw_smokes()
+	draw_flasks_containers()
+	
+	if CUR_STATE ~= STATES.TUTORIAL_ONE and CUR_STATE ~= STATES.TUTORIAL_TWO then
+		draw_timer()
+		draw_score()
+	end
+
+	if SELECTED ~= nil then	draw_selected_flask() end
+end
+
+function draw_background()
+	spr(128, 0, 0, 0, 2, 0, 0, 8, 8)
+	spr(128, 90, 0, 0, 2, 0, 0, 8, 8)
+	spr(128, 140, 0, 0, 2, 0, 0, 8, 8)
+end
+
+function draw_flasks_fluid()
+	for i = 1, #FLASKS do draw_flask_fluid(FLASKS[i]) end
+end
+
+function draw_flask_fluid(flask)
+	local x = flask.center_x - FLASK_WIDTH / 2
+	for i = 1, #flask.fill_order do
+		local color = flask.fill_order[i][1]
+		local y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
+		local height = math.ceil(flask.fill_order[i][3]) - math.ceil(flask.fill_order[i][2])
+		rect(x + 3,	y, FLASK_WIDTH - 6, height, color)
+	end
+end
+
+function draw_faucets()
+	local width = DROP_SLOTS[1][2] - DROP_SLOTS[1][1]
+
+	-- draw red faucet 
+	local pos_red_x = (DROP_SLOTS[1][1] + DROP_SLOTS[1][2])/2 - width/2
+	spr(2,pos_red_x - 6, 0, 0, 3, 0, 0, 2, 2)
+
+	-- draw blue faucet
+	local pos_blue_x = (DROP_SLOTS[2][1] + DROP_SLOTS[2][2])/2 - width/2
+	spr(4,pos_blue_x - 6, 0, 0, 3, 0, 0, 2, 2)
+
+	-- draw out of order faucet
+	local pos_outoforder_x = (DROP_SLOTS[3][1] + DROP_SLOTS[3][2])/2 - width/2
+
+	if CUR_STATE == STATES.TUTORIAL_ONE then
+		spr(8, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
+	else
+		spr(6, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
+	end
+end
+
+function draw_orders()
+	-- Orders are 8px from the edges
+	-- Orders are spaced 12px between each other
+	-- Orders are 32px by 16px and scaled by 2
+	for i=1, math.min(#ORDERS, 4) do
+		create_order_ui(i, ORDERS)
+	end
+
+	for i=1, #COMPLETED_ORDERS do
+		create_order_ui(i, COMPLETED_ORDERS)
+	end
+end
+
+function create_order_ui(i, o)
+	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 3)
+	for j=1, #o[i].content do
+		local color_spr = -1
+		if o[i].content[j][1] == 2 then
+			color_spr = 16
+		elseif o[i].content[j][1] == 9 then
+			color_spr = 17
+		elseif o[i].content[j][1] == 5 then
+			color_spr = 32
+		end
+
+		if #o[i].content == 1 then
+			spr(color_spr, o[i].pos[1] + 7, o[i].pos[2] + 5, 0, 2)
+			local percentage = o[i].content[j][2] * 100
+			print(percentage .. "%", o[i].pos[1]+26, o[i].pos[2] + 9, 0, false, 2, true)
+
+		elseif #o[i].content == 2 then
+			spr(color_spr, o[i].pos[1] + 15 + 25*(j-1), o[i].pos[2] + 5, 0)
+			local percentage = math.floor(0.5 + o[i].content[j][2] * 100)
+			print(percentage .. "%", o[i].pos[1]+15+25*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
+		elseif #o[i].content == 3 then
+			spr(color_spr, o[i].pos[1] + 8 + 20*(j-1), o[i].pos[2] + 5, 0)
+			local percentage = math.floor(0.5 + o[i].content[j][2] * 100)
+			print(percentage .. "%", o[i].pos[1]+7+20*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
+		end
+	end
+end
+
+function draw_particles()
+	for i = 1, #PARTICLES_RED do 
+		--PARTICLES_RED.pos[1]
+		rect(PARTICLES_RED[i].pos[1], PARTICLES_RED[i].pos[2], math.floor(PARTICLES_RED[i].size), math.floor(PARTICLES_RED[i].size), PARTICLES_RED[i].color)
+	end
+
+	for i = 1, #PARTICLES_GREEN do 
+		rect(PARTICLES_GREEN[i].pos[1], PARTICLES_GREEN[i].pos[2], math.floor(PARTICLES_GREEN[i].size), math.floor(PARTICLES_GREEN[i].size), PARTICLES_GREEN[i].color)
+	end
+
+	for i = 1, #PARTICLES_BLUE do 
+		rect(PARTICLES_BLUE[i].pos[1], PARTICLES_BLUE[i].pos[2], math.floor(PARTICLES_BLUE[i].size), math.floor(PARTICLES_BLUE[i].size), PARTICLES_BLUE[i].color)
+	end
+end
+
+function draw_creatures() 
+	for i = 1, #CREATURES do 
+		spr(CREATURES[i].spr, CREATURES[i].pos[1] - FLASK_WIDTH / 2 + 2, CREATURES[i].pos[2], 0, 2, 0, 0, CREATURES[i].width, CREATURES[i].height)
+	end
+end
+
+function draw_smokes()
+	draw_smoke(SMOKE_RED_PARTICLES)
+	draw_smoke(SMOKE_GREEN_PARTICLES)
+	draw_smoke(SMOKE_BLUE_PARTICLES)
+end
+
+function draw_smoke(particles)
+	for i = 1, #particles do 
+		-- if is shrinking, draw a circle
+		if particles[i].color == particles[i].color_2 or particles[i].color == particles[i].color_3 then 
+			circ(particles[i].pos[1], particles[i].pos[2], particles[i].size / 2, particles[i].color)
+		else
+			rect(particles[i].pos[1], particles[i].pos[2], particles[i].size, particles[i].size, particles[i].color)
+		end
+	end
+end
+
+function draw_flasks_containers() 
+	for i = 1, #FLASKS do
+		spr(10, FLASKS[i].center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
+	end
+end
+
+function draw_timer()
+	rect(7, 10, 6, 100, 3)
+	rect(7, TIMER_Y, 6, math.floor(TIMER_HEIGHT+0.5), 4)
+	rectb(7, 10, 7, 100, 4)
+	local str = "TIME"
+	for i = 1, #str do
+		local c = str:sub(i,i)
+		print(c, 8, 37 + i*7)
+	end
+end
+
+function draw_score()
+	print("Score", 0, 118, 4, false, 1, true)
+	print(TOTAL_SCORE, 0, 125, 4, false, 1, true)
+end
+
+function draw_selected_flask()
+	-- SELECTED flask is always on top
+	local selected_flask = FLASKS[get_flask_at(SELECTED)]
+	draw_flask_fluid(selected_flask)
+
+	local particles = nil
+	if selected_flask.cur_slot == 1 then
+		particles = PARTICLES_RED
+	elseif selected_flask.cur_slot == 2 then
+		particles = PARTICLES_BLUE
+	elseif selected_flask.cur_slot == 3 then
+		particles = PARTICLES_GREEN
+	end
+
+	for i = 1, #particles do 
+		--PARTICLES_RED.pos[1]
+		rect(particles[i].pos[1], particles[i].pos[2], math.floor(particles[i].size), math.floor(particles[i].size), particles[i].color)
+	end
+
+	if selected_flask.cur_slot == 1 then
+		draw_smoke(SMOKE_RED_PARTICLES)
+	elseif selected_flask.cur_slot == 2 then
+		draw_smoke(SMOKE_BLUE_PARTICLES)
+	elseif selected_flask.cur_slot == 3 then
+		draw_smoke(SMOKE_GREEN_PARTICLES)
+	end
+
+	spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
 end
 
 function draw_main_menu()
@@ -892,24 +1083,6 @@ function draw_main_menu()
 	print('and SPACEBAR', 20, 68, 15, false, 1, true)
 	print('Press Z to start...', 20, 116, 7, false, 1, true)
 	draw_god()
-end
-
-function draw_continue_message()
-	print('Press Z to continue...', 20, 126, 7, false, 1, true)
-end
-
-function print_cutscene_message(message, x, y)
-	print(message, x, y, 12, false, 1, true)
-end
-
-function draw_god()
-	HALO_ANIM_COUNTER = HALO_ANIM_COUNTER + 0.1 * HALO_SPEED
-	local pos_y = -15 + math.sin(HALO_ANIM_COUNTER) * HALO_HEIGHT
-
-	spr(186, 160, 50, 0, 2, 0, 0, 6, 5)
-
-	-- draw halo
-	spr(106, 158, pos_y, 0, 2, 0, 0, 6, 5)
 end
 
 function draw_cutscene_zero()
@@ -943,18 +1116,6 @@ function draw_cutscene_two()
 	draw_continue_message()
 end
 
-function draw_cutscene_three()
-	print_cutscene_message('Fantastic job!', 20, 46)
-	print_cutscene_message('You now know the basics of how to operate', 20, 54)
-	print_cutscene_message('the H.E.C.K. machine.', 20, 62)
-
-	print_cutscene_message('You are ready to face a bigger challenge', 20, 78)
-	print_cutscene_message('and work for Heaven\'s Kitchen.', 20, 86)
-
-	draw_god()
-	draw_continue_message()
-end
-
 function draw_how_to_play_one()
 	print_cutscene_message('Open each faucet with your \'1\', \'2\'', 20, 30)
 	print_cutscene_message('and \'3\' keys and fill out the FLASKS.', 20, 38)
@@ -980,6 +1141,18 @@ function draw_how_to_play_two()
 	print_cutscene_message('You can drag and drop a flask into another', 20, 78)
 	print_cutscene_message('to make them switch places and add multiple', 20, 86)
 	print_cutscene_message('layers to your mixture. Godspeed!', 20, 94)
+
+	draw_god()
+	draw_continue_message()
+end
+
+function draw_cutscene_three()
+	print_cutscene_message('Fantastic job!', 20, 46)
+	print_cutscene_message('You now know the basics of how to operate', 20, 54)
+	print_cutscene_message('the H.E.C.K. machine.', 20, 62)
+
+	print_cutscene_message('You are ready to face a bigger challenge', 20, 78)
+	print_cutscene_message('and work for Heaven\'s Kitchen.', 20, 86)
 
 	draw_god()
 	draw_continue_message()
@@ -1103,204 +1276,25 @@ function draw_stars()
 	end 
 end
 
-function draw_game()
-	draw_background()
-	draw_flasks_fluid()
-	draw_faucets()
-	draw_orders()
-	draw_particles()
-	draw_creatures()
-	draw_smokes()
-	draw_flasks_containers()
-	
-	if CUR_STATE ~= STATES.TUTORIAL_ONE and CUR_STATE ~= STATES.TUTORIAL_TWO then
-		draw_timer()
-		draw_score()
-	end
-
-	if SELECTED ~= nil then	draw_selected_flask() end
+function print_cutscene_message(message, x, y)
+	print(message, x, y, 12, false, 1, true)
 end
 
-function draw_background()
-	spr(128, 0, 0, 0, 2, 0, 0, 8, 8)
-	spr(128, 90, 0, 0, 2, 0, 0, 8, 8)
-	spr(128, 140, 0, 0, 2, 0, 0, 8, 8)
+function draw_continue_message()
+	print('Press Z to continue...', 20, 126, 7, false, 1, true)
 end
 
-function draw_creatures() 
-	for i = 1, #CREATURES do 
-		spr(CREATURES[i].spr, CREATURES[i].pos[1] - FLASK_WIDTH / 2 + 2, CREATURES[i].pos[2], 0, 2, 0, 0, CREATURES[i].width, CREATURES[i].height)
-	end
-end
+function draw_god()
+	HALO_ANIM_COUNTER = HALO_ANIM_COUNTER + 0.1 * HALO_SPEED
+	local pos_y = -15 + math.sin(HALO_ANIM_COUNTER) * HALO_HEIGHT
 
-function draw_smokes()
-	draw_smoke(SMOKE_RED_PARTICLES)
-	draw_smoke(SMOKE_GREEN_PARTICLES)
-	draw_smoke(SMOKE_BLUE_PARTICLES)
-end
+	spr(186, 160, 50, 0, 2, 0, 0, 6, 5)
 
-function draw_smoke(particles)
-	for i = 1, #particles do 
-		-- if is shrinking, draw a circle
-		if particles[i].color == particles[i].color_2 or particles[i].color == particles[i].color_3 then 
-			circ(particles[i].pos[1], particles[i].pos[2], particles[i].size / 2, particles[i].color)
-		else
-			rect(particles[i].pos[1], particles[i].pos[2], particles[i].size, particles[i].size, particles[i].color)
-		end
-	end
-end
-
-function draw_particles()
-	for i = 1, #PARTICLES_RED do 
-		--PARTICLES_RED.pos[1]
-		rect(PARTICLES_RED[i].pos[1], PARTICLES_RED[i].pos[2], math.floor(PARTICLES_RED[i].size), math.floor(PARTICLES_RED[i].size), PARTICLES_RED[i].color)
-	end
-
-	for i = 1, #PARTICLES_GREEN do 
-		rect(PARTICLES_GREEN[i].pos[1], PARTICLES_GREEN[i].pos[2], math.floor(PARTICLES_GREEN[i].size), math.floor(PARTICLES_GREEN[i].size), PARTICLES_GREEN[i].color)
-	end
-
-	for i = 1, #PARTICLES_BLUE do 
-		rect(PARTICLES_BLUE[i].pos[1], PARTICLES_BLUE[i].pos[2], math.floor(PARTICLES_BLUE[i].size), math.floor(PARTICLES_BLUE[i].size), PARTICLES_BLUE[i].color)
-	end
-end
-
-function draw_timer()
-	rect(7, 10, 6, 100, 3)
-	rect(7, TIMER_Y, 6, math.floor(TIMER_HEIGHT+0.5), 4)
-	rectb(7, 10, 7, 100, 4)
-	local str = "TIME"
-	for i = 1, #str do
-		local c = str:sub(i,i)
-		print(c, 8, 37 + i*7)
-	end
-end
-
-function draw_flasks_containers() 
-	for i = 1, #FLASKS do
-		spr(10, FLASKS[i].center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
-	end
-end
-
-function draw_flasks_fluid()
-	for i = 1, #FLASKS do
-		draw_flask_fluid(FLASKS[i])
-	end
-end
-
-function draw_flask_fluid(flask)
-	local x = flask.center_x - FLASK_WIDTH / 2
-	for i = 1, #flask.fill_order do
-		local color = flask.fill_order[i][1]
-		local y = SCREEN_HEIGHT - (flask.fill_order[i][3] + FLASK_OFFSET_Y)
-		local height = math.ceil(flask.fill_order[i][3]) - math.ceil(flask.fill_order[i][2])
-		rect(x + 3,	y, FLASK_WIDTH - 6, height, color)
-	end
-end
-
-function draw_selected_flask()
-	-- SELECTED flask is always on top
-	local selected_flask = FLASKS[get_flask_at(SELECTED)]
-	draw_flask_fluid(selected_flask)
-
-	local particles = nil
-	if selected_flask.cur_slot == 1 then
-		particles = PARTICLES_RED
-	elseif selected_flask.cur_slot == 2 then
-		particles = PARTICLES_BLUE
-	elseif selected_flask.cur_slot == 3 then
-		particles = PARTICLES_GREEN
-	end
-
-	for i = 1, #particles do 
-		--PARTICLES_RED.pos[1]
-		rect(particles[i].pos[1], particles[i].pos[2], math.floor(particles[i].size), math.floor(particles[i].size), particles[i].color)
-	end
-
-	if selected_flask.cur_slot == 1 then
-		draw_smoke(SMOKE_RED_PARTICLES)
-	elseif selected_flask.cur_slot == 2 then
-		draw_smoke(SMOKE_BLUE_PARTICLES)
-	elseif selected_flask.cur_slot == 3 then
-		draw_smoke(SMOKE_GREEN_PARTICLES)
-	end
-
-	spr(10, selected_flask.center_x - FLASK_WIDTH / 2 - 6, 45, 0, 3, 0, 0, 2, 4)
-end
-
-function draw_orders()
-	-- Orders are 8px from the edges
-	-- Orders are spaced 12px between each other
-	-- Orders are 32px by 16px and scaled by 2
-	for i=1, math.min(#ORDERS, 4) do
-		create_order_ui(i, ORDERS)
-	end
-
-	for i=1, #COMPLETED_ORDERS do
-		create_order_ui(i, COMPLETED_ORDERS)
-	end
-end
-
-function create_order_ui(i, o)
-	spr(12, o[i].pos[1], o[i].pos[2], 0, 2, 0, 0, 4, 3)
-	for j=1, #o[i].content do
-		local color_spr = -1
-		if o[i].content[j][1] == 2 then
-			color_spr = 16
-		elseif o[i].content[j][1] == 9 then
-			color_spr = 17
-		elseif o[i].content[j][1] == 5 then
-			color_spr = 32
-		end
-
-		if #o[i].content == 1 then
-			spr(color_spr, o[i].pos[1] + 7, o[i].pos[2] + 5, 0, 2)
-			local percentage = o[i].content[j][2] * 100
-			print(percentage .. "%", o[i].pos[1]+26, o[i].pos[2] + 9, 0, false, 2, true)
-
-		elseif #o[i].content == 2 then
-			spr(color_spr, o[i].pos[1] + 15 + 25*(j-1), o[i].pos[2] + 5, 0)
-			local percentage = math.floor(0.5 + o[i].content[j][2] * 100)
-			print(percentage .. "%", o[i].pos[1]+15+25*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
-		elseif #o[i].content == 3 then
-			spr(color_spr, o[i].pos[1] + 8 + 20*(j-1), o[i].pos[2] + 5, 0)
-			local percentage = math.floor(0.5 + o[i].content[j][2] * 100)
-			print(percentage .. "%", o[i].pos[1]+7+20*(j-1), o[i].pos[2] + 17, 0, false, 1, true)
-		end
-	end
-end
-
-function draw_faucets()
-	local width = DROP_SLOTS[1][2] - DROP_SLOTS[1][1]
-
-	-- draw red faucet 
-	local pos_red_x = (DROP_SLOTS[1][1] + DROP_SLOTS[1][2])/2 - width/2
-	spr(2,pos_red_x - 6, 0, 0, 3, 0, 0, 2, 2)
-
-	-- draw blue faucet
-	local pos_blue_x = (DROP_SLOTS[2][1] + DROP_SLOTS[2][2])/2 - width/2
-	spr(4,pos_blue_x - 6, 0, 0, 3, 0, 0, 2, 2)
-
-	-- draw out of order faucet
-	local pos_outoforder_x = (DROP_SLOTS[3][1] + DROP_SLOTS[3][2])/2 - width/2
-
-	if CUR_STATE == STATES.TUTORIAL_ONE then
-		spr(8, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
-	else
-		spr(6, pos_outoforder_x - 6, 0, 0, 3, 0, 0, 2, 2)
-	end
-end
-
-function draw_score()
-	print("Score", 0, 118, 4, false, 1, true)
-	print(TOTAL_SCORE, 0, 125, 4, false, 1, true)
+	-- draw halo
+	spr(106, 158, pos_y, 0, 2, 0, 0, 6, 5)
 end
 
 -- utils
-function ifthenelse (cond, t, f)
-    if cond then return t else return f end
-end
-
 function has_value (tab, val)
     for _i, value in ipairs(tab) do
         if value == val then
@@ -1308,6 +1302,10 @@ function has_value (tab, val)
         end
     end
     return false
+end
+
+function ifthenelse (cond, t, f)
+    if cond then return t else return f end
 end
 
 function map(func, tbl)
@@ -1318,14 +1316,13 @@ function map(func, tbl)
 	return newtbl
 end
 
--- Does not work for empty tables
 function min(tbl)
-	return tbl[min_i(tbl)]
+	local i = min_i(tbl)
+	return ifthenelse(i == nil, i, tbl[i])
 end
 
--- Does not work for empty tables
 function min_i(tbl)
-	local idx, min = 1, tbl[1]
+	local idx, min = nil, tbl[1]
 	for i = 1, #tbl do
 		if tbl[i] < min then 
 			idx = i
@@ -1335,13 +1332,13 @@ function min_i(tbl)
 	return idx
 end
 
-function init()
-	music(0)
-	CUR_STATE = STATES.MAIN_MENU
+function random_float(lower, greater)
+    return lower + math.random()  * (greater - lower);
 end
-init()
 
--- DO NOT EDIT BELOW ASSETS MANUALLY
+init() -- starts the game
+
+-- DO NOT EDIT BELOW ASSETS
 
 -- <TILES>
 -- 002:0033333100313111003111120011312200311222001122cc0012222200122222
