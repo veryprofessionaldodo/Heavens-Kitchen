@@ -179,7 +179,7 @@ HALO_ANIM_COUNTER = 0
 HALO_HEIGHT = 3
 HALO_SPEED = 0.3
 
--- called at 60Hz by TIC-80
+-- TIC() is called at 60Hz by TIC-80
 function TIC()
 	update()
 	draw()
@@ -189,6 +189,7 @@ function init()
 	music(0)
 	CUR_STATE = STATES.MAIN_MENU
 end
+
 -- updates
 function update()
 	FRAME_COUNTER = FRAME_COUNTER + 1
@@ -201,6 +202,8 @@ function update()
 		update_flasks()
 		update_streams()
 		update_smokes()
+
+		-- end level if timeout or no more orders
 		handle_timeout()
 		if #ORDERS == 0 then update_state_machine()	end
 	end
@@ -260,16 +263,24 @@ function update_state_machine()
 end
 
 function calculate_stars()
-	local stars = 0
-	if CUR_STATE == STATES.RESULT_ONE then
-		stars = math.floor(TOTAL_SCORE / (LEVEL_ONE_SCORE / 3))
-	elseif CUR_STATE == STATES.RESULT_TWO then
-		stars = math.floor(TOTAL_SCORE / (LEVEL_TWO_SCORE / 3))
-	elseif CUR_STATE == STATES.RESULT_THREE then
-		stars = math.floor(TOTAL_SCORE / (LEVEL_THREE_SCORE / 3))
-	end
+	local threshold = ifthenelse(CUR_STATE == STATES.RESULT_ONE, LEVEL_ONE_SCORE, nil)
+	threshold = ifthenelse(CUR_STATE == STATES.RESULT_TWO, LEVEL_TWO_SCORE, threshold)
+	threshold = ifthenelse(CUR_STATE == STATES.RESULT_THREE, LEVEL_THREE_SCORE, threshold)
+	local stars = math.floor(TOTAL_SCORE / (threshold / 3))
 	CURRENT_STARS = ifthenelse(stars > 3, 3, stars)
 	TOTAL_STARS = TOTAL_STARS + CURRENT_STARS
+end
+
+function update_orders()
+	for i = 1, #ORDERS do
+		ORDERS[i].pos[1] = ORDERS[i].pos[1] + (ORDERS[i].target[1] - ORDERS[i].pos[1]) / ORDER_DELTA
+		ORDERS[i].pos[2] = ORDERS[i].pos[2] + (ORDERS[i].target[2] - ORDERS[i].pos[2]) / ORDER_DELTA
+	end
+
+	for i = 1, #COMPLETED_ORDERS do
+		COMPLETED_ORDERS[i].pos[1] = COMPLETED_ORDERS[i].pos[1] + (COMPLETED_ORDERS[i].target[1] - COMPLETED_ORDERS[i].pos[1]) / ORDER_DELTA
+		COMPLETED_ORDERS[i].pos[2] = COMPLETED_ORDERS[i].pos[2] + (COMPLETED_ORDERS[i].target[2] - COMPLETED_ORDERS[i].pos[2]) / ORDER_DELTA
+	end
 end
 
 function update_mouse()
@@ -286,6 +297,28 @@ function update_mouse()
 		SELECTED = slot
 	elseif SELECTED ~= nil then
 		FLASKS[get_flask_at(SELECTED)].center_x = mx
+	end
+end
+
+function update_creatures() 
+	local i = 1
+
+	while i < #CREATURES + 1 do
+		CREATURES[i].time_to_drop = CREATURES[i].time_to_drop - 1
+
+		if CREATURES[i].time_to_drop <= 0 then 
+			CREATURES[i].velocity_y = CREATURES[i].velocity_y + 0.5
+		else 
+			CREATURES[i].pos[1] = CREATURES[i].flask.center_x
+		end
+
+		CREATURES[i].pos[2] = CREATURES[i].pos[2] + CREATURES[i].velocity_y
+
+		if CREATURES[i].pos[2] > 200 then
+			table.remove(CREATURES, i)
+		else 
+			i = i + 1
+		end
 	end
 end
 
@@ -314,40 +347,6 @@ function update_flasks()
 	end
 end
 
-function update_creatures() 
-	local i = 1
-
-	while i < #CREATURES + 1 do
-		CREATURES[i].time_to_drop = CREATURES[i].time_to_drop - 1
-
-		if CREATURES[i].time_to_drop <= 0 then 
-			CREATURES[i].velocity_y = CREATURES[i].velocity_y + 0.5
-		else 
-			CREATURES[i].pos[1] = CREATURES[i].flask.center_x
-		end
-
-		CREATURES[i].pos[2] = CREATURES[i].pos[2] + CREATURES[i].velocity_y
-
-		if CREATURES[i].pos[2] > 200 then
-			table.remove(CREATURES, i)
-		else 
-			i = i + 1
-		end
-	end
-end
-
-function generate_stream_particles(center, particles, particle_color)
-	-- draw main stream
-	for _ = 1, 25 do 
-		local pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
-		local pos_y = math.random(39, 40)
-		local particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={random_float(-0.1,0.1), random_float(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = random_float(1,3), time_to_live=random_float(20,40)}
-		if #particles < NUMBER_OF_STREAM_PARTICLES then
-			table.insert(particles, particle)
-		end
-	end
-end
-
 function handle_faucet_sfx()
 	if key(FAUCET_KEYCODE_1) or key(FAUCET_KEYCODE_2) or key(FAUCET_KEYCODE_3) then
 		if not ANY_FAUCET_DROPPING then
@@ -365,75 +364,15 @@ function handle_faucet_sfx()
 	end
 end
 
-function update_smokes() 
-	local center = (DROP_SLOTS[1][1] + DROP_SLOTS[1][2]) / 2 - 2
-	local red_flask = FLASKS[get_flask_at(1)]
-	update_smoke(SMOKE_RED_PARTICLES, center, red_flask)
-	
-	local center = (DROP_SLOTS[2][1] + DROP_SLOTS[2][2]) / 2 - 2
-	local blue_flask = FLASKS[get_flask_at(2)]
-	update_smoke(SMOKE_BLUE_PARTICLES, center, blue_flask)
-	
-	local center = (DROP_SLOTS[3][1] + DROP_SLOTS[3][2]) / 2 - 2
-	local green_flask = FLASKS[get_flask_at(3)]
-	update_smoke(SMOKE_GREEN_PARTICLES, center, green_flask)
-end
-
-function update_smoke(particles, center, flask) 
-	local i = 1
-	for j = 1, #particles do 
-		update_smoke_particle(particles[j], flask.center_x, SMOKE_WIDTH, SMOKE_HEIGHT)
-	end
-	while i < #particles do 
-		if particles[i].time_to_live <= 0 then
-			table.remove(particles, i, center)
-		else 
-			i = i + 1
+function generate_stream_particles(center, particles, particle_color)
+	-- draw main stream
+	for _ = 1, 25 do 
+		local pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
+		local pos_y = math.random(39, 40)
+		local particle = {pos = {pos_x, pos_y}, color=particle_color, velocity={random_float(-0.1,0.1), random_float(PARTICLE_SPEED-2,PARTICLE_SPEED+2)}, size = random_float(1,3), time_to_live=random_float(20,40)}
+		if #particles < NUMBER_OF_STREAM_PARTICLES then
+			table.insert(particles, particle)
 		end
-	end
-end
-
-function update_smoke_particle(particle, center, width, height) 
-	if particle.size < 0.5 then 
-		particle.color = particle.color_2
-	elseif particle.size < 0.2 then
-		particle.color = particle.color_3
-	elseif particle.size < 0.01 then 
-		particle.time_to_live = 0
-	end
-
-	particle.time_to_live = particle.time_to_live - 1
-	particle.size = particle.size + random_float(-0.2, -0.1)
-	
-	if particle.pos[1] < center - width/2 then 
-		particle.velocity[1] = particle.velocity[1] + random_float(0.1, 0.8)
-	elseif particle.pos[1] > center + width/2 then
-		particle.velocity[1] = particle.velocity[1] + random_float(-0.8, -0.1)
-	else 
-		particle.velocity[1] = particle.velocity[1] + random_float(-0.1, 0.1)
-	end
-
-	if height - particle.pos[2] < MAX_PROX_X then 
-		particle.velocity[2] = particle.velocity[2] + random_float(-0.1, -0.01)
-	elseif particle.pos[2] < 47 then
-		particle.velocity[2] = particle.velocity[2] / 1.1
-	else
-		particle.velocity[2] = particle.velocity[2] + random_float(-0.01, 0.01)
-	end
-
-	--velocity_y = random_float(-1, 1)
-	-- update properties
-	particle.pos[1] = particle.pos[1] + particle.velocity[1]
-	particle.pos[2] = particle.pos[2] + particle.velocity[2]
-	particle.pos[1] = math.min(math.max(particle.pos[1], center - width / 2), center + width / 2)
-
-	-- check if bounce is necessary
-	if particle.pos[1] == center + width / 2 then 
-		particle.velocity[1] = random_float(-2,-1)
-		particle.pos[1] = particle.pos[1] + particle.velocity[1]
-	elseif particle.pos[1] == center - width / 2 then 
-		particle.velocity[1] = random_float(1,2)
-		particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	end
 end
 
@@ -520,6 +459,78 @@ function update_stream_particle(particle, flask, height)
 		particle.velocity[1] = random_float(-2,-1)
 		particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	elseif particle.pos[1] == center - SMOKE_WIDTH / 2 and color == 12 then 
+		particle.velocity[1] = random_float(1,2)
+		particle.pos[1] = particle.pos[1] + particle.velocity[1]
+	end
+end
+
+function update_smokes() 
+	local center = (DROP_SLOTS[1][1] + DROP_SLOTS[1][2]) / 2 - 2
+	local red_flask = FLASKS[get_flask_at(1)]
+	update_smoke(SMOKE_RED_PARTICLES, center, red_flask)
+	
+	local center = (DROP_SLOTS[2][1] + DROP_SLOTS[2][2]) / 2 - 2
+	local blue_flask = FLASKS[get_flask_at(2)]
+	update_smoke(SMOKE_BLUE_PARTICLES, center, blue_flask)
+	
+	local center = (DROP_SLOTS[3][1] + DROP_SLOTS[3][2]) / 2 - 2
+	local green_flask = FLASKS[get_flask_at(3)]
+	update_smoke(SMOKE_GREEN_PARTICLES, center, green_flask)
+end
+
+function update_smoke(particles, center, flask) 
+	local i = 1
+	for j = 1, #particles do 
+		update_smoke_particle(particles[j], flask.center_x, SMOKE_WIDTH, SMOKE_HEIGHT)
+	end
+	while i < #particles do 
+		if particles[i].time_to_live <= 0 then
+			table.remove(particles, i, center)
+		else 
+			i = i + 1
+		end
+	end
+end
+
+function update_smoke_particle(particle, center, width, height) 
+	if particle.size < 0.5 then 
+		particle.color = particle.color_2
+	elseif particle.size < 0.2 then
+		particle.color = particle.color_3
+	elseif particle.size < 0.01 then 
+		particle.time_to_live = 0
+	end
+
+	particle.time_to_live = particle.time_to_live - 1
+	particle.size = particle.size + random_float(-0.2, -0.1)
+	
+	if particle.pos[1] < center - width/2 then 
+		particle.velocity[1] = particle.velocity[1] + random_float(0.1, 0.8)
+	elseif particle.pos[1] > center + width/2 then
+		particle.velocity[1] = particle.velocity[1] + random_float(-0.8, -0.1)
+	else 
+		particle.velocity[1] = particle.velocity[1] + random_float(-0.1, 0.1)
+	end
+
+	if height - particle.pos[2] < MAX_PROX_X then 
+		particle.velocity[2] = particle.velocity[2] + random_float(-0.1, -0.01)
+	elseif particle.pos[2] < 47 then
+		particle.velocity[2] = particle.velocity[2] / 1.1
+	else
+		particle.velocity[2] = particle.velocity[2] + random_float(-0.01, 0.01)
+	end
+
+	--velocity_y = random_float(-1, 1)
+	-- update properties
+	particle.pos[1] = particle.pos[1] + particle.velocity[1]
+	particle.pos[2] = particle.pos[2] + particle.velocity[2]
+	particle.pos[1] = math.min(math.max(particle.pos[1], center - width / 2), center + width / 2)
+
+	-- check if bounce is necessary
+	if particle.pos[1] == center + width / 2 then 
+		particle.velocity[1] = random_float(-2,-1)
+		particle.pos[1] = particle.pos[1] + particle.velocity[1]
+	elseif particle.pos[1] == center - width / 2 then 
 		particle.velocity[1] = random_float(1,2)
 		particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	end
@@ -680,30 +691,6 @@ function calculate_score(fill_order)
 	return best_score
 end
 
-function update_orders()
-	for i = 1, #ORDERS do
-		ORDERS[i].pos[1] = ORDERS[i].pos[1] + (ORDERS[i].target[1] - ORDERS[i].pos[1]) / ORDER_DELTA
-		ORDERS[i].pos[2] = ORDERS[i].pos[2] + (ORDERS[i].target[2] - ORDERS[i].pos[2]) / ORDER_DELTA
-	end
-
-	for i = 1, #COMPLETED_ORDERS do
-		COMPLETED_ORDERS[i].pos[1] = COMPLETED_ORDERS[i].pos[1] + (COMPLETED_ORDERS[i].target[1] - COMPLETED_ORDERS[i].pos[1]) / ORDER_DELTA
-		COMPLETED_ORDERS[i].pos[2] = COMPLETED_ORDERS[i].pos[2] + (COMPLETED_ORDERS[i].target[2] - COMPLETED_ORDERS[i].pos[2]) / ORDER_DELTA
-	end
-end
-
-function get_flask_at(slot)
-	for i = 1, #FLASKS do if FLASKS[i].cur_slot == slot then return i end end
-end
-
-function get_slot(mx)
-	for i = 1, #DROP_SLOTS do
-		local x0 = DROP_SLOTS[i][1]
-		local x1 = DROP_SLOTS[i][2]
-		if mx >= x0 and mx <= x1 then return i end
-	end
-end
-
 function mouse_up(flask)
 	local closest = get_closest_slot(flask.center_x)
 	local closest_flask = FLASKS[get_flask_at(closest)]
@@ -720,6 +707,18 @@ function get_closest_slot(x)
 	local positions = map(function(a) return math.abs(x - a) end, positions)
 	local idx = min_i(positions)
 	return math.ceil(idx / 2) 
+end
+
+function get_flask_at(slot)
+	for i = 1, #FLASKS do if FLASKS[i].cur_slot == slot then return i end end
+end
+
+function get_slot(mx)
+	for i = 1, #DROP_SLOTS do
+		local x0 = DROP_SLOTS[i][1]
+		local x1 = DROP_SLOTS[i][2]
+		if mx >= x0 and mx <= x1 then return i end
+	end
 end
 
 function handle_timeout()
@@ -772,7 +771,7 @@ function setup_level()
 		}
 	else
 		ORDERS = generate_orders(
-			40,
+			30,
 			LEVELS_METADATA[CUR_STATE].max_steps, 
 			LEVELS_METADATA[CUR_STATE].FAUCETS, 
 			LEVELS_METADATA[CUR_STATE].percentages
