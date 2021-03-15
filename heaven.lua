@@ -1,8 +1,9 @@
 -- title:  Heaven's Kitchen
 -- author: Team Amogus
--- desc:   Create Pikmin to please God
+-- desc:   1st place submission for RetroJam 2021 organized by IEEE UP SB
 -- script: lua
 
+-- Game States
 STATES = {
 	MAIN_MENU = 'main_menu',
 	CUTSCENE_ZERO = 'cutscene_zero',
@@ -44,11 +45,15 @@ PLAYABLE_STATES = {
 	STATES.LEVEL_THREE
 }
 
--- red, blue, green faucets
-FAUCETS = { 2, 9, 5 }
+CUR_STATE = STATES.MAIN_MENU
 
--- times in seconds
+-- Faucet colors: red, blue, green
+FAUCETS = { 2, 9, 5 }
+ANY_FAUCET_DROPPING = false
+
+-- Levels
 LEVELS_METADATA = {
+	-- times in seconds
 	tutorial_one = { 
 		time = math.huge -- no timeout for tutorials
 	},
@@ -75,6 +80,12 @@ LEVELS_METADATA = {
 	}
 }
 
+-- Flasks
+SELECTED = nil -- SELECTED flask to drag
+FLASK_WIDTH = 36
+FLASK_OFFSET_Y = 4
+FLASK_HEIGHT = 84
+
 FLASK1 = {
 	center_x = 42, -- x position of the center of the flask
 	fill_order = {}, -- order of fill with tuples (color, y0, y1) like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
@@ -94,70 +105,71 @@ FLASK3 = {
 }
 
 FLASKS = { FLASK1, FLASK2, FLASK3 }
-SELECTED = nil -- SELECTED flask to drag
 
+-- Drop slots ranges
+DROP_SLOTS = { {24, 60}, {74, 110}, {124, 160} } 
+
+-- Scoring
 TOTAL_SCORE = 0
 TOTAL_STARS = 0
 CURRENT_STARS = 0
-
-DROP_SLOTS = { {24, 60}, {74, 110}, {124, 160} } -- ranges of the drop slots
-
-SCREEN_WIDTH = 240
-SCREEN_HEIGHT = 136
-CLOCK_FREQ = 60 --Hz
-
-CUR_STATE = STATES.MAIN_MENU
-
-FLASK_WIDTH = 36
-FLASK_OFFSET_Y = 4
-FLASK_HEIGHT = 84
-
-Z_KEYCODE = 26
-FAUCET_KEYCODE_1 = 28
-FAUCET_KEYCODE_2 = 29
-FAUCET_KEYCODE_3 = 30
-
-ORDER_START_POS = 8
-ORDER_PADDING = 44
-ORDER_DELTA = 15
-ORDER_OFF_SCREEN = 241
-FILL_RATE = 0.4
-
-BACKGROUND_COLOR = 0
-
-STREAM_WIDTH = 4
-NUMBER_OF_STREAM_PARTICLES = 500
-NUMBER_OF_SMOKE_PARTICLES = 600
-PARTICLE_SPEED = 5
-BUBBLES_GRAVITY = 0.1
-
-FLASK_TRANSITION_TIME = 3
-FRAME_COUNTER = 0
-RECT_HEIGHT = 100
-TIMER_Y = 10
-TIMER_HEIGHT = 100
 
 LEVEL_ONE_SCORE = 1050
 LEVEL_TWO_SCORE = 510
 LEVEL_THREE_SCORE = 570
 
-ORDERS = {}
+HAIR_THRESHOLD = 35
+PERSON_THRESHOLD = 30
+COW_THRESHOLD = 20
+FROG_THRESHOLD = 10
 
-COMPLETED_ORDERS = {}
+-- Timer 
+RECT_HEIGHT = 100
+TIMER_Y = 10
+TIMER_HEIGHT = 100
+
+-- TIC-80 properties
+SCREEN_WIDTH = 240
+SCREEN_HEIGHT = 136
+CLOCK_FREQ = 60 --Hz
+
+-- Keycodes
+Z_KEYCODE = 26
+FAUCET_KEYCODE_1 = 28
+FAUCET_KEYCODE_2 = 29
+FAUCET_KEYCODE_3 = 30
+
+-- Orders
+ORDER_START_POS = 8
+ORDER_PADDING = 44
+ORDER_DELTA = 15
+ORDER_OFF_SCREEN = 241
 VERTICAL_TARGETS = { 8, 52, 96, 137 }
 
-ANY_FAUCET_DROPPING = false
+ORDERS = {}
+COMPLETED_ORDERS = {}
 
--- transition particle system, each particle contains the follwoing 
+-- Faucet Streams & Smoke
+STREAM_WIDTH = 4
+SMOKE_WIDTH = 30
+SMOKE_HEIGHT = 84
+FILL_RATE = 0.4
+NUMBER_OF_STREAM_PARTICLES = 500
+NUMBER_OF_SMOKE_PARTICLES = 600
+PARTICLE_SPEED = 5
+BUBBLES_GRAVITY = 0.1
+MAX_PROX_X = 5
+
+FLASK_TRANSITION_TIME = 3
+FRAME_COUNTER = 0
+
+-- transition particle system, each particle contains the following 
 -- components: position, velocity, color, size, color, color_2, color_3
 -- (used for transitions) and time_to_live
 -- used to check if stream can be activated or not
 SMOKE_RED_PARTICLES = {}
 SMOKE_GREEN_PARTICLES = {}
 SMOKE_BLUE_PARTICLES = {}
-SMOKE_WIDTH = 30
-SMOKE_HEIGHT = 84
-MAX_PROX_X = 5
 
 -- particles are simple objects that have five components:
 -- position, velocity, color time-to-live, and size
@@ -165,19 +177,16 @@ PARTICLES_RED = {}
 PARTICLES_GREEN = {}
 PARTICLES_BLUE = {}
 
-HAIR_THRESHOLD = 35
-PERSON_THRESHOLD = 30
-COW_THRESHOLD = 20
-FROG_THRESHOLD = 10
-TIME_UNTIL_CREATURE_DROP = 100
-
 -- contains the CREATURES, and each contain the following information:
 -- flask, position, y_velocity, starting sprite, width, height
 CREATURES = {}
+TIME_UNTIL_CREATURE_DROP = 100
 
+-- Others
 HALO_ANIM_COUNTER = 0
 HALO_HEIGHT = 3
 HALO_SPEED = 0.3
+BACKGROUND_COLOR = 0
 
 -- TIC() is called at 60Hz by TIC-80
 function TIC()
@@ -1317,11 +1326,12 @@ end
 
 function min(tbl)
 	local i = min_i(tbl)
-	return ifthenelse(i == nil, i, tbl[i])
+	return ifthenelse(i == nil, nil, tbl[i])
 end
 
 function min_i(tbl)
-	local idx, min = nil, tbl[1]
+	if #tbl == 0 then return nil end
+	local idx, min = 1, tbl[1]
 	for i = 1, #tbl do
 		if tbl[i] < min then 
 			idx = i
