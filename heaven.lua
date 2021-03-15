@@ -2,6 +2,7 @@
 -- author: Team Amogus
 -- desc:   1st place submission for RetroJam 2021 organized by IEEE UP SB
 -- script: lua
+
 -- Game States
 STATES = {
     MAIN_MENU = 'main_menu',
@@ -327,7 +328,7 @@ function update_flasks()
         local center_stream = (DROP_SLOTS[1][1] + DROP_SLOTS[1][2]) / 2 - 2
         generate_stream_particles(center_stream, PARTICLES_RED, 3)
     end
-	
+
     if key(FAUCET_KEYCODE_2) and #SMOKE_BLUE_PARTICLES < 10 then
         local center_stream = (DROP_SLOTS[2][1] + DROP_SLOTS[2][2]) / 2 - 2
         generate_stream_particles(center_stream, PARTICLES_BLUE, 10)
