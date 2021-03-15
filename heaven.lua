@@ -160,9 +160,6 @@ PARTICLE_SPEED = 5
 BUBBLES_GRAVITY = 0.1
 MAX_PROX_X = 5
 
-FLASK_TRANSITION_TIME = 3
-FRAME_COUNTER = 0
-
 -- transition particle system, each particle contains the following 
 -- components: position, velocity, color, size, color, color_2, color_3
 -- (used for transitions) and time_to_live
@@ -187,6 +184,8 @@ HALO_ANIM_COUNTER = 0
 HALO_HEIGHT = 3
 HALO_SPEED = 0.3
 BACKGROUND_COLOR = 0
+FLASK_TRANSITION_TIME = 3
+FRAME_COUNTER = 0
 
 -- TIC() is called at 60Hz by TIC-80
 function TIC()
