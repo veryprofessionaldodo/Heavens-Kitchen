@@ -1,6 +1,6 @@
 -- title:  Heaven's Kitchen
--- author: Amogus
--- desc:   Play as a mad chemist working for God
+-- author: Team Amogus
+-- desc:   Create Pikmin to please God
 -- script: lua
 
 STATES = {
@@ -44,13 +44,10 @@ PLAYABLE_STATES = {
 	STATES.LEVEL_THREE
 }
 
-FAUCETS = { 2, 9, 5 } -- red, yellow, blue FAUCETS
+-- red, blue, green faucets
+FAUCETS = { 2, 9, 5 }
 
--- table with information for each level like time (possible others in the future)
--- time in seconds
--- max steps as max steps for recipes
--- FAUCETS as FAUCETS allowed
--- percentages
+-- times in seconds
 LEVELS_METADATA = {
 	tutorial_one = { 
 		time = math.huge -- no timeout for tutorials
@@ -79,8 +76,8 @@ LEVELS_METADATA = {
 }
 
 FLASK1 = {
-	center_x = 42, -- center x
-	fill_order = {}, -- order of fill like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
+	center_x = 42, -- x position of the center of the flask
+	fill_order = {}, -- order of fill with tuples (color, y0, y1) like e.g. [(red, 0, 30), (blue, 30, 35), (yellow, 35, 100)]
 	cur_slot = 1, -- current slot the flask is placed in
 }
 
