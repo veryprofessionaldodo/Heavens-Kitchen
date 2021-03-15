@@ -111,7 +111,6 @@ CUR_STATE = STATES.MAIN_MENU
 FLASK_WIDTH = 36
 FLASK_OFFSET_Y = 4
 FLASK_HEIGHT = 84
-SMOKE_WIDTH = 30
 
 Z_KEYCODE = 26
 FAUCET_KEYCODE_1 = 28
@@ -156,6 +155,9 @@ ANY_FAUCET_DROPPING = false
 SMOKE_RED_PARTICLES = {}
 SMOKE_GREEN_PARTICLES = {}
 SMOKE_BLUE_PARTICLES = {}
+SMOKE_WIDTH = 30
+SMOKE_HEIGHT = 84
+MAX_PROX_X = 5
 
 -- particles are simple objects that have five components:
 -- position, velocity, color time-to-live, and size
@@ -378,12 +380,9 @@ function update_smokes()
 end
 
 function update_smoke(particles, center, flask) 
-	-- width = 30 TODO
-	local height = 84
-
 	local i = 1
 	for j = 1, #particles do 
-		update_smoke_particle(particles[j], flask.center_x, SMOKE_WIDTH, height)
+		update_smoke_particle(particles[j], flask.center_x, SMOKE_WIDTH, SMOKE_HEIGHT)
 	end
 	while i < #particles do 
 		if particles[i].time_to_live <= 0 then
@@ -414,7 +413,7 @@ function update_smoke_particle(particle, center, width, height)
 		particle.velocity[1] = particle.velocity[1] + random_float(-0.1, 0.1)
 	end
 
-	if height - particle.pos[2] < max_prox_x then 
+	if height - particle.pos[2] < MAX_PROX_X then 
 		particle.velocity[2] = particle.velocity[2] + random_float(-0.1, -0.01)
 	elseif particle.pos[2] < 47 then
 		particle.velocity[2] = particle.velocity[2] / 1.1
@@ -619,20 +618,17 @@ function generate_smoke_particles(flask)
 end
 
 function generate_smoke(center, particles, smoke_col_1, smoke_col_2, smoke_col_3)
-	-- width = 30
-	local height = 84
-	max_prox_x = 5
-	local particle_size = (SMOKE_WIDTH * height / NUMBER_OF_SMOKE_PARTICLES)
+	local particle_size = (SMOKE_WIDTH * SMOKE_HEIGHT / NUMBER_OF_SMOKE_PARTICLES)
 	for i = 1, SMOKE_WIDTH do 
-		for j = 1, height do 
+		for j = 1, SMOKE_HEIGHT do 
 			local pos_x = center - SMOKE_WIDTH/2 + i + particle_size / 2
-			local pos_y = height/2 + j + particle_size / 2
+			local pos_y = SMOKE_HEIGHT/2 + j + particle_size / 2
 
-			local velocity_x = random_float(-0.05,0.05)
+			local velocity_x = random_float(-0.05, 0.05)
 			-- if it is close to the bounds, make the velocity not as intense
-			if i < max_prox_x then
+			if i < MAX_PROX_X then
 				velocity_x = random_float(-0.05, -0.01)
-			elseif i > SMOKE_WIDTH - max_prox_x then
+			elseif i > SMOKE_WIDTH - MAX_PROX_X then
 				velocity_x = random_float(0.01, 0.05)
 			end
 
