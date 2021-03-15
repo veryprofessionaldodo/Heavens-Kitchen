@@ -1,4 +1,4 @@
-# 🧪 Heaven's Kitchen
+# Heaven's Kitchen 🧪
 
 <p align="center">
   <img src="https://i.imgur.com/jUjiyVf.gif" width="370" alt="accessibility text">
@@ -13,12 +13,14 @@ Our submission won **Best Game** 🥇, **Best Art** 🎨, **Best Gameplay** 🕹
 ## About the game
 
 ### Concept
+
 > Create Pikmin to please God
 
 You've just got accepted into Heaven's Kitchen, the holiest contest in the universe to-be. Your task is to populate a recently created world by crafting different chemical concoctions into new creatures. Follow your chef's instructions and make your way through chaotic levels as you try your best to create a world in your bosses' image.
 
 ### Controls
-In order to play the game you'll need to create several chemical reactions. Open each faucet with your *'1'*, *'2'* and *'3'* keys and fill out the flasks according to the requests appearing on the right hand side of your screen. To get different liquids into each flask, you'll need to swap them by dragging with your mouse and placing them under the faucet with the color you need.
+
+To play the game you'll need to create several chemical reactions. Open each faucet with your *'1'*, *'2'* and *'3'* keys and fill out the flasks according to the requests appearing on the right-hand side of your screen. To get different liquids into each flask, you'll need to swap them by dragging with your mouse and placing them under the faucet with the color you need.
 
 ### Links
 
