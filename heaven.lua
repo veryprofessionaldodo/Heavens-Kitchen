@@ -111,6 +111,7 @@ CUR_STATE = STATES.MAIN_MENU
 FLASK_WIDTH = 36
 FLASK_OFFSET_Y = 4
 FLASK_HEIGHT = 84
+SMOKE_WIDTH = 30
 
 Z_KEYCODE = 26
 FAUCET_KEYCODE_1 = 28
@@ -377,12 +378,12 @@ function update_smokes()
 end
 
 function update_smoke(particles, center, flask) 
-	width = 30
+	-- width = 30 TODO
 	local height = 84
 
 	local i = 1
 	for j = 1, #particles do 
-		update_smoke_particle(particles[j], flask.center_x, width, height)
+		update_smoke_particle(particles[j], flask.center_x, SMOKE_WIDTH, height)
 	end
 	while i < #particles do 
 		if particles[i].time_to_live <= 0 then
@@ -492,7 +493,7 @@ function update_stream_particle(particle, flask, height)
 	particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	particle.pos[2] = particle.pos[2] + particle.velocity[2]
 
-	final_height = height
+	local final_height = height
 
 	if particle.pos[1] < center - FLASK_WIDTH / 2 or particle.pos[1] > center + FLASK_WIDTH / 2 then
 		final_height = 1000
@@ -512,14 +513,14 @@ function update_stream_particle(particle, flask, height)
 	end
 
 	if particle.color == 12 then
-		particle.pos[1] = math.min(math.max(particle.pos[1], center - width / 2), center + width / 2)
+		particle.pos[1] = math.min(math.max(particle.pos[1], center - SMOKE_WIDTH / 2), center + SMOKE_WIDTH / 2)
 	end
 
 	-- check if bounce is necessary
-	if particle.pos[1] == center + width / 2 and color == 12 then 
+	if particle.pos[1] == center + SMOKE_WIDTH / 2 and color == 12 then 
 		particle.velocity[1] = random_float(-2,-1)
 		particle.pos[1] = particle.pos[1] + particle.velocity[1]
-	elseif particle.pos[1] == center - width / 2 and color == 12 then 
+	elseif particle.pos[1] == center - SMOKE_WIDTH / 2 and color == 12 then 
 		particle.velocity[1] = random_float(1,2)
 		particle.pos[1] = particle.pos[1] + particle.velocity[1]
 	end
@@ -618,20 +619,20 @@ function generate_smoke_particles(flask)
 end
 
 function generate_smoke(center, particles, smoke_col_1, smoke_col_2, smoke_col_3)
-	width = 30
+	-- width = 30
 	local height = 84
 	max_prox_x = 5
-	local particle_size = (width * height / NUMBER_OF_SMOKE_PARTICLES)
-	for i = 1, width do 
+	local particle_size = (SMOKE_WIDTH * height / NUMBER_OF_SMOKE_PARTICLES)
+	for i = 1, SMOKE_WIDTH do 
 		for j = 1, height do 
-			local pos_x = center - width/2 + i + particle_size / 2
+			local pos_x = center - SMOKE_WIDTH/2 + i + particle_size / 2
 			local pos_y = height/2 + j + particle_size / 2
 
 			local velocity_x = random_float(-0.05,0.05)
 			-- if it is close to the bounds, make the velocity not as intense
 			if i < max_prox_x then
 				velocity_x = random_float(-0.05, -0.01)
-			elseif i > width - max_prox_x then
+			elseif i > SMOKE_WIDTH - max_prox_x then
 				velocity_x = random_float(0.01, 0.05)
 			end
 
