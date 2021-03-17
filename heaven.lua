@@ -20,20 +20,27 @@ STATES = {
     RESULT_TWO = 'result_two',
     LEVEL_THREE = 'level_three',
     RESULT_THREE = 'result_three',
-    RESULT_FINAL = 'result_final'
+    RESULT_FINAL = 'result_final',
+    ARCADE_EASY = 'arcade_easy',
+    ARCADE_MEDIUM = 'arcade_medium',
+    ARCADE_HARD = 'arcade_hard'
 }
 
 SKIPPABLE_STATES = {STATES.MAIN_MENU, STATES.CUTSCENE_ZERO, STATES.CUTSCENE_ONE, STATES.CUTSCENE_TWO,
                     STATES.HOW_TO_PLAY_ONE, STATES.HOW_TO_PLAY_TWO, STATES.CUTSCENE_THREE, STATES.RESULT_ONE,
                     STATES.RESULT_TWO, STATES.RESULT_THREE, STATES.RESULT_FINAL}
 
-PLAYABLE_STATES = {STATES.TUTORIAL_ONE, STATES.TUTORIAL_TWO, STATES.LEVEL_ONE, STATES.LEVEL_TWO, STATES.LEVEL_THREE}
+PLAYABLE_STATES = {STATES.TUTORIAL_ONE, STATES.TUTORIAL_TWO, STATES.LEVEL_ONE, STATES.LEVEL_TWO, STATES.LEVEL_THREE,
+                   STATES.ARCADE_EASY, STATES.ARCADE_MEDIUM, STATES.ARCADE_HARD}
 
 CUR_STATE = STATES.MAIN_MENU
 
 -- Faucet colors: red, blue, green
 FAUCETS = {2, 9, 5}
 ANY_FAUCET_DROPPING = false
+
+-- Arcade
+ARCADE_TIME = 90
 
 -- Levels
 LEVELS_METADATA = {
@@ -60,6 +67,24 @@ LEVELS_METADATA = {
     },
     level_three = {
         time = 60,
+        max_steps = 3,
+        FAUCETS = FAUCETS,
+        percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
+    },
+    arcade_easy = {
+        time = ARCADE_TIME,
+        max_steps = 2,
+        FAUCETS = FAUCETS,
+        percentages = {0.25, 0.50, 0.75, 1}
+    },
+    arcade_medium = {
+        time = ARCADE_TIME,
+        max_steps = 3,
+        FAUCETS = FAUCETS,
+        percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
+    },
+    arcade_hard = {
+        time = ARCADE_TIME,
         max_steps = 3,
         FAUCETS = FAUCETS,
         percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
@@ -219,6 +244,11 @@ function update()
         update_streams()
         update_smokes()
 
+        if #ORDERS <= 10 then
+            generate_orders(30, LEVELS_METADATA[CUR_STATE].max_steps, LEVELS_METADATA[CUR_STATE].FAUCETS,
+            LEVELS_METADATA[CUR_STATE].percentages)
+        end
+
         -- end level if timeout or no more orders
         handle_timeout()
         if #ORDERS == 0 then
@@ -234,7 +264,12 @@ function update_state_machine()
     -- advances state machine to next state
     -- may run additional logic in between
     if CUR_STATE == STATES.MAIN_MENU then
-        CUR_STATE = STATES.CUTSCENE_ZERO
+        if MENU_SELECTION == 1 then
+            CUR_STATE = STATES.CUTSCENE_ZERO
+        elseif MENU_SELECTION == 2 then
+            music(2)
+            CUR_STATE = STATES.ARCADE_EASY
+        end
     elseif CUR_STATE == STATES.CUTSCENE_ZERO then
         CUR_STATE = STATES.CUTSCENE_ONE
     elseif CUR_STATE == STATES.CUTSCENE_ONE then
@@ -830,7 +865,14 @@ function get_slot(mx)
 end
 
 function handle_timeout()
-    local timeout = LEVELS_METADATA[CUR_STATE].time * CLOCK_FREQ
+    local timeout
+
+    if CUR_STATE == STATES.ARCADE_EASY then
+        timeout = LEVELS_METADATA[CUR_STATE].time * CLOCK_FREQ
+    else
+        timeout = LEVELS_METADATA[CUR_STATE].time * CLOCK_FREQ
+    end
+
 
     local timer_incr = RECT_HEIGHT / LEVELS_METADATA[CUR_STATE].time
     if ((FRAME_COUNTER % CLOCK_FREQ) == 0) then
