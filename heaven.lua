@@ -92,7 +92,7 @@ FLASK3 = {
 
 FLASKS = {FLASK1, FLASK2, FLASK3}
 
--- Drop slots ranges
+-- Drop slots x ranges
 DROP_SLOTS = {{24, 60}, {74, 110}, {124, 160}}
 
 -- Scoring
@@ -142,10 +142,11 @@ COMPLETED_ORDERS = {}
 STREAM_WIDTH = 4
 SMOKE_WIDTH = 30
 SMOKE_HEIGHT = 84
+SMOKE_HEIGHT_START = 40
 FILL_RATE = 0.4
-NUMBER_OF_STREAM_PARTICLES = 700
-NUMBER_OF_SMOKE_PARTICLES = 400
-MAX_PARTICLE_SIZE = SMOKE_WIDTH * SMOKE_HEIGHT / NUMBER_OF_SMOKE_PARTICLES
+NUMBER_OF_STREAM_PARTICLES = 500
+NUMBER_OF_SMOKE_PARTICLES = 1000
+MAX_PARTICLE_SIZE = (SMOKE_WIDTH * SMOKE_HEIGHT) / NUMBER_OF_SMOKE_PARTICLES
 PARTICLE_SPEED = 5
 BUBBLES_GRAVITY = 0.1
 MAX_PROX_X = 5
@@ -158,7 +159,7 @@ VERTICAL_ENTER_THRESHOLD = 40
 SMOKE_RED_PARTICLES = {}
 SMOKE_GREEN_PARTICLES = {}
 SMOKE_BLUE_PARTICLES = {}
-SMOKE_EVAPORATION_SPEED = 2
+SMOKE_EVAPORATION_SPEED = 4
 
 -- particles are simple objects that have five components:
 -- position, velocity, color time-to-live, size, and whether it has passed 
@@ -436,7 +437,7 @@ function update_stream(particles, flask, smoke_particles)
     local i = 1
     while i <= #particles do
         if #smoke_particles > 10 then
-            particles[i].time_to_live = particles[i].time_to_live / 10
+            particles[i].time_to_live = 0
         end
 
         if particles[i].time_to_live <= 0 then
@@ -450,15 +451,15 @@ end
 
 function update_stream_particle(particle, flask, height)
     local center = flask.center_x
-    local min_flask_x = center - SMOKE_WIDTH / 2 
+    local min_flask_x = center - SMOKE_WIDTH / 2
     local max_flask_x = center + SMOKE_WIDTH / 2 - 2
 
     -- is a part of the stream, make it speed up
     if particle.color ~= 12 then
         particle.velocity[1] = particle.velocity[1] + random_float(-0.1, 0.1)
-        particle.velocity[2] = particle.velocity[2] + random_float(0.1,0.5)
+        particle.velocity[2] = particle.velocity[2] + random_float(0.1, 0.5)
         particle.size = math.max(math.min(particle.size + random_float(-0.4, 0.3), 5), 1)
-    -- has turned to foam
+        -- has turned to foam
     else
         particle.size = math.max(math.min(particle.size + random_float(-0.4, 0.3), 2), 0)
         particle.velocity[2] = particle.velocity[2] - BUBBLES_GRAVITY
@@ -468,15 +469,16 @@ function update_stream_particle(particle, flask, height)
             particle.velocity[1] = particle.velocity[1] + random_float(0.1, 0.2)
         end
     end
-   
+
     local final_height = height
 
     -- if it is outside of the flask 
     if particle.pos[1] < min_flask_x or particle.pos[1] > max_flask_x and not particle.has_entered then
         final_height = 1000
         particle.can_enter = false
-    -- check if it can enter the flask
-    elseif particle.pos[1] > min_flask_x and particle.pos[1] < max_flask_x and particle.pos[2] < VERTICAL_ENTER_THRESHOLD then
+        -- check if it can enter the flask
+    elseif particle.pos[1] > min_flask_x and particle.pos[1] < max_flask_x and particle.pos[2] <
+        VERTICAL_ENTER_THRESHOLD then
         particle.can_enter = true
     end
 
@@ -488,7 +490,7 @@ function update_stream_particle(particle, flask, height)
     -- update particles inside flask or that can still enter
     if particle.has_entered or particle.can_enter then
 
-        if particle.has_entered then 
+        if particle.has_entered then
             particle.pos[1] = math.min(math.max(particle.pos[1], min_flask_x), max_flask_x)
             -- check if flask bounce is necessary
             if particle.pos[1] == min_flask_x then
@@ -497,11 +499,11 @@ function update_stream_particle(particle, flask, height)
                 particle.velocity[1] = random_float(-3, -1)
             end
         end
-        
+
         -- is foam, is bouncing on surface
         if particle.pos[2] < final_height and particle.color == 12 then
             particle.velocity[2] = -particle.velocity[2] / 2
-        end 
+        end
 
         -- check if particle has reached stream
         if particle.pos[2] > final_height and particle.color ~= 12 then
@@ -511,22 +513,27 @@ function update_stream_particle(particle, flask, height)
             particle.velocity[2] = random_float(PARTICLE_SPEED / 6 - 1, PARTICLE_SPEED / 6 + 1)
             fill_flask(flask)
         end
-    -- update particles outside of flask
-    else 
+
+        -- check if it hit the bottom
+        if particle.pos[2] > 128 and particle.color == 12 then
+            particle.velocity[2] = random_float(-2, -1)
+        end
+        -- update particles outside of flask
+    else
         -- check if particle hits flask on the right or left side
-        if particle.pos[1] < center then 
+        if particle.pos[1] < center then
             particle.pos[1] = math.min(particle.pos[1], min_flask_x)
 
             -- hit left side of flask
-            if particle.pos[1] == min_flask_x then 
+            if particle.pos[1] == min_flask_x then
                 particle.velocity[1] = particle.velocity[1] + random_float(-2, -4)
-            else 
-            end 
-        else 
+            else
+            end
+        else
             particle.pos[1] = math.max(particle.pos[1], max_flask_x)
 
             -- hit right side of flask
-            if particle.pos[1] == max_flask_x then 
+            if particle.pos[1] == max_flask_x then
                 particle.velocity[1] = particle.velocity[1] + random_float(2, 4)
             end
         end
@@ -537,36 +544,36 @@ function update_stream_particle(particle, flask, height)
     particle.time_to_live = particle.time_to_live - 1
     particle.pos[1] = particle.pos[1] + particle.velocity[1]
     particle.pos[2] = particle.pos[2] + particle.velocity[2]
-    
+
     -- if it has left the screen, it should be immediately be killed
     if particle.pos[2] > 160 then
         particle.time_to_live = 0
     end
-    
+
 end
 
 function update_smokes()
-    local center = (DROP_SLOTS[1][1] + DROP_SLOTS[1][2]) / 2 - 2
+    local center = (DROP_SLOTS[1][1] + DROP_SLOTS[1][2]) / 2
     local red_flask = FLASKS[get_flask_at(1)]
     update_smoke(SMOKE_RED_PARTICLES, center, red_flask)
 
-    local center = (DROP_SLOTS[2][1] + DROP_SLOTS[2][2]) / 2 - 2
+    local center = (DROP_SLOTS[2][1] + DROP_SLOTS[2][2]) / 2
     local blue_flask = FLASKS[get_flask_at(2)]
     update_smoke(SMOKE_BLUE_PARTICLES, center, blue_flask)
 
-    local center = (DROP_SLOTS[3][1] + DROP_SLOTS[3][2]) / 2 - 2
+    local center = (DROP_SLOTS[3][1] + DROP_SLOTS[3][2]) / 2
     local green_flask = FLASKS[get_flask_at(3)]
     update_smoke(SMOKE_GREEN_PARTICLES, center, green_flask)
 end
 
-function update_smoke(particles, center, flask)
+function update_smoke(smoke, center, flask)
     local i = 1
-    for j = 1, #particles do
-        update_smoke_particle(particles[j], flask.center_x, SMOKE_WIDTH, SMOKE_HEIGHT)
+    for j = 1, #smoke do
+        update_smoke_particle(smoke[j], flask.center_x, SMOKE_WIDTH, 120)
     end
-    while i < #particles do
-        if particles[i].time_to_live <= 0 then
-            table.remove(particles, i, center)
+    while i <= #smoke do
+        if smoke[i].time_to_live <= 0 then
+            table.remove(smoke, i)
         else
             i = i + 1
         end
@@ -574,34 +581,29 @@ function update_smoke(particles, center, flask)
 end
 
 function update_smoke_particle(particle, center, width, height)
-    if particle.size < MAX_PARTICLE_SIZE / 2 then
-        particle.color = particle.color_2
-    elseif particle.size < MAX_PARTICLE_SIZE / 4 then
-        particle.color = particle.color_3
-    elseif particle.size < 0.01 then
+    if particle.size < 0.01 then
         particle.time_to_live = 0
+    elseif particle.size < MAX_PARTICLE_SIZE then
+        particle.color = particle.color_2
+    elseif particle.size < MAX_PARTICLE_SIZE / 2 then
+        particle.color = particle.color_3
     end
 
-    particle.time_to_live = particle.time_to_live - 1 * SMOKE_EVAPORATION_SPEED
-    particle.size = particle.size + random_float(-0.2, -0.1) * SMOKE_EVAPORATION_SPEED
+    particle.size = particle.size + random_float(-0.04, -0.03) * SMOKE_EVAPORATION_SPEED
 
-    if particle.pos[1] < center - width / 2 then
-        particle.velocity[1] = particle.velocity[1] + random_float(0.1, 0.8)
-    elseif particle.pos[1] > center + width / 2 then
-        particle.velocity[1] = particle.velocity[1] + random_float(-0.8, -0.1)
-    else
-        particle.velocity[1] = particle.velocity[1] + random_float(-0.1, 0.1)
-    end
+    particle.velocity[1] = particle.velocity[1] + random_float(-0.1, 0.1)
 
-    if height - particle.pos[2] < MAX_PROX_X then
-        particle.velocity[2] = particle.velocity[2] + random_float(-0.1, -0.01)
-    elseif particle.pos[2] < 47 then
-        particle.velocity[2] = particle.velocity[2] / 1.1
+    -- has reached the bottom, go up
+    if particle.pos[2] > height then
+        particle.velocity[2] = particle.velocity[2] + random_float(-0.05, -0.01)
     else
         particle.velocity[2] = particle.velocity[2] + random_float(-0.01, 0.01)
     end
 
-    -- velocity_y = random_float(-1, 1)
+    if particle.pos[2] < 47 then
+        particle.velocity[2] = particle.velocity[2] / 1.05
+    end
+
     -- update properties
     particle.pos[1] = particle.pos[1] + particle.velocity[1]
     particle.pos[2] = particle.pos[2] + particle.velocity[2]
@@ -718,10 +720,13 @@ function generate_smoke_particles(flask)
 end
 
 function generate_smoke(center, particles, smoke_col_1, smoke_col_2, smoke_col_3)
-    for i = 1, SMOKE_WIDTH do
-        for j = 1, SMOKE_HEIGHT do
-            local pos_x = center - SMOKE_WIDTH / 2 + i - MAX_PARTICLE_SIZE / 2
-            local pos_y = SMOKE_HEIGHT / 2 + j - MAX_PARTICLE_SIZE / 2
+    local min_flask_x = center - SMOKE_WIDTH / 2
+    local max_flask_x = center + SMOKE_WIDTH / 2 - 2
+
+    for i = 1, SMOKE_WIDTH / MAX_PARTICLE_SIZE do
+        for j = 1, SMOKE_HEIGHT / MAX_PARTICLE_SIZE do
+            local pos_x = min_flask_x + i * MAX_PARTICLE_SIZE - MAX_PARTICLE_SIZE / 2
+            local pos_y = SMOKE_HEIGHT_START + j * MAX_PARTICLE_SIZE - MAX_PARTICLE_SIZE / 2
 
             local velocity_x = random_float(-0.05, 0.05)
             -- if it is close to the bounds, make the velocity not as intense
@@ -733,13 +738,13 @@ function generate_smoke(center, particles, smoke_col_1, smoke_col_2, smoke_col_3
 
             local velocity_y = random_float(-1, 1)
             local particle = {
-                size = MAX_PARTICLE_SIZE,
+                size = MAX_PARTICLE_SIZE * 2,
                 pos = {pos_x, pos_y},
                 velocity = {velocity_x, velocity_y},
                 color = smoke_col_1,
                 color_2 = smoke_col_2,
                 color_3 = smoke_col_3,
-                time_to_live = random_float(30, 60)
+                time_to_live = random_float(30, 90)
             }
             table.insert(particles, particle)
         end
@@ -1139,7 +1144,6 @@ function draw_particles()
             math.floor(PARTICLES_BLUE[i].size), PARTICLES_BLUE[i].color)
     end
 
-
 end
 
 function draw_creatures()
@@ -1157,12 +1161,7 @@ end
 
 function draw_smoke(particles)
     for i = 1, #particles do
-        -- if is shrinking, draw a circle
-        if particles[i].color == particles[i].color_2 or particles[i].color == particles[i].color_3 then
-            circ(particles[i].pos[1], particles[i].pos[2], particles[i].size / 2, particles[i].color)
-        else
-            rect(particles[i].pos[1], particles[i].pos[2], particles[i].size, particles[i].size, particles[i].color)
-        end
+        rect(particles[i].pos[1], particles[i].pos[2], particles[i].size, particles[i].size, particles[i].color)
     end
 end
 
