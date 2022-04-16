@@ -244,7 +244,8 @@ function update()
         update_streams()
         update_smokes()
 
-        if #ORDERS <= 10 then
+        -- only for arcade mode
+        if MENU_SELECTION == 2 and #ORDERS <= 10 then
             generate_orders(30, LEVELS_METADATA[CUR_STATE].max_steps, LEVELS_METADATA[CUR_STATE].FAUCETS,
             LEVELS_METADATA[CUR_STATE].percentages)
         end
