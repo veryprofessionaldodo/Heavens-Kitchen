@@ -1,8 +1,10 @@
 # Heaven's Kitchen 🧪
 
+**Try it [here](https://dpain.itch.io/heavens-kitchen)**
+
 <p align="center">
-  <img src="https://i.imgur.com/jUjiyVf.gif" width="370" alt="accessibility text">
-  <img src="https://i.imgur.com/ORQ6u7v.gif" width="370" title="hover text"> 
+  <img src="https://i.imgur.com/jUjiyVf.gif" width="370">
+  <img src="https://i.imgur.com/ORQ6u7v.gif" width="370"> 
 </p>
 
 Our 1st place entry for IEEE University of Porto Student Branch 2021 Retro Jam was **'Heaven's Kitchen'**, a game made in 48 hours for the **[TIC-80 fantasy console](https://tic80.com/)** by a team of five software engineers. The jam's theme was **REACTION**.  

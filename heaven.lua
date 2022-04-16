@@ -1,9 +1,8 @@
 -- title:  Heaven's Kitchen
--- author: Team Amogus
+-- author: Team "Amogus"
 -- desc:   1st place submission for RetroJam 2021 organized by IEEE UP SB
 -- script: lua
 
--- Game States
 STATES = {
     MAIN_MENU = 'main_menu',
     CUTSCENE_ZERO = 'cutscene_zero',
@@ -26,17 +25,17 @@ STATES = {
     ARCADE_HARD = 'arcade_hard'
 }
 
-SKIPPABLE_STATES = {STATES.MAIN_MENU, STATES.CUTSCENE_ZERO, STATES.CUTSCENE_ONE, STATES.CUTSCENE_TWO,
-                    STATES.HOW_TO_PLAY_ONE, STATES.HOW_TO_PLAY_TWO, STATES.CUTSCENE_THREE, STATES.RESULT_ONE,
-                    STATES.RESULT_TWO, STATES.RESULT_THREE, STATES.RESULT_FINAL}
+SKIPPABLE_STATES = { STATES.MAIN_MENU, STATES.CUTSCENE_ZERO, STATES.CUTSCENE_ONE, STATES.CUTSCENE_TWO,
+    STATES.HOW_TO_PLAY_ONE, STATES.HOW_TO_PLAY_TWO, STATES.CUTSCENE_THREE, STATES.RESULT_ONE,
+    STATES.RESULT_TWO, STATES.RESULT_THREE, STATES.RESULT_FINAL }
 
-PLAYABLE_STATES = {STATES.TUTORIAL_ONE, STATES.TUTORIAL_TWO, STATES.LEVEL_ONE, STATES.LEVEL_TWO, STATES.LEVEL_THREE,
-                   STATES.ARCADE_EASY, STATES.ARCADE_MEDIUM, STATES.ARCADE_HARD}
+PLAYABLE_STATES = { STATES.TUTORIAL_ONE, STATES.TUTORIAL_TWO, STATES.LEVEL_ONE, STATES.LEVEL_TWO, STATES.LEVEL_THREE,
+    STATES.ARCADE_EASY, STATES.ARCADE_MEDIUM, STATES.ARCADE_HARD }
 
 CUR_STATE = STATES.MAIN_MENU
 
 -- Faucet colors: red, blue, green
-FAUCETS = {2, 9, 5}
+FAUCETS = { 2, 9, 5 }
 ANY_FAUCET_DROPPING = false
 
 -- Arcade
@@ -47,47 +46,45 @@ LEVELS_METADATA = {
     -- times in seconds
     tutorial_one = {
         time = math.huge -- no timeout for tutorials
-        
     },
     tutorial_two = {
         time = math.huge -- no timeout for tutorials
-        
     },
     level_one = {
         time = 90,
         max_steps = 2,
         FAUCETS = FAUCETS,
-        percentages = {0.25, 0.50, 0.75, 1}
+        percentages = { 0.25, 0.50, 0.75, 1 }
     },
     level_two = {
         time = 60,
         max_steps = 3,
         FAUCETS = FAUCETS,
-        percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
+        percentages = { 0.15, 0.25, 0.50, 0.75, 0.85, 1 }
     },
     level_three = {
         time = 60,
         max_steps = 3,
         FAUCETS = FAUCETS,
-        percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
+        percentages = { 0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1 }
     },
     arcade_easy = {
         time = ARCADE_TIME,
         max_steps = 2,
         FAUCETS = FAUCETS,
-        percentages = {0.25, 0.50, 0.75, 1}
+        percentages = { 0.25, 0.50, 0.75, 1 }
     },
     arcade_medium = {
         time = ARCADE_TIME,
         max_steps = 3,
         FAUCETS = FAUCETS,
-        percentages = {0.15, 0.25, 0.50, 0.75, 0.85, 1}
+        percentages = { 0.15, 0.25, 0.50, 0.75, 0.85, 1 }
     },
     arcade_hard = {
         time = ARCADE_TIME,
         max_steps = 3,
         FAUCETS = FAUCETS,
-        percentages = {0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1}
+        percentages = { 0.15, 0.25, 0.35, 0.50, 0.65, 0.75, 0.85, 1 }
     }
 }
 
@@ -115,10 +112,10 @@ FLASK3 = {
     cur_slot = 3
 }
 
-FLASKS = {FLASK1, FLASK2, FLASK3}
+FLASKS = { FLASK1, FLASK2, FLASK3 }
 
 -- Drop slots x ranges
-DROP_SLOTS = {{24, 60}, {74, 110}, {124, 160}}
+DROP_SLOTS = { { 24, 60 }, { 74, 110 }, { 124, 160 } }
 
 -- Scoring
 TOTAL_SCORE = 0
@@ -134,7 +131,7 @@ PERSON_THRESHOLD = 30
 COW_THRESHOLD = 20
 FROG_THRESHOLD = 10
 
--- Timer 
+-- Timer
 RECT_HEIGHT = 100
 TIMER_Y = 10
 TIMER_HEIGHT = 100
@@ -158,7 +155,7 @@ ORDER_START_POS = 8
 ORDER_PADDING = 44
 ORDER_DELTA = 15
 ORDER_OFF_SCREEN = 241
-VERTICAL_TARGETS = {8, 52, 96, 137}
+VERTICAL_TARGETS = { 8, 52, 96, 137 }
 
 ORDERS = {}
 COMPLETED_ORDERS = {}
@@ -177,7 +174,7 @@ BUBBLES_GRAVITY = 0.1
 MAX_PROX_X = 5
 VERTICAL_ENTER_THRESHOLD = 40
 
--- transition particle system, each particle contains the following 
+-- transition particle system, each particle contains the following
 -- components: position, velocity, color, size, color, color_2, color_3
 -- (used for transitions) and time_to_live
 -- used to check if stream can be activated or not
@@ -187,7 +184,7 @@ SMOKE_BLUE_PARTICLES = {}
 SMOKE_EVAPORATION_SPEED = 4
 
 -- particles are simple objects that have five components:
--- position, velocity, color time-to-live, size, and whether it has passed 
+-- position, velocity, color time-to-live, size, and whether it has passed
 -- the flask, and cannot be added to the fluid
 PARTICLES_RED = {}
 PARTICLES_GREEN = {}
@@ -228,7 +225,7 @@ function update()
     FRAME_COUNTER = FRAME_COUNTER + 1
     if CUR_STATE == STATES.MAIN_MENU then
         if keyp(UP_KEYCODE) or keyp(DOWN_KEYCODE) then
-            switch_selection() 
+            switch_selection()
         end
 
         if keyp(RETURN_KEYCODE) then
@@ -247,7 +244,7 @@ function update()
         -- only for arcade mode
         if MENU_SELECTION == 2 and #ORDERS <= 10 then
             generate_orders(30, LEVELS_METADATA[CUR_STATE].max_steps, LEVELS_METADATA[CUR_STATE].FAUCETS,
-            LEVELS_METADATA[CUR_STATE].percentages)
+                LEVELS_METADATA[CUR_STATE].percentages)
         end
 
         -- end level if timeout or no more orders
@@ -335,9 +332,9 @@ function update_orders()
 
     for i = 1, #COMPLETED_ORDERS do
         COMPLETED_ORDERS[i].pos[1] = COMPLETED_ORDERS[i].pos[1] +
-                                         (COMPLETED_ORDERS[i].target[1] - COMPLETED_ORDERS[i].pos[1]) / ORDER_DELTA
+            (COMPLETED_ORDERS[i].target[1] - COMPLETED_ORDERS[i].pos[1]) / ORDER_DELTA
         COMPLETED_ORDERS[i].pos[2] = COMPLETED_ORDERS[i].pos[2] +
-                                         (COMPLETED_ORDERS[i].target[2] - COMPLETED_ORDERS[i].pos[2]) / ORDER_DELTA
+            (COMPLETED_ORDERS[i].target[2] - COMPLETED_ORDERS[i].pos[2]) / ORDER_DELTA
     end
 end
 
@@ -412,7 +409,7 @@ function switch_selection()
         MENU_SELECTION = 2
     elseif MENU_SELECTION == 2 then
         MENU_SELECTION = 1
-    end   
+    end
 end
 
 function handle_faucet_sfx()
@@ -438,9 +435,9 @@ function generate_stream_particles(center, particles, particle_color)
         local pos_x = center + STREAM_WIDTH / 2 + math.random(-STREAM_WIDTH / 2, STREAM_WIDTH / 2)
         local pos_y = math.random(39, 40)
         local particle = {
-            pos = {pos_x, pos_y},
+            pos = { pos_x, pos_y },
             color = particle_color,
-            velocity = {random_float(-0.1, 0.1), random_float(PARTICLE_SPEED - 2, PARTICLE_SPEED + 2)},
+            velocity = { random_float(-0.1, 0.1), random_float(PARTICLE_SPEED - 2, PARTICLE_SPEED + 2) },
             size = random_float(1, 3),
             time_to_live = random_float(20, 40),
             has_entered = false,
@@ -508,7 +505,7 @@ function update_stream_particle(particle, flask, height)
 
     local final_height = height
 
-    -- if it is outside of the flask 
+    -- if it is outside of the flask
     if particle.pos[1] < min_flask_x or particle.pos[1] > max_flask_x and not particle.has_entered then
         final_height = 1000
         particle.can_enter = false
@@ -659,7 +656,7 @@ function fill_flask(flask)
     local cur_color = FAUCETS[flask.cur_slot]
 
     if #flask.fill_order == 0 then
-        table.insert(flask.fill_order, {cur_color, 0, 0})
+        table.insert(flask.fill_order, { cur_color, 0, 0 })
     end
 
     if flask.fill_order[#flask.fill_order][1] == cur_color then
@@ -668,7 +665,7 @@ function fill_flask(flask)
     else
         -- different color as the previous, create new entry
         local y = flask.fill_order[#flask.fill_order][3]
-        table.insert(flask.fill_order, {cur_color, y, y + 0.1 * FILL_RATE})
+        table.insert(flask.fill_order, { cur_color, y, y + 0.1 * FILL_RATE })
     end
 
     check_if_flask_full(flask)
@@ -735,7 +732,7 @@ function add_creature(flask, score)
 
     local creature = {
         flask = flask,
-        pos = {pos_x, pos_y},
+        pos = { pos_x, pos_y },
         spr = sprite,
         time_to_drop = TIME_UNTIL_CREATURE_DROP,
         velocity_y = 0,
@@ -775,8 +772,8 @@ function generate_smoke(center, particles, smoke_col_1, smoke_col_2, smoke_col_3
             local velocity_y = random_float(-1, 1)
             local particle = {
                 size = MAX_PARTICLE_SIZE * 2,
-                pos = {pos_x, pos_y},
-                velocity = {velocity_x, velocity_y},
+                pos = { pos_x, pos_y },
+                velocity = { velocity_x, velocity_y },
                 color = smoke_col_1,
                 color_2 = smoke_col_2,
                 color_3 = smoke_col_3,
@@ -801,8 +798,8 @@ function calculate_score(fill_order)
                 failed = true
             elseif ORDERS[i].content[j][1] == fill_order[j][1] then
                 total_diff = total_diff +
-                                 math.ceil(math.abs((ORDERS[i].content[j][2] * FLASK_HEIGHT) -
-                                                        (fill_order[j][3] - fill_order[j][2])))
+                    math.ceil(math.abs((ORDERS[i].content[j][2] * FLASK_HEIGHT) -
+                    (fill_order[j][3] - fill_order[j][2])))
             else
                 failed = true
             end
@@ -838,8 +835,8 @@ function mouse_up(flask)
 end
 
 function get_closest_slot(x)
-    local positions = {DROP_SLOTS[1][1], DROP_SLOTS[1][2], DROP_SLOTS[2][1], DROP_SLOTS[2][2], DROP_SLOTS[3][1],
-                       DROP_SLOTS[3][2]}
+    local positions = { DROP_SLOTS[1][1], DROP_SLOTS[1][2], DROP_SLOTS[2][1], DROP_SLOTS[2][2], DROP_SLOTS[3][1],
+        DROP_SLOTS[3][2] }
     local positions = map(function(a)
         return math.abs(x - a)
     end, positions)
@@ -911,44 +908,44 @@ function setup_level()
 
     -- generate orders for next level
     if CUR_STATE == STATES.TUTORIAL_ONE then
-        ORDERS = {{
-            content = {{FAUCETS[1], 1}},
-            pos = {168, 137},
-            target = {168, VERTICAL_TARGETS[1]}
+        ORDERS = { {
+            content = { { FAUCETS[1], 1 } },
+            pos = { 168, 137 },
+            target = { 168, VERTICAL_TARGETS[1] }
         }, {
-            content = {{FAUCETS[2], 1}},
-            pos = {168 + ORDER_PADDING, 137},
-            target = {168, VERTICAL_TARGETS[2]}
+            content = { { FAUCETS[2], 1 } },
+            pos = { 168 + ORDER_PADDING, 137 },
+            target = { 168, VERTICAL_TARGETS[2] }
         }, {
-            content = {{FAUCETS[1], 1}},
-            pos = {168 + ORDER_PADDING * 2, 137},
-            target = {168, VERTICAL_TARGETS[3]}
+            content = { { FAUCETS[1], 1 } },
+            pos = { 168 + ORDER_PADDING * 2, 137 },
+            target = { 168, VERTICAL_TARGETS[3] }
         }, {
-            content = {{FAUCETS[2], 1}},
-            pos = {168, 137},
-            target = {168, VERTICAL_TARGETS[4]}
-        }}
+            content = { { FAUCETS[2], 1 } },
+            pos = { 168, 137 },
+            target = { 168, VERTICAL_TARGETS[4] }
+        } }
     elseif CUR_STATE == STATES.TUTORIAL_TWO then
-        ORDERS = {{
-            content = {{FAUCETS[1], 0.5}, {FAUCETS[2], 0.5}},
-            pos = {168, 137},
-            target = {168, VERTICAL_TARGETS[1]}
+        ORDERS = { {
+            content = { { FAUCETS[1], 0.5 }, { FAUCETS[2], 0.5 } },
+            pos = { 168, 137 },
+            target = { 168, VERTICAL_TARGETS[1] }
         }, {
-            content = {{FAUCETS[2], 0.25}, {FAUCETS[3], 0.75}},
-            pos = {168 + ORDER_PADDING, 137},
-            target = {168, VERTICAL_TARGETS[2]}
+            content = { { FAUCETS[2], 0.25 }, { FAUCETS[3], 0.75 } },
+            pos = { 168 + ORDER_PADDING, 137 },
+            target = { 168, VERTICAL_TARGETS[2] }
         }, {
-            content = {{FAUCETS[3], 1}},
-            pos = {168, 137},
-            target = {168, VERTICAL_TARGETS[3]}
+            content = { { FAUCETS[3], 1 } },
+            pos = { 168, 137 },
+            target = { 168, VERTICAL_TARGETS[3] }
         }, {
-            content = {{FAUCETS[3], 0.5}, {FAUCETS[1], 0.5}},
-            pos = {168 + ORDER_PADDING * 2, 137},
-            target = {168, VERTICAL_TARGETS[4]}
-        }}
+            content = { { FAUCETS[3], 0.5 }, { FAUCETS[1], 0.5 } },
+            pos = { 168 + ORDER_PADDING * 2, 137 },
+            target = { 168, VERTICAL_TARGETS[4] }
+        } }
     else
         ORDERS = generate_orders(30, LEVELS_METADATA[CUR_STATE].max_steps, LEVELS_METADATA[CUR_STATE].FAUCETS,
-                     LEVELS_METADATA[CUR_STATE].percentages)
+            LEVELS_METADATA[CUR_STATE].percentages)
     end
 end
 
@@ -956,13 +953,13 @@ function generate_orders(norders, max_steps, FAUCETS, percentages)
     -- ORDERS
     local new_orders = {}
     for o = 1, norders do
-        local pos = {168, 137 + (o - 1) * ORDER_PADDING}
-        local target = {168, VERTICAL_TARGETS[o] or 137}
+        local pos = { 168, 137 + (o - 1) * ORDER_PADDING }
+        local target = { 168, VERTICAL_TARGETS[o] or 137 }
 
-        -- what a mess lol 
+        -- what a mess lol
         -- generate first pair (color, p)
-        local ps = {percentages[math.random(1, #percentages)]}
-        local colors = {FAUCETS[math.random(1, #FAUCETS)]}
+        local ps = { percentages[math.random(1, #percentages)] }
+        local colors = { FAUCETS[math.random(1, #FAUCETS)] }
 
         -- if first p1 is less than 1, generate another one
         -- generate also another color, different from the last
@@ -1008,7 +1005,7 @@ function generate_orders(norders, max_steps, FAUCETS, percentages)
 
         local content = {}
         for i = 1, #ps do
-            table.insert(content, {colors[i], ps[i]})
+            table.insert(content, { colors[i], ps[i] })
         end
 
         table.insert(new_orders, {
@@ -1106,7 +1103,7 @@ end
 function draw_faucets()
     local width = DROP_SLOTS[1][2] - DROP_SLOTS[1][1]
 
-    -- draw red faucet 
+    -- draw red faucet
     local pos_red_x = (DROP_SLOTS[1][1] + DROP_SLOTS[1][2]) / 2 - width / 2
     spr(2, pos_red_x - 6, 0, 0, 3, 0, 0, 2, 2)
 
@@ -1141,7 +1138,7 @@ function create_order_ui(i, o)
 
     ORDER_ANIM_COUNTER = ORDER_ANIM_COUNTER + 0.1 * ORDER_SPEED
     local pos_y = o[i].pos[2] + math.cos(ORDER_ANIM_COUNTER)
-    
+
 
     spr(12, o[i].pos[1], pos_y, 0, 2, 0, 0, 4, 3)
     for j = 1, #o[i].content do
@@ -1975,4 +1972,3 @@ init() -- starts the game
 -- <PALETTE>
 -- 000:1a1c2c5d275db13e53ef7d57ffcd75a7f07038b76425717929366f3b5dc941a6f673eff7f4f4f494b0c2566c86333c57
 -- </PALETTE>
-
